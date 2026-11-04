@@ -22,8 +22,8 @@ class IsotropicGaussian:
 
     cfg: DataConfig
     n_train: int
-    n_test: int
     dimensions: int
+    n_test: int = 0
     seed: int = 42
     signal_vector: Optional[torch.Tensor] = None
     sample_type_law: Optional[SampleTypeLaw] = None

@@ -28,7 +28,7 @@ TestResults.xml
 #Images
 *.png
 *.svg
+*.html
 
 #Mac
 .DS_Store
-

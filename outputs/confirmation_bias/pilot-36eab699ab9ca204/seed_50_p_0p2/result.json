@@ -1,0 +1,1694 @@
+{
+  "seed": 50,
+  "p": 0.2,
+  "data_metadata": {
+    "seed": 50,
+    "streams": {
+      "signal_and_weights": 61,
+      "noise": 16910948157526013764,
+      "initial_labels": 81,
+      "membership": 12372185825753948537,
+      "class_ranks": 17050325644010424580
+    },
+    "stream_recipe": "signal_and_weights=seed+11; initial_labels=seed+31; other seeds=uint64(SeedSequence([seed,0x43424941,tag]).generate_state(1)) | 2**63; tags noise=23,membership=101,class_ranks=103",
+    "pairing": "shared mu,U,Delta,class ranks,w_init,and exogenous unlabeled Y_init",
+    "sampling": "prescribed counts with nested rank assignment in each subset",
+    "initialization": "b=0, iid N(0,1) w independent of mu; exogenous iid Rademacher Y_init on unlabeled coordinates; engine special t=0 step",
+    "hashes": {
+      "mu": "745bc6e83538ea9793be331ec709c84f95738390ddc951e34850c44fdf82df15",
+      "U": "85a31a652ea508984eca8cfd46bc84aaa5cf7eeb4cb8834211f587d73d7a608c",
+      "Delta": "a050008538ea70a8fcffca0dbc10a48a2cd4113f6e53dc8efa90d46a7a65e592",
+      "ranks": "6d048b1fae48b44797c42183b4f71559d3f7488bb659dd4b62013a2443f495e6",
+      "w_init": "c72725aa7b420e123bb8f3a4abf0504ecc5fae546dfa0eeb1dc674aaa90e9c76",
+      "exogenous_labels": "cef03c5400a9d585717193e6a510e478c6d8c0162a6eacbdf7e984154ebe795b"
+    },
+    "population_p": 0.2,
+    "realized_labeled_p": 0.2,
+    "realized_unlabeled_p": 0.2,
+    "class_counts": {
+      "labeled": {
+        "positive": 48,
+        "negative": 192,
+        "positive_fraction": 0.2
+      },
+      "unlabeled": {
+        "positive": 4752,
+        "negative": 19008,
+        "positive_fraction": 0.2
+      }
+    },
+    "label_sha256": "1569b38cde395b85e25c09bb3fec82f36aaf3c3e96b1ffcf227fae280d3f1078",
+    "initial_label_sha256": "68958e021e297eed03e5c35c7de76d9a2c8c7df99d2783adf6595a318782d98a",
+    "count_rounding": "round to nearest, ties to even; labeled count clipped to [1,N-1]"
+  },
+  "baseline": {
+    "states": {
+      "iteration": {
+        "__array__": "a0"
+      },
+      "error": {
+        "__array__": "a1"
+      },
+      "b": {
+        "__array__": "a2"
+      },
+      "m": {
+        "__array__": "a3"
+      },
+      "tau": {
+        "__array__": "a4"
+      },
+      "normalized_bias": {
+        "__array__": "a5"
+      },
+      "normalized_alignment": {
+        "__array__": "a6"
+      },
+      "configuration_fractions": {
+        "__array__": "a7"
+      },
+      "prediction_fractions": {
+        "__array__": "a8"
+      },
+      "selected_false_negative_fraction": {
+        "__array__": "a9"
+      },
+      "selected_false_positive_fraction": {
+        "__array__": "a10"
+      },
+      "fitted_configuration_fractions": {
+        "__array__": "a11"
+      },
+      "assigned_selected_false_negative_fraction": {
+        "__array__": "a12"
+      },
+      "assigned_selected_false_positive_fraction": {
+        "__array__": "a13"
+      },
+      "selected_false_negative_rate": {
+        "__array__": "a14"
+      },
+      "selected_false_positive_rate": {
+        "__array__": "a15"
+      },
+      "selected_error_rate": {
+        "__array__": "a16"
+      }
+    },
+    "updates": {
+      "iteration": {
+        "__array__": "a17"
+      },
+      "zeta_L": {
+        "__array__": "a18"
+      },
+      "zeta_U": {
+        "__array__": "a19"
+      },
+      "delta_b": {
+        "__array__": "a20"
+      },
+      "beta": {
+        "__array__": "a21"
+      },
+      "beta_assigned": {
+        "__array__": "a22"
+      },
+      "correctly_labeled_selected_zeta_U": {
+        "__array__": "a23"
+      },
+      "oracle_identity_residual": {
+        "__array__": "a24"
+      },
+      "bias_update_residual": {
+        "__array__": "a25"
+      },
+      "score_update_residual": {
+        "__array__": "a26"
+      },
+      "dynamic_self_label_zeta_U": {
+        "__array__": "a27"
+      },
+      "transition_counts": {
+        "__array__": "a28"
+      },
+      "switches": {
+        "__array__": "a29"
+      },
+      "crossings": {
+        "minus_up": {
+          "count": {
+            "__array__": "a30"
+          },
+          "mean_bias": {
+            "__array__": "a31"
+          },
+          "mean_feature": {
+            "__array__": "a32"
+          },
+          "mean_total": {
+            "__array__": "a33"
+          },
+          "mean_abs_bias": {
+            "__array__": "a34"
+          },
+          "mean_abs_feature": {
+            "__array__": "a35"
+          }
+        },
+        "minus_down": {
+          "count": {
+            "__array__": "a36"
+          },
+          "mean_bias": {
+            "__array__": "a37"
+          },
+          "mean_feature": {
+            "__array__": "a38"
+          },
+          "mean_total": {
+            "__array__": "a39"
+          },
+          "mean_abs_bias": {
+            "__array__": "a40"
+          },
+          "mean_abs_feature": {
+            "__array__": "a41"
+          }
+        },
+        "plus_up": {
+          "count": {
+            "__array__": "a42"
+          },
+          "mean_bias": {
+            "__array__": "a43"
+          },
+          "mean_feature": {
+            "__array__": "a44"
+          },
+          "mean_total": {
+            "__array__": "a45"
+          },
+          "mean_abs_bias": {
+            "__array__": "a46"
+          },
+          "mean_abs_feature": {
+            "__array__": "a47"
+          }
+        },
+        "plus_down": {
+          "count": {
+            "__array__": "a48"
+          },
+          "mean_bias": {
+            "__array__": "a49"
+          },
+          "mean_feature": {
+            "__array__": "a50"
+          },
+          "mean_total": {
+            "__array__": "a51"
+          },
+          "mean_abs_bias": {
+            "__array__": "a52"
+          },
+          "mean_abs_feature": {
+            "__array__": "a53"
+          }
+        }
+      }
+    },
+    "summary": {
+      "first_fully_negative_selected_iteration": null,
+      "last_observed_switch": 191,
+      "total_configuration_switches": 29802,
+      "terminal_configuration_type": "negative selected plus zeros"
+    },
+    "endpoint": {
+      "b": -4.77811428719179,
+      "w": {
+        "__array__": "a54"
+      },
+      "configuration": {
+        "__array__": "a55"
+      }
+    }
+  },
+  "t_best": 48,
+  "checkpoints": [
+    {
+      "t0": 24,
+      "p0": {
+        "__array__": "a56"
+      },
+      "state": {
+        "b": -0.6890885450260046,
+        "w": {
+          "__array__": "a57"
+        }
+      },
+      "continuations": {
+        "dynamic": {
+          "states": {
+            "iteration": {
+              "__array__": "a58"
+            },
+            "error": {
+              "__array__": "a59"
+            },
+            "b": {
+              "__array__": "a60"
+            },
+            "m": {
+              "__array__": "a61"
+            },
+            "tau": {
+              "__array__": "a62"
+            },
+            "normalized_bias": {
+              "__array__": "a63"
+            },
+            "normalized_alignment": {
+              "__array__": "a64"
+            },
+            "configuration_fractions": {
+              "__array__": "a65"
+            },
+            "prediction_fractions": {
+              "__array__": "a66"
+            },
+            "selected_false_negative_fraction": {
+              "__array__": "a67"
+            },
+            "selected_false_positive_fraction": {
+              "__array__": "a68"
+            },
+            "fitted_configuration_fractions": {
+              "__array__": "a69"
+            },
+            "assigned_selected_false_negative_fraction": {
+              "__array__": "a70"
+            },
+            "assigned_selected_false_positive_fraction": {
+              "__array__": "a71"
+            },
+            "selected_false_negative_rate": {
+              "__array__": "a72"
+            },
+            "selected_false_positive_rate": {
+              "__array__": "a73"
+            },
+            "selected_error_rate": {
+              "__array__": "a74"
+            }
+          },
+          "updates": {
+            "iteration": {
+              "__array__": "a75"
+            },
+            "zeta_L": {
+              "__array__": "a76"
+            },
+            "zeta_U": {
+              "__array__": "a77"
+            },
+            "delta_b": {
+              "__array__": "a78"
+            },
+            "beta": {
+              "__array__": "a79"
+            },
+            "beta_assigned": {
+              "__array__": "a80"
+            },
+            "correctly_labeled_selected_zeta_U": {
+              "__array__": "a81"
+            },
+            "oracle_identity_residual": {
+              "__array__": "a82"
+            },
+            "bias_update_residual": {
+              "__array__": "a83"
+            },
+            "score_update_residual": {
+              "__array__": "a84"
+            },
+            "dynamic_self_label_zeta_U": {
+              "__array__": "a85"
+            },
+            "transition_counts": {
+              "__array__": "a86"
+            },
+            "switches": {
+              "__array__": "a87"
+            },
+            "crossings": {
+              "minus_up": {
+                "count": {
+                  "__array__": "a88"
+                },
+                "mean_bias": {
+                  "__array__": "a89"
+                },
+                "mean_feature": {
+                  "__array__": "a90"
+                },
+                "mean_total": {
+                  "__array__": "a91"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a92"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a93"
+                }
+              },
+              "minus_down": {
+                "count": {
+                  "__array__": "a94"
+                },
+                "mean_bias": {
+                  "__array__": "a95"
+                },
+                "mean_feature": {
+                  "__array__": "a96"
+                },
+                "mean_total": {
+                  "__array__": "a97"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a98"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a99"
+                }
+              },
+              "plus_up": {
+                "count": {
+                  "__array__": "a100"
+                },
+                "mean_bias": {
+                  "__array__": "a101"
+                },
+                "mean_feature": {
+                  "__array__": "a102"
+                },
+                "mean_total": {
+                  "__array__": "a103"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a104"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a105"
+                }
+              },
+              "plus_down": {
+                "count": {
+                  "__array__": "a106"
+                },
+                "mean_bias": {
+                  "__array__": "a107"
+                },
+                "mean_feature": {
+                  "__array__": "a108"
+                },
+                "mean_total": {
+                  "__array__": "a109"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a110"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a111"
+                }
+              }
+            }
+          },
+          "summary": {
+            "first_fully_negative_selected_iteration": null,
+            "last_observed_switch": 191,
+            "total_configuration_switches": 15316,
+            "terminal_configuration_type": "negative selected plus zeros"
+          },
+          "endpoint": {
+            "b": -4.77811428719179,
+            "w": {
+              "__array__": "a112"
+            },
+            "configuration": {
+              "__array__": "a113"
+            }
+          }
+        },
+        "frozen": {
+          "states": {
+            "iteration": {
+              "__array__": "a114"
+            },
+            "error": {
+              "__array__": "a115"
+            },
+            "b": {
+              "__array__": "a116"
+            },
+            "m": {
+              "__array__": "a117"
+            },
+            "tau": {
+              "__array__": "a118"
+            },
+            "normalized_bias": {
+              "__array__": "a119"
+            },
+            "normalized_alignment": {
+              "__array__": "a120"
+            },
+            "configuration_fractions": {
+              "__array__": "a121"
+            },
+            "prediction_fractions": {
+              "__array__": "a122"
+            },
+            "selected_false_negative_fraction": {
+              "__array__": "a123"
+            },
+            "selected_false_positive_fraction": {
+              "__array__": "a124"
+            },
+            "fitted_configuration_fractions": {
+              "__array__": "a125"
+            },
+            "assigned_selected_false_negative_fraction": {
+              "__array__": "a126"
+            },
+            "assigned_selected_false_positive_fraction": {
+              "__array__": "a127"
+            },
+            "selected_false_negative_rate": {
+              "__array__": "a128"
+            },
+            "selected_false_positive_rate": {
+              "__array__": "a129"
+            },
+            "selected_error_rate": {
+              "__array__": "a130"
+            }
+          },
+          "updates": {
+            "iteration": {
+              "__array__": "a131"
+            },
+            "zeta_L": {
+              "__array__": "a132"
+            },
+            "zeta_U": {
+              "__array__": "a133"
+            },
+            "delta_b": {
+              "__array__": "a134"
+            },
+            "beta": {
+              "__array__": "a135"
+            },
+            "beta_assigned": {
+              "__array__": "a136"
+            },
+            "correctly_labeled_selected_zeta_U": {
+              "__array__": "a137"
+            },
+            "oracle_identity_residual": {
+              "__array__": "a138"
+            },
+            "bias_update_residual": {
+              "__array__": "a139"
+            },
+            "score_update_residual": {
+              "__array__": "a140"
+            },
+            "dynamic_self_label_zeta_U": {
+              "__array__": "a141"
+            },
+            "transition_counts": {
+              "__array__": "a142"
+            },
+            "switches": {
+              "__array__": "a143"
+            },
+            "crossings": {
+              "minus_up": {
+                "count": {
+                  "__array__": "a144"
+                },
+                "mean_bias": {
+                  "__array__": "a145"
+                },
+                "mean_feature": {
+                  "__array__": "a146"
+                },
+                "mean_total": {
+                  "__array__": "a147"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a148"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a149"
+                }
+              },
+              "minus_down": {
+                "count": {
+                  "__array__": "a150"
+                },
+                "mean_bias": {
+                  "__array__": "a151"
+                },
+                "mean_feature": {
+                  "__array__": "a152"
+                },
+                "mean_total": {
+                  "__array__": "a153"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a154"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a155"
+                }
+              },
+              "plus_up": {
+                "count": {
+                  "__array__": "a156"
+                },
+                "mean_bias": {
+                  "__array__": "a157"
+                },
+                "mean_feature": {
+                  "__array__": "a158"
+                },
+                "mean_total": {
+                  "__array__": "a159"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a160"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a161"
+                }
+              },
+              "plus_down": {
+                "count": {
+                  "__array__": "a162"
+                },
+                "mean_bias": {
+                  "__array__": "a163"
+                },
+                "mean_feature": {
+                  "__array__": "a164"
+                },
+                "mean_total": {
+                  "__array__": "a165"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a166"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a167"
+                }
+              }
+            }
+          },
+          "summary": {
+            "first_fully_negative_selected_iteration": null,
+            "last_observed_switch": 200,
+            "total_configuration_switches": 6686,
+            "terminal_configuration_type": "both selected signs plus zeros"
+          },
+          "endpoint": {
+            "b": -1.6004678441035611,
+            "w": {
+              "__array__": "a168"
+            },
+            "configuration": {
+              "__array__": "a169"
+            }
+          }
+        },
+        "oracle": {
+          "states": {
+            "iteration": {
+              "__array__": "a170"
+            },
+            "error": {
+              "__array__": "a171"
+            },
+            "b": {
+              "__array__": "a172"
+            },
+            "m": {
+              "__array__": "a173"
+            },
+            "tau": {
+              "__array__": "a174"
+            },
+            "normalized_bias": {
+              "__array__": "a175"
+            },
+            "normalized_alignment": {
+              "__array__": "a176"
+            },
+            "configuration_fractions": {
+              "__array__": "a177"
+            },
+            "prediction_fractions": {
+              "__array__": "a178"
+            },
+            "selected_false_negative_fraction": {
+              "__array__": "a179"
+            },
+            "selected_false_positive_fraction": {
+              "__array__": "a180"
+            },
+            "fitted_configuration_fractions": {
+              "__array__": "a181"
+            },
+            "assigned_selected_false_negative_fraction": {
+              "__array__": "a182"
+            },
+            "assigned_selected_false_positive_fraction": {
+              "__array__": "a183"
+            },
+            "selected_false_negative_rate": {
+              "__array__": "a184"
+            },
+            "selected_false_positive_rate": {
+              "__array__": "a185"
+            },
+            "selected_error_rate": {
+              "__array__": "a186"
+            }
+          },
+          "updates": {
+            "iteration": {
+              "__array__": "a187"
+            },
+            "zeta_L": {
+              "__array__": "a188"
+            },
+            "zeta_U": {
+              "__array__": "a189"
+            },
+            "delta_b": {
+              "__array__": "a190"
+            },
+            "beta": {
+              "__array__": "a191"
+            },
+            "beta_assigned": {
+              "__array__": "a192"
+            },
+            "correctly_labeled_selected_zeta_U": {
+              "__array__": "a193"
+            },
+            "oracle_identity_residual": {
+              "__array__": "a194"
+            },
+            "bias_update_residual": {
+              "__array__": "a195"
+            },
+            "score_update_residual": {
+              "__array__": "a196"
+            },
+            "dynamic_self_label_zeta_U": {
+              "__array__": "a197"
+            },
+            "transition_counts": {
+              "__array__": "a198"
+            },
+            "switches": {
+              "__array__": "a199"
+            },
+            "crossings": {
+              "minus_up": {
+                "count": {
+                  "__array__": "a200"
+                },
+                "mean_bias": {
+                  "__array__": "a201"
+                },
+                "mean_feature": {
+                  "__array__": "a202"
+                },
+                "mean_total": {
+                  "__array__": "a203"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a204"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a205"
+                }
+              },
+              "minus_down": {
+                "count": {
+                  "__array__": "a206"
+                },
+                "mean_bias": {
+                  "__array__": "a207"
+                },
+                "mean_feature": {
+                  "__array__": "a208"
+                },
+                "mean_total": {
+                  "__array__": "a209"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a210"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a211"
+                }
+              },
+              "plus_up": {
+                "count": {
+                  "__array__": "a212"
+                },
+                "mean_bias": {
+                  "__array__": "a213"
+                },
+                "mean_feature": {
+                  "__array__": "a214"
+                },
+                "mean_total": {
+                  "__array__": "a215"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a216"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a217"
+                }
+              },
+              "plus_down": {
+                "count": {
+                  "__array__": "a218"
+                },
+                "mean_bias": {
+                  "__array__": "a219"
+                },
+                "mean_feature": {
+                  "__array__": "a220"
+                },
+                "mean_total": {
+                  "__array__": "a221"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a222"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a223"
+                }
+              }
+            }
+          },
+          "summary": {
+            "first_fully_negative_selected_iteration": null,
+            "last_observed_switch": 200,
+            "total_configuration_switches": 10258,
+            "terminal_configuration_type": "both selected signs plus zeros"
+          },
+          "endpoint": {
+            "b": -1.5214593105744287,
+            "w": {
+              "__array__": "a224"
+            },
+            "configuration": {
+              "__array__": "a225"
+            }
+          }
+        }
+      },
+      "minimizers": {
+        "frozen": {
+          "b": -1.6125932235939946,
+          "w": {
+            "__array__": "a226"
+          },
+          "objective": 0.17848002228636786,
+          "gradient_inf": 6.719381346470543e-09,
+          "gradient_l2": 4.7486296639098926e-08,
+          "gradient_coordinates": "(b,v=w/sqrt(d))",
+          "converged": true,
+          "status": "converged",
+          "solver_status_code": 0,
+          "solver_success": true,
+          "message": "CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL",
+          "nit": 19,
+          "nfev": 21,
+          "solver_settings": {
+            "method": "L-BFGS-B",
+            "gtol": 1e-08,
+            "ftol": 1e-15,
+            "maxiter": 1500,
+            "maxls": 40,
+            "residual_tolerance": 1e-06
+          },
+          "assumptions": {
+            "positive_ridge": true,
+            "both_labeled_classes": true,
+            "both_active_target_classes": true,
+            "finite_unique_minimizer_guaranteed": true
+          },
+          "warnings": [],
+          "error": 0.18912893339911915,
+          "consistency": {
+            "margins": {
+              "__array__": "a227"
+            },
+            "margin_min": -1.8066551061895477,
+            "violations": {
+              "positive_below_upper": 1171,
+              "negative_above_lower": 1,
+              "zero_at_or_below_lower": 5530,
+              "zero_at_or_above_upper": 0
+            },
+            "n_violated_inequalities": 6702,
+            "n_violated_observations": 6702,
+            "n_near_boundary": 0,
+            "induced_configuration": {
+              "__array__": "a228"
+            },
+            "status": "numerically inconsistent",
+            "tolerance": 1e-07,
+            "solver_converged": true,
+            "rigorous_certificate": false,
+            "interpretation": "original pseudo-label branch"
+          }
+        },
+        "oracle": {
+          "b": -1.5243895599519186,
+          "w": {
+            "__array__": "a229"
+          },
+          "objective": 0.3133855270974717,
+          "gradient_inf": 7.306543994942301e-09,
+          "gradient_l2": 3.602877612214035e-08,
+          "gradient_coordinates": "(b,v=w/sqrt(d))",
+          "converged": true,
+          "status": "converged",
+          "solver_status_code": 0,
+          "solver_success": true,
+          "message": "CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL",
+          "nit": 33,
+          "nfev": 35,
+          "solver_settings": {
+            "method": "L-BFGS-B",
+            "gtol": 1e-08,
+            "ftol": 1e-15,
+            "maxiter": 1500,
+            "maxls": 40,
+            "residual_tolerance": 1e-06
+          },
+          "assumptions": {
+            "positive_ridge": true,
+            "both_labeled_classes": true,
+            "both_active_target_classes": true,
+            "finite_unique_minimizer_guaranteed": true
+          },
+          "warnings": [],
+          "error": 0.15827001922837852,
+          "consistency": {
+            "margins": {
+              "__array__": "a230"
+            },
+            "margin_min": -5.940152753635044,
+            "violations": {
+              "positive_below_upper": 1470,
+              "negative_above_lower": 957,
+              "zero_at_or_below_lower": 6635,
+              "zero_at_or_above_upper": 100
+            },
+            "n_violated_inequalities": 9162,
+            "n_violated_observations": 9162,
+            "n_near_boundary": 0,
+            "induced_configuration": {
+              "__array__": "a231"
+            },
+            "status": "numerically inconsistent",
+            "tolerance": 1e-07,
+            "solver_converged": true,
+            "rigorous_certificate": false,
+            "interpretation": "comparison to original branch only; oracle need not be an equilibrium"
+          }
+        }
+      },
+      "replay_max_abs": 0.0
+    },
+    {
+      "t0": 48,
+      "p0": {
+        "__array__": "a232"
+      },
+      "state": {
+        "b": -1.564110912853148,
+        "w": {
+          "__array__": "a233"
+        }
+      },
+      "continuations": {
+        "dynamic": {
+          "states": {
+            "iteration": {
+              "__array__": "a234"
+            },
+            "error": {
+              "__array__": "a235"
+            },
+            "b": {
+              "__array__": "a236"
+            },
+            "m": {
+              "__array__": "a237"
+            },
+            "tau": {
+              "__array__": "a238"
+            },
+            "normalized_bias": {
+              "__array__": "a239"
+            },
+            "normalized_alignment": {
+              "__array__": "a240"
+            },
+            "configuration_fractions": {
+              "__array__": "a241"
+            },
+            "prediction_fractions": {
+              "__array__": "a242"
+            },
+            "selected_false_negative_fraction": {
+              "__array__": "a243"
+            },
+            "selected_false_positive_fraction": {
+              "__array__": "a244"
+            },
+            "fitted_configuration_fractions": {
+              "__array__": "a245"
+            },
+            "assigned_selected_false_negative_fraction": {
+              "__array__": "a246"
+            },
+            "assigned_selected_false_positive_fraction": {
+              "__array__": "a247"
+            },
+            "selected_false_negative_rate": {
+              "__array__": "a248"
+            },
+            "selected_false_positive_rate": {
+              "__array__": "a249"
+            },
+            "selected_error_rate": {
+              "__array__": "a250"
+            }
+          },
+          "updates": {
+            "iteration": {
+              "__array__": "a251"
+            },
+            "zeta_L": {
+              "__array__": "a252"
+            },
+            "zeta_U": {
+              "__array__": "a253"
+            },
+            "delta_b": {
+              "__array__": "a254"
+            },
+            "beta": {
+              "__array__": "a255"
+            },
+            "beta_assigned": {
+              "__array__": "a256"
+            },
+            "correctly_labeled_selected_zeta_U": {
+              "__array__": "a257"
+            },
+            "oracle_identity_residual": {
+              "__array__": "a258"
+            },
+            "bias_update_residual": {
+              "__array__": "a259"
+            },
+            "score_update_residual": {
+              "__array__": "a260"
+            },
+            "dynamic_self_label_zeta_U": {
+              "__array__": "a261"
+            },
+            "transition_counts": {
+              "__array__": "a262"
+            },
+            "switches": {
+              "__array__": "a263"
+            },
+            "crossings": {
+              "minus_up": {
+                "count": {
+                  "__array__": "a264"
+                },
+                "mean_bias": {
+                  "__array__": "a265"
+                },
+                "mean_feature": {
+                  "__array__": "a266"
+                },
+                "mean_total": {
+                  "__array__": "a267"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a268"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a269"
+                }
+              },
+              "minus_down": {
+                "count": {
+                  "__array__": "a270"
+                },
+                "mean_bias": {
+                  "__array__": "a271"
+                },
+                "mean_feature": {
+                  "__array__": "a272"
+                },
+                "mean_total": {
+                  "__array__": "a273"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a274"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a275"
+                }
+              },
+              "plus_up": {
+                "count": {
+                  "__array__": "a276"
+                },
+                "mean_bias": {
+                  "__array__": "a277"
+                },
+                "mean_feature": {
+                  "__array__": "a278"
+                },
+                "mean_total": {
+                  "__array__": "a279"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a280"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a281"
+                }
+              },
+              "plus_down": {
+                "count": {
+                  "__array__": "a282"
+                },
+                "mean_bias": {
+                  "__array__": "a283"
+                },
+                "mean_feature": {
+                  "__array__": "a284"
+                },
+                "mean_total": {
+                  "__array__": "a285"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a286"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a287"
+                }
+              }
+            }
+          },
+          "summary": {
+            "first_fully_negative_selected_iteration": null,
+            "last_observed_switch": 191,
+            "total_configuration_switches": 7750,
+            "terminal_configuration_type": "negative selected plus zeros"
+          },
+          "endpoint": {
+            "b": -4.77811428719179,
+            "w": {
+              "__array__": "a288"
+            },
+            "configuration": {
+              "__array__": "a289"
+            }
+          }
+        },
+        "frozen": {
+          "states": {
+            "iteration": {
+              "__array__": "a290"
+            },
+            "error": {
+              "__array__": "a291"
+            },
+            "b": {
+              "__array__": "a292"
+            },
+            "m": {
+              "__array__": "a293"
+            },
+            "tau": {
+              "__array__": "a294"
+            },
+            "normalized_bias": {
+              "__array__": "a295"
+            },
+            "normalized_alignment": {
+              "__array__": "a296"
+            },
+            "configuration_fractions": {
+              "__array__": "a297"
+            },
+            "prediction_fractions": {
+              "__array__": "a298"
+            },
+            "selected_false_negative_fraction": {
+              "__array__": "a299"
+            },
+            "selected_false_positive_fraction": {
+              "__array__": "a300"
+            },
+            "fitted_configuration_fractions": {
+              "__array__": "a301"
+            },
+            "assigned_selected_false_negative_fraction": {
+              "__array__": "a302"
+            },
+            "assigned_selected_false_positive_fraction": {
+              "__array__": "a303"
+            },
+            "selected_false_negative_rate": {
+              "__array__": "a304"
+            },
+            "selected_false_positive_rate": {
+              "__array__": "a305"
+            },
+            "selected_error_rate": {
+              "__array__": "a306"
+            }
+          },
+          "updates": {
+            "iteration": {
+              "__array__": "a307"
+            },
+            "zeta_L": {
+              "__array__": "a308"
+            },
+            "zeta_U": {
+              "__array__": "a309"
+            },
+            "delta_b": {
+              "__array__": "a310"
+            },
+            "beta": {
+              "__array__": "a311"
+            },
+            "beta_assigned": {
+              "__array__": "a312"
+            },
+            "correctly_labeled_selected_zeta_U": {
+              "__array__": "a313"
+            },
+            "oracle_identity_residual": {
+              "__array__": "a314"
+            },
+            "bias_update_residual": {
+              "__array__": "a315"
+            },
+            "score_update_residual": {
+              "__array__": "a316"
+            },
+            "dynamic_self_label_zeta_U": {
+              "__array__": "a317"
+            },
+            "transition_counts": {
+              "__array__": "a318"
+            },
+            "switches": {
+              "__array__": "a319"
+            },
+            "crossings": {
+              "minus_up": {
+                "count": {
+                  "__array__": "a320"
+                },
+                "mean_bias": {
+                  "__array__": "a321"
+                },
+                "mean_feature": {
+                  "__array__": "a322"
+                },
+                "mean_total": {
+                  "__array__": "a323"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a324"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a325"
+                }
+              },
+              "minus_down": {
+                "count": {
+                  "__array__": "a326"
+                },
+                "mean_bias": {
+                  "__array__": "a327"
+                },
+                "mean_feature": {
+                  "__array__": "a328"
+                },
+                "mean_total": {
+                  "__array__": "a329"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a330"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a331"
+                }
+              },
+              "plus_up": {
+                "count": {
+                  "__array__": "a332"
+                },
+                "mean_bias": {
+                  "__array__": "a333"
+                },
+                "mean_feature": {
+                  "__array__": "a334"
+                },
+                "mean_total": {
+                  "__array__": "a335"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a336"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a337"
+                }
+              },
+              "plus_down": {
+                "count": {
+                  "__array__": "a338"
+                },
+                "mean_bias": {
+                  "__array__": "a339"
+                },
+                "mean_feature": {
+                  "__array__": "a340"
+                },
+                "mean_total": {
+                  "__array__": "a341"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a342"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a343"
+                }
+              }
+            }
+          },
+          "summary": {
+            "first_fully_negative_selected_iteration": null,
+            "last_observed_switch": 200,
+            "total_configuration_switches": 6455,
+            "terminal_configuration_type": "both selected signs plus zeros"
+          },
+          "endpoint": {
+            "b": -3.1664486865130144,
+            "w": {
+              "__array__": "a344"
+            },
+            "configuration": {
+              "__array__": "a345"
+            }
+          }
+        },
+        "oracle": {
+          "states": {
+            "iteration": {
+              "__array__": "a346"
+            },
+            "error": {
+              "__array__": "a347"
+            },
+            "b": {
+              "__array__": "a348"
+            },
+            "m": {
+              "__array__": "a349"
+            },
+            "tau": {
+              "__array__": "a350"
+            },
+            "normalized_bias": {
+              "__array__": "a351"
+            },
+            "normalized_alignment": {
+              "__array__": "a352"
+            },
+            "configuration_fractions": {
+              "__array__": "a353"
+            },
+            "prediction_fractions": {
+              "__array__": "a354"
+            },
+            "selected_false_negative_fraction": {
+              "__array__": "a355"
+            },
+            "selected_false_positive_fraction": {
+              "__array__": "a356"
+            },
+            "fitted_configuration_fractions": {
+              "__array__": "a357"
+            },
+            "assigned_selected_false_negative_fraction": {
+              "__array__": "a358"
+            },
+            "assigned_selected_false_positive_fraction": {
+              "__array__": "a359"
+            },
+            "selected_false_negative_rate": {
+              "__array__": "a360"
+            },
+            "selected_false_positive_rate": {
+              "__array__": "a361"
+            },
+            "selected_error_rate": {
+              "__array__": "a362"
+            }
+          },
+          "updates": {
+            "iteration": {
+              "__array__": "a363"
+            },
+            "zeta_L": {
+              "__array__": "a364"
+            },
+            "zeta_U": {
+              "__array__": "a365"
+            },
+            "delta_b": {
+              "__array__": "a366"
+            },
+            "beta": {
+              "__array__": "a367"
+            },
+            "beta_assigned": {
+              "__array__": "a368"
+            },
+            "correctly_labeled_selected_zeta_U": {
+              "__array__": "a369"
+            },
+            "oracle_identity_residual": {
+              "__array__": "a370"
+            },
+            "bias_update_residual": {
+              "__array__": "a371"
+            },
+            "score_update_residual": {
+              "__array__": "a372"
+            },
+            "dynamic_self_label_zeta_U": {
+              "__array__": "a373"
+            },
+            "transition_counts": {
+              "__array__": "a374"
+            },
+            "switches": {
+              "__array__": "a375"
+            },
+            "crossings": {
+              "minus_up": {
+                "count": {
+                  "__array__": "a376"
+                },
+                "mean_bias": {
+                  "__array__": "a377"
+                },
+                "mean_feature": {
+                  "__array__": "a378"
+                },
+                "mean_total": {
+                  "__array__": "a379"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a380"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a381"
+                }
+              },
+              "minus_down": {
+                "count": {
+                  "__array__": "a382"
+                },
+                "mean_bias": {
+                  "__array__": "a383"
+                },
+                "mean_feature": {
+                  "__array__": "a384"
+                },
+                "mean_total": {
+                  "__array__": "a385"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a386"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a387"
+                }
+              },
+              "plus_up": {
+                "count": {
+                  "__array__": "a388"
+                },
+                "mean_bias": {
+                  "__array__": "a389"
+                },
+                "mean_feature": {
+                  "__array__": "a390"
+                },
+                "mean_total": {
+                  "__array__": "a391"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a392"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a393"
+                }
+              },
+              "plus_down": {
+                "count": {
+                  "__array__": "a394"
+                },
+                "mean_bias": {
+                  "__array__": "a395"
+                },
+                "mean_feature": {
+                  "__array__": "a396"
+                },
+                "mean_total": {
+                  "__array__": "a397"
+                },
+                "mean_abs_bias": {
+                  "__array__": "a398"
+                },
+                "mean_abs_feature": {
+                  "__array__": "a399"
+                }
+              }
+            }
+          },
+          "summary": {
+            "first_fully_negative_selected_iteration": null,
+            "last_observed_switch": 195,
+            "total_configuration_switches": 4960,
+            "terminal_configuration_type": "both selected signs plus zeros"
+          },
+          "endpoint": {
+            "b": -1.6559426749892314,
+            "w": {
+              "__array__": "a400"
+            },
+            "configuration": {
+              "__array__": "a401"
+            }
+          }
+        }
+      },
+      "minimizers": {
+        "frozen": {
+          "b": -3.305523651669209,
+          "w": {
+            "__array__": "a402"
+          },
+          "objective": 0.13282552427617222,
+          "gradient_inf": 2.987824077992779e-09,
+          "gradient_l2": 4.352687123944483e-08,
+          "gradient_coordinates": "(b,v=w/sqrt(d))",
+          "converged": true,
+          "status": "converged",
+          "solver_status_code": 0,
+          "solver_success": true,
+          "message": "CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL",
+          "nit": 27,
+          "nfev": 31,
+          "solver_settings": {
+            "method": "L-BFGS-B",
+            "gtol": 1e-08,
+            "ftol": 1e-15,
+            "maxiter": 1500,
+            "maxls": 40,
+            "residual_tolerance": 1e-06
+          },
+          "assumptions": {
+            "positive_ridge": true,
+            "both_labeled_classes": true,
+            "both_active_target_classes": true,
+            "finite_unique_minimizer_guaranteed": true
+          },
+          "warnings": [],
+          "error": 0.19769339133364,
+          "consistency": {
+            "margins": {
+              "__array__": "a403"
+            },
+            "margin_min": -3.195988353283247,
+            "violations": {
+              "positive_below_upper": 516,
+              "negative_above_lower": 0,
+              "zero_at_or_below_lower": 6132,
+              "zero_at_or_above_upper": 0
+            },
+            "n_violated_inequalities": 6648,
+            "n_violated_observations": 6648,
+            "n_near_boundary": 0,
+            "induced_configuration": {
+              "__array__": "a404"
+            },
+            "status": "numerically inconsistent",
+            "tolerance": 1e-07,
+            "solver_converged": true,
+            "rigorous_certificate": false,
+            "interpretation": "original pseudo-label branch"
+          }
+        },
+        "oracle": {
+          "b": -1.6578931353350175,
+          "w": {
+            "__array__": "a405"
+          },
+          "objective": 0.3859786577793577,
+          "gradient_inf": 6.942991827256083e-09,
+          "gradient_l2": 1.1086765990319317e-07,
+          "gradient_coordinates": "(b,v=w/sqrt(d))",
+          "converged": true,
+          "status": "converged",
+          "solver_status_code": 0,
+          "solver_success": true,
+          "message": "CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL",
+          "nit": 28,
+          "nfev": 33,
+          "solver_settings": {
+            "method": "L-BFGS-B",
+            "gtol": 1e-08,
+            "ftol": 1e-15,
+            "maxiter": 1500,
+            "maxls": 40,
+            "residual_tolerance": 1e-06
+          },
+          "assumptions": {
+            "positive_ridge": true,
+            "both_labeled_classes": true,
+            "both_active_target_classes": true,
+            "finite_unique_minimizer_guaranteed": true
+          },
+          "warnings": [],
+          "error": 0.1552316622812775,
+          "consistency": {
+            "margins": {
+              "__array__": "a406"
+            },
+            "margin_min": -4.413884170987127,
+            "violations": {
+              "positive_below_upper": 273,
+              "negative_above_lower": 1800,
+              "zero_at_or_below_lower": 2296,
+              "zero_at_or_above_upper": 152
+            },
+            "n_violated_inequalities": 4521,
+            "n_violated_observations": 4521,
+            "n_near_boundary": 0,
+            "induced_configuration": {
+              "__array__": "a407"
+            },
+            "status": "numerically inconsistent",
+            "tolerance": 1e-07,
+            "solver_converged": true,
+            "rigorous_certificate": false,
+            "interpretation": "comparison to original branch only; oracle need not be an equilibrium"
+          }
+        }
+      },
+      "replay_max_abs": 0.0
+    }
+  ],
+  "summary": {
+    "terminal_error": 0.19999990863917333,
+    "best_error": 0.16392984149909967,
+    "deterioration": 0.03607006714007366,
+    "maximum_post_best_deterioration": 0.03607006714007366,
+    "deteriorated": true
+  },
+  "status": "complete",
+  "elapsed_seconds": 61.11267687499998,
+  "config": {
+    "d": 3000,
+    "n_labeled": 240,
+    "n_unlabeled": 23760,
+    "T": 200,
+    "p_c": 0.2,
+    "sigma": 1.0,
+    "signal_std": 1.0,
+    "eta": 0.5,
+    "penalty": 0.1,
+    "pi": 2.0,
+    "kappa_minus": -1.3862943611198906,
+    "kappa_plus": 1.3862943611198906,
+    "seeds": [
+      49,
+      50,
+      51
+    ],
+    "profile": "pilot",
+    "solver_gtol": 1e-08,
+    "solver_ftol": 1e-15,
+    "solver_maxiter": 1500,
+    "solver_maxls": 40,
+    "solver_residual_tolerance": 1e-06,
+    "consistency_tolerance": 1e-07,
+    "deterioration_tolerance": 1e-08,
+    "replay_tolerance": 1e-10
+  },
+  "configuration_id": "pilot-36eab699ab9ca204"
+}
