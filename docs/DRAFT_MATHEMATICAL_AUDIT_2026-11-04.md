@@ -41,7 +41,7 @@ The unlabeled coefficient is multiplied by `1/omega`. This is time-dependent and
 The draft refreshes pseudo-labels at every iteration, including zero:
 
 \[
-\widehat Y_j^0=\operatorname{sign}(b^0+X_j^\top w^0/\sqrt d).
+\widehat Y_j^0=\mathrm{sign}(b^0+X_j^\top w^0/\sqrt d).
 \]
 
 The code instead uses an explicit `Y_init` at zero, followed by score signs from time one onward. Its state-evolution base sampler returns `(Y, Delta, Y_init)` independently of the fresh Gaussian innovations; the default sampler refuses an active unlabeled coefficient at time zero without this exogenous input. This is not the first-step rule in the current draft.
@@ -114,7 +114,7 @@ After identification, the smooth branch map is defined on the entire ambient spa
 **Interpretation to preserve:** the limit need not be a fixed point of the actual threshold-assigned map, nor a local minimum of V. Remark 4.5 correctly allows this. A concrete example is d=1, all feature vectors zero, ridge penalty, two positive and one negative labeled observations, and at least one unlabeled observation. Take `kappa_+=log(2)`, `kappa_-=-1`, `pi=1`, `lambda=.1`, `eta=.1`, `w0=0`, and `0<b0<log(2)`. All unlabeled examples remain unselected at every finite time, and
 
 \[
-b^{t+1}=b^t-.1\{\operatorname{sigmoid}(b^t)-2/3\}\uparrow\log 2.
+b^{t+1}=b^t-.1\{\mathrm{sigmoid}(b^t)-2/3\}\uparrow\log 2.
 \]
 
 The limit belongs to the closure of the unselected branch, but threshold equality selects all unlabeled examples. At the limit the intercept gradient is `-1/3`, so the actual update moves away. The right derivative of V is negative there, so it is not a local minimum either. The step-size condition is satisfied (`Lambda_d=.5`). This example is allowed because the finite-dimensional theorem permits arbitrary fixed features.

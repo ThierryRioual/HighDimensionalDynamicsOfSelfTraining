@@ -44,8 +44,8 @@ signs by default. An optional full-index `Y_init` overrides only the first step
 and requires `Y_init[I_L]=Y[I_L]`. At a finite update `t`, the default is
 
 $$
-\widehat Y^t=\operatorname{sign}(r^t) \quad (t\ge0),
-\qquad \operatorname{sign}(0)=1.
+\widehat Y^t=\mathrm{sign}(r^t) \quad (t\ge0),
+\qquad \mathrm{sign}(0)=1.
 $$
 
 `SelfTrainedGradientDescent.fit(X, y_observed, initialization)` is the

@@ -9,7 +9,7 @@ predictions and study the population classification error and its decomposition.
 
 The model uses $X_i=Y_i\mu/\sqrt d+\sigma U_i$ and scores
 $r_i^t=b^t+X_i^\top w^t/\sqrt d$. The training pool is reused at every iteration.
-Pseudo-labels default to score signs from iteration zero, with $\operatorname{sign}(0)=+1$.
+Pseudo-labels default to score signs from iteration zero, with $\mathrm{sign}(0)=+1$.
 Selection includes both boundaries: $r_i^t\geq\kappa_+$ or $r_i^t\leq\kappa_-$.
 The unlabeled loss is averaged over the **entire unlabeled pool**, without
 rescaling by the selected fraction. Effective-process predictions are estimated
@@ -127,7 +127,7 @@ held-out error estimate. The notebook runners generate no held-out test sample.
 
 | Result key | Implemented quantity |
 | --- | --- |
-| `population_error` | Population classification error $P(\operatorname{sign}_+(r^t)\ne Y)$, with a positive prediction at zero scores. |
+| `population_error` | Population classification error $P(\mathrm{sign}_+(r^t)\ne Y)$, with a positive prediction at zero scores. |
 | `bias_term` | Intercept $b^t$. |
 | `weight_vector_norm` | Dimension-normalized norm $\tau^t=\lVert w^t\rVert/\sqrt d$. |
 | `weight_signal_alignment` | Alignment $m^t=\mu^\top w^t/d$. |
