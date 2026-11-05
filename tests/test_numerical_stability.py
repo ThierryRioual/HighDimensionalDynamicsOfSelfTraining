@@ -5,18 +5,19 @@ import torch
 
 from src.algorithms import SelfTrainedGradientDescent
 from src.config import AlgorithmConfig
+from src.environment import QuenchedEnvironment
+from src.initialization import SelfTrainingInitialization
 from src.objectives import LogisticLoss, RidgePenalty
+from src.primitives import compute_scores
 
 
-def _algorithm_config(n_iterations, ramp_start, ramp_end, step_size):
+def _algorithm_config(n_iterations, step_size):
     return AlgorithmConfig(
         n_iterations=n_iterations,
         margin_threshold=1.0,
         step_size=step_size,
         penalty_param=0.01,
         pseudo_label_param=0.1,
-        ramp_start=ramp_start,
-        ramp_end=ramp_end,
         loss_function=LogisticLoss(),
         penalty_function=RidgePenalty(),
     )
@@ -33,35 +34,32 @@ def test_self_training_does_not_emit_runtime_warnings():
         learner = SelfTrainedGradientDescent(
             cfg=_algorithm_config(
                 n_iterations=20,
-                ramp_start=5,
-                ramp_end=15,
                 step_size=0.5,
             )
         )
         X_lab = torch.as_tensor(X_lab)
         y_lab = torch.as_tensor(y_lab)
         X_unl = torch.as_tensor(X_unl)
-        learner.fit(X_lab, y_lab, X_unl)
-        fields = learner.compute_preactivation(X_unl)
+        X = torch.cat((X_lab, X_unl))
+        Y = torch.cat((y_lab, torch.ones(len(X_unl))))
+        environment = QuenchedEnvironment(
+            torch.zeros(X.shape[1]), Y,
+            torch.cat((torch.ones(len(X_lab)), torch.zeros(len(X_unl)))),
+        )
+        initialization = SelfTrainingInitialization(
+            learner.cfg.initial_bias, torch.randn(X.shape[1]), Y.clone()
+        )
+        learner.fit(X, environment.Y * environment.Delta, initialization)
+        fields = learner.decision_function(X_unl)
 
     assert torch.isfinite(fields).all()
     assert torch.isfinite(learner.weights).all()
 
 
 def test_field_is_safe_for_extreme_weights():
-    learner = SelfTrainedGradientDescent(
-        cfg=_algorithm_config(
-            n_iterations=5,
-            ramp_start=1,
-            ramp_end=4,
-            step_size=0.1,
-        )
-    )
-
-    fields = learner.compute_preactivation(
+    fields = compute_scores(
         torch.tensor([[1.0, -2.0], [0.5, 1.5]]),
-        bias=1e300,
-        weights=torch.tensor([1e300, -1e300]),
+        1e300, torch.tensor([1e300, -1e300]),
     )
 
     assert torch.isfinite(fields).all()

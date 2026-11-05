@@ -19,9 +19,7 @@ def _state_evolution(n_iterations=3):
         step_size=0.1,
         penalty_param=0.1,
         pseudo_label_param=0.0,
-        ramp_start=0,
-        ramp_end=0,
-        include_bias=True,
+        train_bias=True,
     )
     return MacroscopicStateEvolution(
         data_cfg=data_cfg,

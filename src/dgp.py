@@ -32,7 +32,6 @@ class IsotropicGaussian:
 
     rng: torch.Generator = field(init=False)
     _mu: torch.Tensor = field(init=False)
-    last_environment_: Optional[QuenchedEnvironment] = field(init=False, default=None)
 
     def __post_init__(self) -> None:
         if self.n_train <= 0 or self.n_test < 0 or self.dimensions <= 0:
@@ -63,25 +62,8 @@ class IsotropicGaussian:
             supervision_ratio=self.cfg.supervision_ratio,
         )
 
-    @property
-    def n_labeled(self) -> int:
-        if self.last_environment_ is not None:
-            return self.last_environment_.N
-        return round(self.cfg.supervision_ratio * self.n_train)
-
-    @property
-    def n_unlabeled(self) -> int:
-        if self.last_environment_ is not None:
-            return self.last_environment_.M
-        return self.n_train - self.n_labeled
-
-    @property
-    def empirical_data_to_dimension_ratio(self) -> float:
-        return self.n_train / self.dimensions
-
     def sample_environment(self, *, stratified: bool = False) -> QuenchedEnvironment:
         if self.environment is not None:
-            self.last_environment_ = self.environment
             return self.environment
         if stratified:
             # Stratification is defined only for the legacy product law; it is a
@@ -103,7 +85,6 @@ class IsotropicGaussian:
         else:
             Y, Delta = self.law.sample(n=self.n_train, generator=self.rng, dtype=torch.float64, device=torch.device("cpu"))
         env = QuenchedEnvironment(self._mu, Y, Delta)
-        self.last_environment_ = env
         return env
 
     def sample_design(self, environment: QuenchedEnvironment, *, generator: Optional[torch.Generator] = None, noise: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -129,14 +110,10 @@ class IsotropicGaussian:
         X = Y[:, None] * self._mu[None, :] / (self.dimensions ** 0.5) + self.cfg.scale * U
         return X, Y
 
-    def sample_full(self, stratified: bool = False) -> Tuple[QuenchedEnvironment, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def sample(self, stratified: bool = False) -> Tuple[QuenchedEnvironment, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return ``(environment, X, X_test, Y_test)`` from one realization."""
+
         env = self.sample_environment(stratified=stratified)
         X, _ = self.sample_design(env)
         X_test, Y_test = self.sample_test()
         return env, X, X_test, Y_test
-
-    def sample(self, stratified: bool = False) -> Tuple[torch.Tensor, ...]:
-        """Backward-compatible split view derived from one full realisation."""
-
-        env, X, X_test, Y_test = self.sample_full(stratified=stratified)
-        return X[env.I_L], env.Y[env.I_L], X[env.I_U], env.Y[env.I_U], X_test, Y_test

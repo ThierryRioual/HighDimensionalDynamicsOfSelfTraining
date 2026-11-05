@@ -1,8 +1,8 @@
 """Finite-dimensional self-training gradient descent.
 
-The only learning loop in this module is full-indexed and conditions on a
-realised :class:`~src.environment.QuenchedEnvironment`.  The familiar split
-``fit(X_lab, Y_lab, X_unl, ...)`` method is an adapter into that loop.
+The learning loop receives one design matrix and observed labels, with zero
+marking unlabeled observations. Model-specific ground truth is used only by
+explicit diagnostic methods and callbacks.
 """
 
 from __future__ import annotations
@@ -14,12 +14,11 @@ import torch
 
 from src.config import AlgorithmConfig
 from src.environment import QuenchedEnvironment
-from src.initialization import (
-    SelfTrainingInitialization,
-    compute_pseudo_labels_from_scores,
-    compute_scores,
+from src.initialization import SelfTrainingInitialization
+from src.primitives import (
+    compute_scores, pseudo_labels, pseudo_residual, selection_rate,
+    sign_with_positive_tie,
 )
-from src.primitives import pseudo_labels, pseudo_residual, selection_rate
 
 
 @dataclass(frozen=True)
@@ -33,8 +32,6 @@ class FiniteStep:
     omega: torch.Tensor
     g: torch.Tensor
     bias_residual: torch.Tensor
-    m: torch.Tensor
-    chi: torch.Tensor
     zeta: torch.Tensor
     tau: torch.Tensor
     bias: torch.Tensor
@@ -43,64 +40,70 @@ class FiniteStep:
 
 @dataclass
 class SelfTrainedGradientDescent:
-    """Manuscript-faithful finite self-training gradient descent."""
+    """Finite self-training gradient descent with frozen pseudo-label updates."""
 
     cfg: AlgorithmConfig
     callback: Optional[Callable[["SelfTrainedGradientDescent", int], None]] = None
 
     bias: Optional[torch.Tensor] = field(init=False, default=None)
     weights: Optional[torch.Tensor] = field(init=False, default=None)
-    environment_: Optional[QuenchedEnvironment] = field(init=False, default=None)
+    y_observed_: Optional[torch.Tensor] = field(init=False, default=None)
     initialization_: Optional[SelfTrainingInitialization] = field(init=False, default=None)
     update_records_: list[FiniteStep] = field(init=False, default_factory=list)
-    score_history_: list[torch.Tensor] = field(init=False, default_factory=list)
     weight_history_: list[torch.Tensor] = field(init=False, default_factory=list)
-    residual_history_: list[torch.Tensor] = field(init=False, default_factory=list)
     prev_preactivations_: Optional[torch.Tensor] = field(init=False, default=None)
 
-    def _validate_X(self, X: torch.Tensor, environment: QuenchedEnvironment) -> torch.Tensor:
-        X = torch.as_tensor(X, dtype=torch.float64, device=environment.mu.device)
-        if X.shape != (environment.n, environment.d):
-            raise ValueError(f"X must have shape ({environment.n}, {environment.d})")
+    def _validate_X(self, X: torch.Tensor) -> torch.Tensor:
+        X = torch.as_tensor(X, dtype=torch.float64)
+        if X.ndim != 2 or min(X.shape) == 0:
+            raise ValueError("X must be a nonempty two-dimensional design matrix")
         if not torch.isfinite(X).all():
             raise ValueError("X must be finite")
-        if environment.N == 0:
-            raise ValueError("finite self-training requires at least one labelled observation")
         return X
 
     def selection_mask(self, scores: torch.Tensor) -> torch.Tensor:
-        tau = None
-        if getattr(self.cfg, "normalized_threshold", False):
-            tau = torch.linalg.vector_norm(self.weights) / self.weights.numel() ** 0.5
-        return self.cfg.selection_mask(scores, tau)
-
-    def _pseudo_weight(self, t: int) -> float:
-        return self.cfg.get_pseudo_label_weight(t)
+        return self.cfg.selection_mask(scores)
 
     @torch.no_grad()
-    def fit_full(
+    def fit(
         self,
         X: torch.Tensor,
-        environment: QuenchedEnvironment,
+        y_observed: torch.Tensor,
         initialization: SelfTrainingInitialization,
     ) -> "SelfTrainedGradientDescent":
-        """Fit the canonical full-indexed, quenched mathematical model."""
+        """Fit with labels in ``{-1, 0, +1}``; zero means unlabeled.
 
-        X = self._validate_X(X, environment)
+        Initialization supplies the bias and weights. Pseudo-labels use score
+        signs from t=0 unless Y_init explicitly overrides the first step.
+        Hidden ground-truth labels and the signal vector are not training inputs.
+        """
+
+        X = self._validate_X(X)
+        y_observed = torch.as_tensor(y_observed, dtype=X.dtype, device=X.device).detach().clone()
+        if y_observed.shape != (X.shape[0],):
+            raise ValueError("y_observed must have shape (n,)")
+        if not torch.all((y_observed == -1) | (y_observed == 0) | (y_observed == 1)):
+            raise ValueError("y_observed entries must belong to {-1, 0, +1}")
+        labeled = y_observed != 0
+        n_labeled = int(labeled.sum().item())
+        if n_labeled == 0:
+            raise ValueError("finite self-training requires at least one labelled observation")
+        n, d = X.shape
+        Delta = labeled.to(dtype=X.dtype)
+        rho = n_labeled / n
         if not isinstance(initialization, SelfTrainingInitialization):
             raise ValueError(
-                "canonical fit_full requires an explicit SelfTrainingInitialization; "
-                "it never creates Y_init from sign(r^0)"
+                "fit requires an explicit SelfTrainingInitialization for bias and weights"
             )
-        init = initialization.for_environment(environment)
-        self.environment_ = environment
+        init = initialization.for_data(X, y_observed)
+        # Loss gradients take binary labels even where Delta later zeros them.
+        training_labels = torch.where(labeled, y_observed, torch.ones_like(y_observed))
+        self.y_observed_ = y_observed
         self.initialization_ = init
         self.bias = torch.as_tensor(init.b_init, dtype=X.dtype, device=X.device).detach().clone().reshape(())
         self.weights = init.w_init.detach().clone()
         self.update_records_ = []
-        self.score_history_ = []
         self.weight_history_ = [self.weights.detach().clone()]
-        self.residual_history_ = []
         self.prev_preactivations_ = None
 
         # Initial callback retains the historical T+1 callback convention.  No
@@ -117,40 +120,38 @@ class SelfTrainedGradientDescent:
             selection = self.selection_mask(scores)
             # Labeled selection is irrelevant, but setting it to zero makes the
             # stored weights exactly the finite manuscript convention.
-            selection = selection * (1.0 - environment.Delta)
-            omega = selection_rate(selection, environment.Delta)
-            pi = self._pseudo_weight(t)
+            selection = selection * (1.0 - Delta)
+            omega = selection_rate(selection, Delta)
+            pi = self.cfg.pseudo_label_param
             g = pseudo_residual(
                 scores=scores,
-                Y=environment.Y,
-                Delta=environment.Delta,
+                Y=training_labels,
+                Delta=Delta,
                 Yhat=Yhat,
                 selection=selection,
-                omega=omega,
                 pi=pi,
                 eta=self.cfg.step_size,
-                rho=environment.rho,
+                rho=rho,
                 loss_function=self.cfg.loss_function,
-                normalize_unlabeled_loss=self.cfg.normalize_unlabeled_loss,
             )
-            bias_pi = self.cfg.get_bias_pseudo_label_weight(t)
-            bias_residual = g if bias_pi == pi else pseudo_residual(
+            bias_pi = self.cfg.get_bias_pseudo_label_weight()
+            bias_eta = self.cfg.get_bias_step_size()
+            reuse_residual = not self.cfg.train_bias or (
+                bias_pi == pi and bias_eta == self.cfg.step_size
+            )
+            bias_residual = g if reuse_residual else pseudo_residual(
                 scores=scores,
-                Y=environment.Y,
-                Delta=environment.Delta,
+                Y=training_labels,
+                Delta=Delta,
                 Yhat=Yhat,
                 selection=selection,
-                omega=omega,
                 pi=bias_pi,
-                eta=self.cfg.step_size,
-                rho=environment.rho,
+                eta=bias_eta,
+                rho=rho,
                 loss_function=self.cfg.loss_function,
-                normalize_unlabeled_loss=self.cfg.normalize_unlabeled_loss,
             )
-            m = torch.dot(environment.mu, w_current) / environment.d
-            chi = torch.dot(environment.Y, g) / environment.n
             zeta = torch.mean(bias_residual)
-            tau = torch.linalg.vector_norm(w_current) / (environment.d ** 0.5)
+            tau = torch.linalg.vector_norm(w_current) / (d ** 0.5)
             record = FiniteStep(
                 t=t,
                 scores=scores.detach().clone(),
@@ -159,52 +160,49 @@ class SelfTrainedGradientDescent:
                 omega=omega.detach().clone(),
                 g=g.detach().clone(),
                 bias_residual=bias_residual.detach().clone(),
-                m=m.detach().clone(),
-                chi=chi.detach().clone(),
                 zeta=zeta.detach().clone(),
                 tau=tau.detach().clone(),
                 bias=b_current.detach().clone(),
                 weight=w_current.detach().clone(),
             )
             self.update_records_.append(record)
-            self.score_history_.append(record.scores)
-            self.residual_history_.append(record.g)
 
             # g already contains -eta times the frozen score gradient.
             decay = -self.cfg.step_size * self.cfg.penalty_param * self.cfg.penalty_function.gradient(w_current)
-            self.prev_preactivations_ = scores[environment.I_U].detach().clone()
-            self.weights = (w_current + decay + (environment.d ** 0.5 / environment.n) * (X.T @ g)).detach()
-            self.bias = (b_current + zeta).detach() if self.cfg.include_bias else b_current.detach().clone()
+            self.prev_preactivations_ = scores[~labeled].detach().clone()
+            self.weights = (w_current + decay + (d ** 0.5 / n) * (X.T @ g)).detach()
+            self.bias = (b_current + zeta).detach() if self.cfg.train_bias else b_current.detach().clone()
             self.weight_history_.append(self.weights.detach().clone())
 
             if self.callback is not None:
                 self.callback(self, t + 1)
         return self
 
-    def macroscopic_observables(self, t: int) -> dict[str, torch.Tensor]:
+    def macroscopic_observables(self, t: int, *, environment: QuenchedEnvironment) -> dict[str, torch.Tensor]:
         """Finite observables attached to the exact objective at iteration ``t``."""
 
         if t < 0 or t >= len(self.update_records_):
             raise IndexError("t must index an executed update")
         step = self.update_records_[t]
-        env = self.environment_
-        assert env is not None
+        env = environment
+        if (env.n, env.d) != (step.scores.numel(), step.weight.numel()):
+            raise ValueError("environment must match the fitted data shape")
         return {
-            "m": step.m,
-            "chi": step.chi,
+            "m": torch.dot(env.mu, step.weight) / env.d,
+            "chi": torch.dot(env.Y, step.g) / env.n,
             "zeta": step.zeta,
             "tau": step.tau,
             "omega": step.omega,
             "C_w": torch.stack(self.weight_history_[: t + 1], dim=1).T @ step.weight / env.d,
-            "C_g": torch.stack(self.residual_history_[: t + 1], dim=1).T @ step.g / env.n,
+            "C_g": torch.stack([record.g for record in self.update_records_[: t + 1]], dim=1).T @ step.g / env.n,
         }
 
-    def finite_decomposition(self, X: torch.Tensor, U: torch.Tensor, t: int, *, sigma: float) -> dict[str, torch.Tensor]:
+    def finite_decomposition(self, X: torch.Tensor, U: torch.Tensor, t: int, *, sigma: float, environment: QuenchedEnvironment) -> dict[str, torch.Tensor]:
         """Return the finite forward/backward decomposition at an executed step."""
 
-        if self.environment_ is None:
+        if self.y_observed_ is None:
             raise RuntimeError("fit must be called first")
-        env = self.environment_
+        env = environment
         step = self.update_records_[t]
         X = torch.as_tensor(X, dtype=torch.float64, device=env.mu.device)
         U = torch.as_tensor(U, dtype=torch.float64, device=env.mu.device)
@@ -212,7 +210,9 @@ class SelfTrainedGradientDescent:
             raise ValueError("X and U must both have shape (n,d)")
         q = U @ step.weight / (env.d ** 0.5)
         p = U.T @ step.g / (env.n ** 0.5)
-        r = step.bias + step.m * env.Y + float(sigma) * q
+        m = torch.dot(env.mu, step.weight) / env.d
+        chi = torch.dot(env.Y, step.g) / env.n
+        r = step.bias + m * env.Y + float(sigma) * q
         noise_update = float(sigma) / (env.delta ** 0.5) * p
         return {
             "q": q,
@@ -220,98 +220,13 @@ class SelfTrainedGradientDescent:
             "r": r,
             "direct_score": step.scores,
             "noise_update": noise_update,
-            "direct_update_noise": (env.d ** 0.5 / env.n) * (X.T @ step.g) - step.chi * env.mu,
+            "direct_update_noise": (env.d ** 0.5 / env.n) * (X.T @ step.g) - chi * env.mu,
         }
-
-    @torch.no_grad()
-    def fit(
-        self,
-        X_lab: torch.Tensor,
-        Y_lab: torch.Tensor | QuenchedEnvironment,
-        X_unl: torch.Tensor | SelfTrainingInitialization | None = None,
-        initial_bias: Optional[float] = None,
-        initial_weights: Optional[torch.Tensor] = None,
-        initial_pseudo_labels: Optional[torch.Tensor] = None,
-        *,
-        Y_unl: Optional[torch.Tensor] = None,
-    ) -> "SelfTrainedGradientDescent":
-        """Fit via the legacy split adapter or ``fit(X, environment, init)``.
-
-        If true unlabeled labels are unavailable in the split API, the adapter
-        constructs a bookkeeping environment whose unlabeled ``Y`` equals the
-        supplied ``Y_init``.  Those coordinates are never consulted by the
-        optimisation; users requiring a quenched ground truth should call
-        :meth:`fit_full`.
-        """
-
-        if isinstance(Y_lab, QuenchedEnvironment):
-            if not isinstance(X_unl, SelfTrainingInitialization):
-                raise TypeError("canonical shorthand is fit(X, environment, initialization)")
-            return self.fit_full(X_lab, Y_lab, X_unl)
-
-        if X_unl is None or isinstance(X_unl, SelfTrainingInitialization):
-            raise TypeError("legacy fit requires X_lab, Y_lab, and X_unl")
-        X_lab = torch.as_tensor(X_lab, dtype=torch.float64)
-        Y_lab_tensor = torch.as_tensor(Y_lab, dtype=torch.float64, device=X_lab.device)
-        X_unl_tensor = torch.as_tensor(X_unl, dtype=torch.float64, device=X_lab.device)
-        if X_lab.ndim != 2 or X_unl_tensor.ndim != 2 or X_lab.shape[1] != X_unl_tensor.shape[1]:
-            raise ValueError("X_lab and X_unl must be two-dimensional with a common feature dimension")
-        if Y_lab_tensor.shape != (X_lab.shape[0],):
-            raise ValueError("Y_lab must have shape (N,)")
-        if not torch.all((Y_lab_tensor == -1) | (Y_lab_tensor == 1)):
-            raise ValueError("Y_lab entries must belong to {-1,+1}")
-        N, M, d = X_lab.shape[0], X_unl_tensor.shape[0], X_lab.shape[1]
-        if N == 0:
-            raise ValueError("legacy fit requires at least one labelled observation")
-        if initial_weights is None:
-            initial_weights = torch.randn(d, dtype=torch.float64, device=X_lab.device)
-        pi0 = self._pseudo_weight(0) if self.cfg.n_iterations else 0.0
-        bias_pi0 = (
-            self.cfg.get_bias_pseudo_label_weight(0)
-            if self.cfg.n_iterations and self.cfg.include_bias
-            else 0.0
-        )
-        if initial_pseudo_labels is None and (pi0 > 0 or bias_pi0 > 0) and M > 0:
-            raise ValueError(
-                "initial_pseudo_labels is required when the t=0 pseudo-labelled contribution is active; "
-                "use compute_pseudo_labels_from_scores explicitly for the theorem-external endogenous experiment"
-            )
-        if initial_pseudo_labels is None:
-            # No t=0 unlabeled term is active.  This placeholder is never used
-            # at t=0 and is refreshed from scores thereafter.
-            initial_pseudo_labels = torch.ones(M, dtype=torch.float64, device=X_lab.device)
-        Y_init_unl = torch.as_tensor(initial_pseudo_labels, dtype=torch.float64, device=X_lab.device)
-        if Y_init_unl.shape != (M,) or not torch.all((Y_init_unl == -1) | (Y_init_unl == 1)):
-            raise ValueError("initial_pseudo_labels must be an M-vector with entries in {-1,+1}")
-        if Y_unl is None:
-            Y_unl_tensor = Y_init_unl
-        else:
-            Y_unl_tensor = torch.as_tensor(Y_unl, dtype=torch.float64, device=X_lab.device)
-            if Y_unl_tensor.shape != (M,) or not torch.all((Y_unl_tensor == -1) | (Y_unl_tensor == 1)):
-                raise ValueError("Y_unl must be an M-vector with entries in {-1,+1}")
-        environment = QuenchedEnvironment(
-            mu=torch.zeros(d, dtype=torch.float64, device=X_lab.device),
-            Y=torch.cat((Y_lab_tensor, Y_unl_tensor)),
-            Delta=torch.cat((torch.ones(N, dtype=torch.float64, device=X_lab.device), torch.zeros(M, dtype=torch.float64, device=X_lab.device))),
-        )
-        init = SelfTrainingInitialization.from_unlabeled_labels(
-            environment,
-            b_init=self.cfg.initial_bias if initial_bias is None else initial_bias,
-            w_init=initial_weights,
-            Y_init_unlabeled=Y_init_unl,
-        )
-        return self.fit_full(torch.cat((X_lab, X_unl_tensor)), environment, init)
 
     def decision_function(self, X: torch.Tensor) -> torch.Tensor:
         if self.weights is None or self.bias is None:
             raise RuntimeError("fit must be called before prediction")
         return compute_scores(X, self.bias, self.weights)
 
-    def compute_preactivation(self, X: torch.Tensor, bias: Optional[float] = None, weights: Optional[torch.Tensor] = None) -> torch.Tensor:
-        if weights is None:
-            return self.decision_function(X)
-        return compute_scores(X, self.bias if bias is None else bias, weights)
-
-    def predict(self, X: torch.Tensor, bias: Optional[float] = None, weights: Optional[torch.Tensor] = None) -> torch.Tensor:
-        scores = self.compute_preactivation(X, bias=bias, weights=weights)
-        return compute_pseudo_labels_from_scores(scores)
+    def predict(self, X: torch.Tensor) -> torch.Tensor:
+        return sign_with_positive_tie(self.decision_function(X))

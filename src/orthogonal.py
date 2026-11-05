@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import torch
 
@@ -54,14 +54,6 @@ class EmpiricalOrthogonalBasis:
     dtype: torch.dtype = torch.float64
     device: Union[str, torch.device] = "cpu"
 
-    residual_norms: List[torch.Tensor] = field(init=False, default_factory=list)
-    input_norms: List[torch.Tensor] = field(init=False, default_factory=list)
-    rank_history: List[int] = field(init=False, default_factory=list)
-    rank_increased_history: List[bool] = field(
-        init=False, default_factory=list
-    )
-    truncation_history: List[bool] = field(init=False, default_factory=list)
-
     _basis: torch.Tensor = field(init=False, repr=False)
     _coordinates: torch.Tensor = field(init=False, repr=False)
 
@@ -92,19 +84,7 @@ class EmpiricalOrthogonalBasis:
             (0, 0), dtype=self.dtype, device=self.device
         )
 
-    @property
-    def basis(self) -> torch.Tensor:
-        """Current basis ``B``, with ``B.T @ B / K == I``."""
-
-        return self._basis
-
-    @property
-    def coordinates(self) -> torch.Tensor:
-        """Current zero-padded coordinate matrix ``Theta``."""
-
-        return self._coordinates
-
-    # Short mathematical aliases are convenient in the state-evolution code.
+    # Mathematical coordinates used by the state-evolution code.
     @property
     def B(self) -> torch.Tensor:
         return self._basis
@@ -114,22 +94,12 @@ class EmpiricalOrthogonalBasis:
         return self._coordinates
 
     @property
-    def numerical_rank(self) -> int:
-        return self._basis.shape[1]
-
-    @property
     def rank(self) -> int:
-        return self.numerical_rank
+        return self._basis.shape[1]
 
     @property
     def n_columns(self) -> int:
         return self._coordinates.shape[1]
-
-    def empirical_norm(self, x: torch.Tensor) -> torch.Tensor:
-        """Return ``sqrt(x.T @ x / K)`` in this particle space."""
-
-        x = self._validate_vector(x)
-        return torch.sqrt(torch.mean(x.square()))
 
     def _validate_vector(self, x: torch.Tensor) -> torch.Tensor:
         x = torch.as_tensor(x, dtype=self.dtype, device=self.device).detach()
@@ -149,11 +119,11 @@ class EmpiricalOrthogonalBasis:
         Classical Gram--Schmidt is applied twice (CGS2).  The new direction is
         retained precisely when
 
-        ``rho > eps_rank * empirical_norm(x)``.
+        ``rho > eps_rank * sqrt(mean(x**2))``.
         """
 
         x = self._validate_vector(x)
-        rank_before = self.numerical_rank
+        rank_before = self.rank
         past_basis = self._basis
 
         if rank_before == 0:
@@ -196,13 +166,7 @@ class EmpiricalOrthogonalBasis:
             (previous_coordinates, theta.unsqueeze(1)), dim=1
         )
 
-        rank_after = self.numerical_rank
-        self.residual_norms.append(rho.clone())
-        self.input_norms.append(input_norm.clone())
-        self.rank_history.append(rank_after)
-        self.rank_increased_history.append(rank_increased)
-        self.truncation_history.append(truncated)
-
+        rank_after = self.rank
         return OrthogonalizationResult(
             beta=beta.clone(),
             theta=theta.clone(),
@@ -220,11 +184,11 @@ class EmpiricalOrthogonalBasis:
     def orthogonality_error(self) -> torch.Tensor:
         """Spectral norm of ``B.T @ B / K - I`` (zero for an empty basis)."""
 
-        if self.numerical_rank == 0:
+        if self.rank == 0:
             return torch.zeros((), dtype=self.dtype, device=self.device)
         gram = (self._basis.T @ self._basis) / self.particle_count
         identity = torch.eye(
-            self.numerical_rank, dtype=self.dtype, device=self.device
+            self.rank, dtype=self.dtype, device=self.device
         )
         return torch.linalg.matrix_norm(gram - identity, ord=2)
 
@@ -233,7 +197,7 @@ class EmpiricalOrthogonalBasis:
     def coordinate_singular_values(self) -> torch.Tensor:
         """Singular values of the small coordinate matrix, on demand."""
 
-        if self.numerical_rank == 0:
+        if self.rank == 0:
             return torch.empty((0,), dtype=self.dtype, device=self.device)
         return torch.linalg.svdvals(self._coordinates)
 

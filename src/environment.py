@@ -24,11 +24,11 @@ def _frozen_vector(name: str, value: torch.Tensor, *, dtype: torch.dtype | None 
 
 @dataclass(frozen=True)
 class QuenchedEnvironment:
-    """Immutable realised finite environment ``(mu, Y, Delta)``.
+    """Validated realised finite environment ``(mu, Y, Delta)``.
 
-    The tensors are cloned on construction so optimiser-side mutation cannot
-    alter the quenched population.  ``I_L`` and ``I_U`` are derived properties,
-    never independent mutable state.
+    Inputs are cloned and fields cannot be rebound. Tensor contents are treated
+    as read-only by convention; a frozen dataclass does not freeze tensor data.
+    ``I_L`` and ``I_U`` are derived properties, never independent mutable state.
     """
 
     mu: torch.Tensor
@@ -39,6 +39,10 @@ class QuenchedEnvironment:
         mu = _frozen_vector("mu", self.mu, dtype=torch.float64)
         Y = _frozen_vector("Y", self.Y, dtype=torch.float64)
         Delta = _frozen_vector("Delta", self.Delta, dtype=torch.float64)
+        if mu.numel() == 0:
+            raise ValueError("the signal dimension must be positive")
+        if Y.shape != Delta.shape:
+            raise ValueError("Y and Delta must have the same shape")
         if Y.device != mu.device or Delta.device != mu.device:
             raise ValueError("mu, Y, and Delta must share a device")
         if not torch.all((Y == -1) | (Y == 1)):
@@ -82,22 +86,6 @@ class QuenchedEnvironment:
     @property
     def rho(self) -> float:
         return self.N / self.n
-
-
-def validate_finite_se_aspect_ratio(
-    environment: QuenchedEnvironment,
-    bar_delta: float,
-    *,
-    tolerance: float = 0.05,
-) -> None:
-    """Validate an explicitly requested finite/SE aspect-ratio comparison."""
-
-    if tolerance < 0 or bar_delta <= 0:
-        raise ValueError("bar_delta must be positive and tolerance nonnegative")
-    if abs(environment.delta - float(bar_delta)) > tolerance:
-        raise ValueError(
-            f"finite delta={environment.delta:.6g} differs from bar_delta={bar_delta:.6g} by more than {tolerance:.6g}"
-        )
 
 
 class SampleTypeLaw(Protocol):
@@ -151,23 +139,16 @@ def state_evolution_sample_base_sampler(
     """Adapt a joint sample-type law to ``MacroscopicStateEvolution``'s sampler.
 
     ``initial_label_sampler`` receives ``(Y, Delta, generator)`` and must
-    return a full exogenous ``Y_init`` vector.  The default independent
-    Rademacher law is a convenient theorem-compatible initial-label law.
+    return a full ``Y_init`` vector to override the first-step pseudo-labels.
+    By default, return None so the process uses its own initial score signs.
     """
 
     def sampler(K: int, generator: torch.Generator, dtype: torch.dtype, device: torch.device):
         Y, Delta = law.sample(K, generator=generator, dtype=dtype, device=device)
-        if initial_label_sampler is None:
-            Y_init = torch.where(
-                torch.rand(K, generator=generator, dtype=dtype, device=device) < 0.5,
-                1.0,
-                -1.0,
-            )
-        else:
-            Y_init = initial_label_sampler(Y, Delta, generator)
-            Y_init = torch.as_tensor(Y_init, dtype=dtype, device=device)
-        Y_init = Y_init.clone()
-        Y_init[Delta == 1] = Y[Delta == 1]
+        Y_init = None
+        if initial_label_sampler is not None:
+            Y_init = torch.as_tensor(initial_label_sampler(Y, Delta, generator), dtype=dtype, device=device).clone()
+            Y_init[Delta == 1] = Y[Delta == 1]
         return Y, Delta, Y_init
 
     return sampler

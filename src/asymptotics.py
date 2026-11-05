@@ -13,18 +13,15 @@ import math
 import random
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 
 from src.config import AlgorithmConfig, DataConfig
 from src.orthogonal import EmpiricalOrthogonalBasis, solve_transported_history
-from src.performance import oracle_calibrated_bias_and_error
-from src.utils import (
-    compute_abstract_pseudo_residual_from,
-    compute_population_error_from,
-)
+from src.performance import oracle_calibrated_bias_and_error, population_error
+from src.primitives import compute_abstract_pseudo_residual_from
 
 
 DeviceLike = Union[str, torch.device]
@@ -34,7 +31,7 @@ ParameterBaseSampler = Callable[
 ]
 SampleBaseSampler = Callable[
     [int, torch.Generator, torch.dtype, torch.device],
-    Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+    Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]],
 ]
 
 
@@ -70,13 +67,14 @@ class MacroscopicStateEvolution:
     A sampler must use the supplied generator for randomness.  This preserves
     dependence within each returned block while keeping the two base blocks and
     the two Gaussian innovation families independent.  If the samplers are
-    omitted, the historical product-law initialization is used.  That legacy
-    sample law has no exogenous ``Y_init`` and is therefore accepted at the
-    first update only when the pseudo-labeled coefficient is zero.
+    omitted, the product-law initialization is used. Pseudo-labels are the
+    current score signs from t=0 by default. An optional Y_init vector overrides
+    only the first step; return None to use the score-sign rule.
 
     Bias handling is configured by ``algo_cfg``: ``initial_bias`` sets the
-    default intercept, ``include_bias`` controls whether it is updated, and
-    ``bias_pseudo_label_param`` controls only its pseudo-labeled increment.
+    default intercept and ``train_bias`` controls whether it is updated.
+    ``bias_step_size`` sets its learning rate (defaulting to the weight rate),
+    and ``bias_pseudo_label_param`` controls only its pseudo-labeled increment.
     The constructor's optional ``initial_bias`` remains a compatibility
     override for an explicitly supplied initial condition.
     """
@@ -100,8 +98,6 @@ class MacroscopicStateEvolution:
     sample_base_sampler: Optional[SampleBaseSampler] = None
 
     _current_t: int = field(init=False, default=0)
-    _debug: bool = False
-    _debug_id_map: Dict[int, str] = field(init=False, default_factory=dict)
 
     signal: torch.Tensor = field(init=False)
     label: torch.Tensor = field(init=False)
@@ -125,10 +121,6 @@ class MacroscopicStateEvolution:
     weight_memory: List[Optional[torch.Tensor]] = field(init=False)
     residual_memory: List[Optional[torch.Tensor]] = field(init=False)
 
-    weight_projection_coordinates: List[Optional[torch.Tensor]] = field(init=False)
-    residual_projection_coordinates: List[Optional[torch.Tensor]] = field(init=False)
-    weight_coordinates: List[Optional[torch.Tensor]] = field(init=False)
-    residual_coordinates: List[Optional[torch.Tensor]] = field(init=False)
     weight_memory_coordinates: List[Optional[torch.Tensor]] = field(init=False)
     residual_memory_coordinates: List[Optional[torch.Tensor]] = field(init=False)
 
@@ -138,12 +130,6 @@ class MacroscopicStateEvolution:
     residual_rank: List[Optional[int]] = field(init=False)
     weight_rank_truncated: List[Optional[bool]] = field(init=False)
     residual_rank_truncated: List[Optional[bool]] = field(init=False)
-    weight_orthogonality_error: List[Optional[torch.Tensor]] = field(init=False)
-    residual_orthogonality_error: List[Optional[torch.Tensor]] = field(init=False)
-    weight_coordinate_singular_values: List[Optional[torch.Tensor]] = field(init=False)
-    residual_coordinate_singular_values: List[Optional[torch.Tensor]] = field(init=False)
-    weight_coordinate_condition_number: List[Optional[torch.Tensor]] = field(init=False)
-    residual_coordinate_condition_number: List[Optional[torch.Tensor]] = field(init=False)
 
     weight_signal_alignments: List[Optional[torch.Tensor]] = field(init=False)
     label_residual_alignments: List[Optional[torch.Tensor]] = field(init=False)
@@ -163,6 +149,8 @@ class MacroscopicStateEvolution:
 
     _sample_innovation_generator: torch.Generator = field(init=False, repr=False)
     _parameter_innovation_generator: torch.Generator = field(init=False, repr=False)
+
+    # Initialization and configuration validation.
 
     def __post_init__(self) -> None:
         self.device = torch.device(self.device)
@@ -221,20 +209,10 @@ class MacroscopicStateEvolution:
         optional_tensor_histories = (
             "weight_memory",
             "residual_memory",
-            "weight_projection_coordinates",
-            "residual_projection_coordinates",
-            "weight_coordinates",
-            "residual_coordinates",
             "weight_memory_coordinates",
             "residual_memory_coordinates",
             "forward_innovation_scale",
             "backward_innovation_scale",
-            "weight_orthogonality_error",
-            "residual_orthogonality_error",
-            "weight_coordinate_singular_values",
-            "residual_coordinate_singular_values",
-            "weight_coordinate_condition_number",
-            "residual_coordinate_condition_number",
             "weight_signal_alignments",
             "label_residual_alignments",
             "mean_residual",
@@ -332,6 +310,8 @@ class MacroscopicStateEvolution:
             raise ValueError("K_g must be a positive integer")
         self.K = self.K_w if self.K_w == self.K_g else None
 
+    # Independent random streams and base-law sampling.
+
     def _seed(self, stream: int) -> int:
         modulus = 2**63 - 1
         return (int(self.mc_seed) + 1_000_003 * stream) % modulus
@@ -354,20 +334,32 @@ class MacroscopicStateEvolution:
             device=self.device,
         )
 
-    @staticmethod
     @contextmanager
-    def _isolated_python_numpy_rng(seed: int):
-        """Temporarily seed and then restore legacy Python/NumPy RNGs."""
+    def _isolated_rng(self, seed: int):
+        """Seed and restore global Torch, Python and NumPy random streams."""
 
-        python_state = random.getstate()
-        numpy_state = np.random.get_state()
-        random.seed(seed)
-        np.random.seed(seed % (2**32))
-        try:
-            yield
-        finally:
-            random.setstate(python_state)
-            np.random.set_state(numpy_state)
+        cuda_devices: List[int] = []
+        if self.device.type == "cuda":
+            cuda_devices = [
+                self.device.index
+                if self.device.index is not None
+                else torch.cuda.current_device()
+            ]
+        with torch.random.fork_rng(devices=cuda_devices):
+            python_state = random.getstate()
+            numpy_state = np.random.get_state()
+            random.seed(seed)
+            np.random.seed(seed % (2**32))
+            try:
+                cpu_generator = torch.Generator(device="cpu").manual_seed(seed)
+                torch.set_rng_state(cpu_generator.get_state())
+                if self.device.type == "cuda":
+                    with torch.cuda.device(cuda_devices[0]):
+                        torch.cuda.manual_seed(seed)
+                yield
+            finally:
+                random.setstate(python_state)
+                np.random.set_state(numpy_state)
 
     def _invoke_sampler(
         self,
@@ -376,47 +368,12 @@ class MacroscopicStateEvolution:
         generator: torch.Generator,
         fallback_stream: int,
     ):
-        # Isolate legacy/global torch RNG calls made inside a custom sampler.
-        cuda_devices: List[int] = []
-        if self.device.type == "cuda":
-            cuda_devices = [
-                self.device.index
-                if self.device.index is not None
-                else torch.cuda.current_device()
-            ]
-        with torch.random.fork_rng(devices=cuda_devices), self._isolated_python_numpy_rng(
-            self._seed(fallback_stream)
-        ):
-            fallback_seed = self._seed(fallback_stream)
-            cpu_generator = torch.Generator(device="cpu").manual_seed(
-                fallback_seed
-            )
-            torch.set_rng_state(cpu_generator.get_state())
-            if self.device.type == "cuda":
-                with torch.cuda.device(cuda_devices[0]):
-                    torch.cuda.manual_seed(fallback_seed)
+        with self._isolated_rng(self._seed(fallback_stream)):
             return sampler(size, generator, self.dtype, self.device)
 
     def _sample_legacy_signal(self) -> torch.Tensor:
         values: List[float] = []
-        cuda_devices: List[int] = []
-        if self.device.type == "cuda":
-            cuda_devices = [
-                self.device.index
-                if self.device.index is not None
-                else torch.cuda.current_device()
-            ]
-        with torch.random.fork_rng(devices=cuda_devices), self._isolated_python_numpy_rng(
-            self._seed(83)
-        ):
-            signal_seed = self._seed(83)
-            cpu_generator = torch.Generator(device="cpu").manual_seed(
-                signal_seed
-            )
-            torch.set_rng_state(cpu_generator.get_state())
-            if self.device.type == "cuda":
-                with torch.cuda.device(cuda_devices[0]):
-                    torch.cuda.manual_seed(signal_seed)
+        with self._isolated_rng(self._seed(83)):
             for _ in range(self.K_w):
                 value = torch.as_tensor(self.data_cfg.signal_law())
                 if value.numel() != 1 or not torch.isfinite(value).all():
@@ -434,6 +391,7 @@ class MacroscopicStateEvolution:
         if not torch.isfinite(result).all():
             raise ValueError(f"{name} must contain only finite values")
         return result.clone()
+
 
     def _sample_parameter_base(
         self, generator: torch.Generator
@@ -485,7 +443,9 @@ class MacroscopicStateEvolution:
                 )
             label = self._vector("Y", sampled[0], self.K_g)
             indicator = self._vector("Delta", sampled[1], self.K_g)
-            initial_label = self._vector("Y_init", sampled[2], self.K_g)
+            initial_label = (
+                None if sampled[2] is None else self._vector("Y_init", sampled[2], self.K_g)
+            )
             self._validate_discrete_sample_base(label, indicator, initial_label)
             return label, indicator, initial_label
 
@@ -511,34 +471,27 @@ class MacroscopicStateEvolution:
             )
             < self.rho
         ).to(self.dtype)
-        bias_pseudo_weight = (
-            self._bias_pseudo_weight(0) if self.algo_cfg.include_bias else 0.0
-        )
-        if (
-            (self._pseudo_weight(0) != 0.0 or bias_pseudo_weight != 0.0)
-            and self.rho < 1.0
-        ):
-            raise ValueError(
-                "an explicit sample_base_sampler returning exogenous Y_init is "
-                "required when a t=0 pseudo-labeled coefficient is nonzero"
-            )
         return label, indicator, None
 
     def _validate_discrete_sample_base(
         self,
         label: torch.Tensor,
         indicator: torch.Tensor,
-        initial_label: torch.Tensor,
+        initial_label: Optional[torch.Tensor],
     ) -> None:
         if not torch.all((label == -1.0) | (label == 1.0)):
             raise ValueError("Y particles must lie in {-1, +1}")
         if not torch.all((indicator == 0.0) | (indicator == 1.0)):
             raise ValueError("Delta particles must lie in {0, 1}")
+        if initial_label is None:
+            return
         if not torch.all((initial_label == -1.0) | (initial_label == 1.0)):
             raise ValueError("Y_init particles must lie in {-1, +1}")
         disagreement = (indicator == 1.0) & (initial_label != label)
         if torch.any(disagreement):
             raise ValueError("Y_init must equal Y on every labeled particle")
+
+    # Configuration aliases and trajectory views.
 
     @property
     def T(self) -> int:
@@ -656,19 +609,7 @@ class MacroscopicStateEvolution:
             P=tuple(self.backward_noise[: self.T]),
         )
 
-    def _pseudo_weight(self, t: int) -> float:
-        # The repository's schedules are retained as a documented experimental
-        # extension.  The terminal diagnostic uses the final update's value.
-        if self.T == 0:
-            return 0.0
-        return self.algo_cfg.get_pseudo_label_weight(min(t, self.T - 1))
-
-    def _bias_pseudo_weight(self, t: int) -> float:
-        """Bias analogue of :meth:`_pseudo_weight`, including terminal diagnostics."""
-
-        if self.T == 0:
-            return 0.0
-        return self.algo_cfg.get_bias_pseudo_label_weight(min(t, self.T - 1))
+    # Numerical helpers.
 
     def _check_time_access(self, t: int) -> None:
         if not isinstance(t, int) or t < 0 or t > self._current_t or t > self.T:
@@ -715,18 +656,7 @@ class MacroscopicStateEvolution:
             kwargs["driver"] = self.lstsq_driver
         return torch.linalg.lstsq(coordinates, psi, **kwargs).solution.detach()
 
-    @staticmethod
-    def _condition_number_from(
-        singular_values: torch.Tensor,
-    ) -> torch.Tensor:
-        if singular_values.numel() == 0:
-            return singular_values.new_full((), float("nan"))
-        smallest = singular_values[-1]
-        return torch.where(
-            smallest > 0.0,
-            singular_values[0] / smallest,
-            torch.full_like(smallest, float("inf")),
-        )
+    # Effective-process recursion, including the terminal diagnostic pass.
 
     @torch.no_grad()
     def compute_trajectory(self) -> None:
@@ -817,47 +747,45 @@ class MacroscopicStateEvolution:
             raise RuntimeError(f"b^{t} has not been computed")
         r = bias + m * self.label + self.sigma * q
         self.preactivation[t] = r
-        omega = self.compute_selection_rate(t)
-        pseudo_weight = self._pseudo_weight(t)
+        selection = self.selection_mask(r)
+        self.compute_selection_rate(t, selection=selection)
+        pseudo_weight = self.algo_cfg.pseudo_label_param
         g = self.compute_pseudo_residual_from(
             r,
             self.label,
             self.indicator,
             pseudo_weight,
-            omega,
             time_index=t,
             initial_pseudo_label=self.initial_pseudo_label,
+            selection=selection,
         )
         if g.shape != (self.K_g,):
             raise RuntimeError("g must live in sample-particle space")
         self.residual[t] = g
-        bias_pseudo_weight = self._bias_pseudo_weight(t)
-        self.bias_residual[t] = (
-            g
-            if bias_pseudo_weight == pseudo_weight
-            else self.compute_pseudo_residual_from(
+        bias_pseudo_weight = self.algo_cfg.get_bias_pseudo_label_weight()
+        bias_eta = self.algo_cfg.get_bias_step_size()
+        if not self.algo_cfg.train_bias:
+            self.bias_residual[t] = g
+        elif bias_eta == 0:
+            self.bias_residual[t] = torch.zeros_like(g)
+        elif bias_pseudo_weight == pseudo_weight and bias_eta == self.eta:
+            self.bias_residual[t] = g
+        else:
+            self.bias_residual[t] = self.compute_pseudo_residual_from(
                 r,
                 self.label,
                 self.indicator,
                 bias_pseudo_weight,
-                omega,
                 time_index=t,
                 initial_pseudo_label=self.initial_pseudo_label,
+                selection=selection,
+                eta=bias_eta,
             )
-        )
 
-        self.weight_projection_coordinates[t] = beta_w
-        self.weight_coordinates[t] = projection.theta
         self.weight_memory_coordinates[t] = psi_w
         self.forward_innovation_scale[t] = v_w
         self.weight_rank[t] = projection.rank_after
         self.weight_rank_truncated[t] = projection.truncated
-        self.weight_orthogonality_error[t] = self.weight_basis.orthogonality_error
-        singular_values = self.weight_basis.coordinate_singular_values
-        self.weight_coordinate_singular_values[t] = singular_values
-        self.weight_coordinate_condition_number[t] = self._condition_number_from(
-            singular_values
-        )
         return r, g
 
     @torch.no_grad()
@@ -903,20 +831,10 @@ class MacroscopicStateEvolution:
                 P_trajectory, self.residual_basis.Theta
             )
 
-            self.residual_projection_coordinates[t] = beta_g
-            self.residual_coordinates[t] = projection.theta
             self.residual_memory_coordinates[t] = psi_g
             self.backward_innovation_scale[t] = v_g
             self.residual_rank[t] = projection.rank_after
             self.residual_rank_truncated[t] = projection.truncated
-            self.residual_orthogonality_error[t] = (
-                self.residual_basis.orthogonality_error
-            )
-            singular_values = self.residual_basis.coordinate_singular_values
-            self.residual_coordinate_singular_values[t] = singular_values
-            self.residual_coordinate_condition_number[t] = (
-                self._condition_number_from(singular_values)
-            )
         elif not (
             self.residual_basis.n_columns == t + 1
             and self.backward_noise[t] is not None
@@ -947,7 +865,7 @@ class MacroscopicStateEvolution:
 
         next_bias = (
             current_bias + zeta
-            if self.algo_cfg.include_bias
+            if self.algo_cfg.train_bias
             else current_bias.detach().clone()
         )
         next_weight = (
@@ -960,30 +878,35 @@ class MacroscopicStateEvolution:
         self.weight[t + 1] = next_weight
         return next_bias, next_weight
 
+    # Macroscopic observables and residual evaluation.
+
     def compute_pseudo_residual_from(
         self,
         preactivation: torch.Tensor,
         label: torch.Tensor,
         indicator: torch.Tensor,
         coef: float,
-        selection_rate: float,
         time_index: int = 1,
         initial_pseudo_label: Optional[torch.Tensor] = None,
+        *,
+        selection: Optional[torch.Tensor] = None,
+        eta: Optional[float] = None,
     ) -> torch.Tensor:
-        selection_mask = self.selection_mask(preactivation, time_index)
+        selection_mask = (
+            self.selection_mask(preactivation)
+            if selection is None else selection
+        )
         return compute_abstract_pseudo_residual_from(
             preactivation=preactivation,
             label=label,
             indicator=indicator,
             selection_mask=selection_mask,
-            selection_rate=selection_rate,
             coef=coef,
             rho=self.rho,
-            eta=self.eta,
+            eta=self.eta if eta is None else eta,
             loss_function=self.algo_cfg.loss_function,
             time_index=time_index,
             initial_pseudo_label=initial_pseudo_label,
-            normalize_unlabeled_loss=self.algo_cfg.normalize_unlabeled_loss,
         )
 
     def compute_weight_signal_alignment(self, t: int) -> torch.Tensor:
@@ -1030,11 +953,12 @@ class MacroscopicStateEvolution:
             ).item()
         return self.weight_norm[t]
 
-    def selection_mask(self, scores: torch.Tensor, t: int) -> torch.Tensor:
-        tau = self.compute_weight_norm(t) if getattr(self.algo_cfg, "normalized_threshold", False) else None
-        return self.algo_cfg.selection_mask(scores, tau)
+    def selection_mask(self, scores: torch.Tensor) -> torch.Tensor:
+        return self.algo_cfg.selection_mask(scores)
 
-    def compute_selection_rate(self, t: int) -> torch.Tensor:
+    def compute_selection_rate(
+        self, t: int, *, selection: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         """Return ``mean((1-Delta) S(r)) / (1-rho)`` as specified."""
 
         self._check_time_access(t)
@@ -1042,7 +966,7 @@ class MacroscopicStateEvolution:
         if preactivation is None or self.rho >= 1.0:
             omega = self.indicator.new_zeros(())
         else:
-            mask = self.selection_mask(preactivation, t)
+            mask = self.selection_mask(preactivation) if selection is None else selection
             omega = torch.mean((1.0 - self.indicator) * mask) / (1.0 - self.rho)
         if not torch.isfinite(omega):
             raise FloatingPointError("selection-rate particle estimate is nonfinite")
@@ -1059,7 +983,7 @@ class MacroscopicStateEvolution:
         bias = self.bias[t].item()
         alignment = float(self.weight_signal_alignments[t])
         weight_scale = float(self.weight_norm[t])
-        result = compute_population_error_from(
+        result = population_error(
             bias,
             alignment,
             weight_scale,
@@ -1095,21 +1019,7 @@ class MacroscopicStateEvolution:
             )
         )
 
-    @property
-    def weight_grammian(self) -> torch.Tensor:
-        """Small diagnostic Gram matrix; never used by the recursion."""
-
-        stop = self.weight_basis.n_columns
-        W = self._stack(self.weight, stop, self.K_w)
-        return (W.T @ W / self.K_w).detach()
-
-    @property
-    def residual_grammian(self) -> torch.Tensor:
-        """Small diagnostic Gram matrix; never used by the recursion."""
-
-        stop = self.residual_basis.n_columns
-        G = self._stack(self.residual, stop, self.K_g)
-        return (G.T @ G / self.K_g).detach()
+    # Diagnostic accessors and compatibility coordinates.
 
     def compute_weight_memory(self, t: int) -> torch.Tensor:
         """Lazily return diagnostic raw-column ``phi_t^[w]`` (no autograd).
@@ -1150,56 +1060,6 @@ class MacroscopicStateEvolution:
                 current_theta, psi
             )
         return self.residual_memory[t]
-
-    def compute_forward_projection_coef(self, t: int) -> torch.Tensor:
-        """Return raw-column ``alpha_t^[w]`` lazily.
-
-        After nonzero rank truncation this represents the maintained
-        regularized coordinate model, not an exact change of raw coordinates.
-        """
-
-        self._check_time_access(t)
-        beta = self.weight_projection_coordinates[t]
-        if beta is None:
-            raise RuntimeError("forward_pass must be called first")
-        past_theta = self.weight_basis.Theta[: beta.numel(), :t]
-        return self._solve_original_memory(past_theta, beta)
-
-    def compute_residual_projection_coef(self, t: int) -> torch.Tensor:
-        """Return raw-column ``alpha_t^[g]`` lazily.
-
-        After nonzero rank truncation this represents the maintained
-        regularized coordinate model, not an exact change of raw coordinates.
-        """
-
-        self._check_time_access(t)
-        beta = self.residual_projection_coordinates[t]
-        if beta is None:
-            raise RuntimeError("backward_pass must be called first")
-        past_theta = self.residual_basis.Theta[: beta.numel(), :t]
-        return self._solve_original_memory(past_theta, beta)
-
-    def compute_forward_noise_variance(self, t: int) -> torch.Tensor:
-        self._check_time_access(t)
-        scale = self.forward_innovation_scale[t]
-        if scale is None:
-            raise RuntimeError("forward_pass must be called first")
-        return scale.square()
-
-    def compute_backward_noise_variance(self, t: int) -> torch.Tensor:
-        self._check_time_access(t)
-        scale = self.backward_innovation_scale[t]
-        if scale is None:
-            raise RuntimeError("backward_pass must be called first")
-        return scale.square()
-
-    def compute_forward_noise(self, t: int) -> torch.Tensor:
-        """Compatibility accessor for the already-computed ``q^t``."""
-
-        self._check_time_access(t)
-        if self.forward_noise[t] is None:
-            self.forward_pass(t)
-        return self.forward_noise[t]
 
     def compute_backward_noise(self, t: int) -> torch.Tensor:
         """Compatibility accessor for the already-computed ``p^t``."""

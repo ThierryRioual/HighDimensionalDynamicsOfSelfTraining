@@ -1,4 +1,4 @@
-"""Direct finite-dimensional checks for the manuscript-consistent core."""
+"""Direct finite-dimensional checks for self-training updates and diagnostics."""
 
 import math
 
@@ -7,16 +7,16 @@ import torch
 
 from src.algorithms import SelfTrainedGradientDescent
 from src.callbacks import TestEvaluatorCallback as EvaluatorCallback
-from src.config import AlgorithmConfig, DataConfig, LinearRampSchedule
+from src.config import AlgorithmConfig, DataConfig
 from src.dgp import IsotropicGaussian
 from src.environment import FourCellSampleTypeLaw, QuenchedEnvironment
-from src.initialization import SelfTrainingInitialization, compute_pseudo_labels_from_scores, compute_scores
+from src.initialization import SelfTrainingInitialization
 from src.performance import (
     bayes_parameters,
     oracle_calibrated_bias_and_error,
     population_error,
 )
-from src.primitives import hard_selection, normalized_selection, pseudo_labels, pseudo_residual, selection_rate
+from src.primitives import compute_scores, sign_with_positive_tie, pseudo_labels, pseudo_residual, selection_rate
 
 
 def _cfg(T=2, pi=1.5):
@@ -50,7 +50,7 @@ def test_gaussian_design_is_conditional_on_environment_not_delta():
     mu = torch.tensor([1., -1.])
     first = QuenchedEnvironment(mu, torch.tensor([1., -1., 1.]), torch.tensor([1., 0., 1.]))
     second = QuenchedEnvironment(mu, first.Y, 1 - first.Delta)
-    dgp = IsotropicGaussian(cfg, 3, 0, 2, signal_vector=mu)
+    dgp = IsotropicGaussian(cfg=cfg, n_train=3, dimensions=2, n_test=0, signal_vector=mu)
     U = torch.tensor([[.2, -.1], [.3, .4], [-.5, .1]])
     X_first, _ = dgp.sample_design(first, noise=U)
     X_second, _ = dgp.sample_design(second, noise=U)
@@ -59,51 +59,29 @@ def test_gaussian_design_is_conditional_on_environment_not_delta():
 
 def test_initialization_and_pseudo_label_timing_are_explicit():
     env, X, _, _, init = _problem()
-    init.for_environment(env)
+    init.for_data(X, env.Y * env.Delta)
     with pytest.raises(ValueError, match="labelled"):
-        SelfTrainingInitialization(0., torch.zeros(env.d), -init.Y_init).for_environment(env)
+        SelfTrainingInitialization(0., torch.zeros(env.d), -init.Y_init).for_data(X, env.Y * env.Delta)
     scores = torch.tensor([0., -.1])
-    torch.testing.assert_close(compute_pseudo_labels_from_scores(scores), torch.tensor([1., -1.]))
+    torch.testing.assert_close(sign_with_positive_tie(scores), torch.tensor([1., -1.]))
     torch.testing.assert_close(pseudo_labels(0, env.Y, init.Y_init), init.Y_init)
     torch.testing.assert_close(pseudo_labels(1, torch.tensor([-.2, 0.]), init.Y_init[:2]), torch.tensor([-1., 1.]))
-    with pytest.raises(ValueError, match="initial_pseudo_labels"):
-        SelfTrainedGradientDescent(_cfg(T=1)).fit(X[env.I_L], env.Y[env.I_L], X[env.I_U], initial_weights=init.w_init)
+    with pytest.raises(ValueError, match="explicit SelfTrainingInitialization"):
+        SelfTrainedGradientDescent(_cfg(T=1)).fit(X, env.Y * env.Delta, None)
 
 
 def test_selection_has_inclusive_boundaries_and_zero_contribution():
     scores = torch.tensor([-.5, .5, 0.])
-    mask = hard_selection(scores, -.5, .5)
+    mask = _cfg().selection_mask(scores)
     torch.testing.assert_close(mask, torch.tensor([1., 1., 0.]))
     Delta = torch.tensor([0., 0., 1.])
     omega = selection_rate(mask, Delta)
     assert omega.item() == 1.
-    torch.testing.assert_close(normalized_selection(torch.zeros_like(mask), 0.), torch.zeros_like(mask))
+    torch.testing.assert_close(selection_rate(torch.zeros_like(mask), Delta), torch.tensor(0.))
 
 
-def test_fixed_pi_is_canonical_and_ramps_are_explicit_extensions():
-    fixed = _cfg(T=3, pi=.8)
-    assert fixed.is_canonical_fixed_pi
-    assert [fixed.get_pseudo_label_weight(t) for t in range(3)] == [.8, .8, .8]
-    ramped = AlgorithmConfig(3, .1, .0, .8, margin_threshold=.5, experimental_schedule=LinearRampSchedule(1, 2))
-    assert not ramped.is_canonical_fixed_pi
-    assert [ramped.get_pseudo_label_weight(t) for t in range(3)] == [0., 0., .8]
 
 
-def test_bias_configuration_defaults_preserve_the_weight_pseudo_label_schedule():
-    fixed = _cfg(T=2, pi=.8)
-    assert fixed.initial_bias == 0.0
-    assert fixed.bias_pseudo_label_param is None
-    assert [fixed.get_bias_pseudo_label_weight(t) for t in range(2)] == [.8, .8]
-
-    ramped = AlgorithmConfig(
-        3,
-        .1,
-        .0,
-        .8,
-        margin_threshold=.5,
-        experimental_schedule=LinearRampSchedule(1, 2),
-    )
-    assert [ramped.get_bias_pseudo_label_weight(t) for t in range(3)] == [0., 0., .8]
 
 
 def test_nonzero_disabled_bias_is_fixed_and_used_in_every_finite_logit():
@@ -115,11 +93,11 @@ def test_nonzero_disabled_bias_is_fixed_and_used_in_every_finite_logit():
         .3,
         1.5,
         margin_threshold=.5,
-        include_bias=False,
+        train_bias=False,
         initial_bias=fixed_bias,
     )
     fixed_init = SelfTrainingInitialization(fixed_bias, init.w_init, init.Y_init)
-    learner = SelfTrainedGradientDescent(cfg).fit_full(X, env, fixed_init)
+    learner = SelfTrainedGradientDescent(cfg).fit(X, env.Y * env.Delta, fixed_init)
 
     torch.testing.assert_close(learner.bias, torch.tensor(fixed_bias))
     for step in learner.update_records_:
@@ -136,15 +114,15 @@ def test_bias_pseudo_label_weight_changes_only_the_one_step_bias_update():
         penalty_param=.3,
         pseudo_label_param=1.5,
         margin_threshold=.5,
-        include_bias=True,
+        train_bias=True,
     )
-    default = SelfTrainedGradientDescent(AlgorithmConfig(**common)).fit_full(X, env, init)
+    default = SelfTrainedGradientDescent(AlgorithmConfig(**common)).fit(X, env.Y * env.Delta, init)
     explicit = SelfTrainedGradientDescent(
         AlgorithmConfig(**common, bias_pseudo_label_param=1.5)
-    ).fit_full(X, env, init)
+    ).fit(X, env.Y * env.Delta, init)
     labeled_only = SelfTrainedGradientDescent(
         AlgorithmConfig(**common, bias_pseudo_label_param=0.0)
-    ).fit_full(X, env, init)
+    ).fit(X, env.Y * env.Delta, init)
 
     torch.testing.assert_close(default.weights, explicit.weights)
     torch.testing.assert_close(default.bias, explicit.bias)
@@ -158,7 +136,6 @@ def test_bias_pseudo_label_weight_changes_only_the_one_step_bias_update():
         Delta=env.Delta,
         Yhat=step.pseudo_labels,
         selection=step.selection,
-        omega=step.omega,
         pi=0.0,
         eta=labeled_only.cfg.step_size,
         rho=env.rho,
@@ -172,23 +149,23 @@ def test_bias_pseudo_label_weight_changes_only_the_one_step_bias_update():
 def test_finite_update_matches_objective_and_forward_backward_decomposition():
     env, X, U, sigma, init = _problem()
     cfg = _cfg(T=2)
-    learner = SelfTrainedGradientDescent(cfg).fit_full(X, env, init)
+    learner = SelfTrainedGradientDescent(cfg).fit(X, env.Y * env.Delta, init)
     step = learner.update_records_[0]
     expected_yhat0 = init.Y_init
     torch.testing.assert_close(step.pseudo_labels, expected_yhat0)
-    torch.testing.assert_close(learner.update_records_[1].pseudo_labels, compute_pseudo_labels_from_scores(learner.update_records_[1].scores))
+    torch.testing.assert_close(learner.update_records_[1].pseudo_labels, sign_with_positive_tie(learner.update_records_[1].scores))
 
-    # Explicit finite objective gradient with frozen Yhat, S, omega.
+    # Explicit finite objective gradient with frozen pseudo-labels and selection.
     grad_lab = cfg.loss_function.gradient(step.scores, env.Y) * env.Delta / env.rho
-    grad_unl = cfg.loss_function.gradient(step.scores, expected_yhat0) * (1-env.Delta) * cfg.pseudo_label_param / (1-env.rho) * step.selection / step.omega
+    grad_unl = cfg.loss_function.gradient(step.scores, expected_yhat0) * (1-env.Delta) * cfg.pseudo_label_param / (1-env.rho) * step.selection
     torch.testing.assert_close(step.g, -cfg.step_size * (grad_lab + grad_unl))
     next_w = step.weight - cfg.step_size * cfg.penalty_param * cfg.penalty_function.gradient(step.weight) + math.sqrt(env.d)/env.n * X.T @ step.g
     torch.testing.assert_close(learner.weight_history_[1], next_w)
-    decomp = learner.finite_decomposition(X, U, 0, sigma=sigma)
+    decomp = learner.finite_decomposition(X, U, 0, sigma=sigma, environment=env)
     torch.testing.assert_close(decomp["r"], decomp["direct_score"], atol=1e-12, rtol=1e-12)
     torch.testing.assert_close(decomp["noise_update"], decomp["direct_update_noise"], atol=1e-12, rtol=1e-12)
-    obs = learner.macroscopic_observables(0)
-    torch.testing.assert_close(obs["chi"], step.chi)
+    obs = learner.macroscopic_observables(0, environment=env)
+    torch.testing.assert_close(obs["chi"], torch.dot(env.Y, step.g) / env.n)
     torch.testing.assert_close(obs["zeta"], step.zeta)
 
 
@@ -205,8 +182,8 @@ def test_finite_oracle_bias_diagnostic_uses_existing_macroscopic_normalization()
         p=p,
         metrics={"population_error"},
     )
-    learner = SelfTrainedGradientDescent(_cfg(T=2), callback=callback).fit_full(
-        X, env, init
+    learner = SelfTrainedGradientDescent(_cfg(T=2), callback=callback).fit(
+        X, env.Y * env.Delta, init
     )
 
     for t, weight in enumerate(learner.weight_history_):
@@ -243,9 +220,9 @@ def test_finite_oracle_bias_diagnostic_does_not_change_the_trajectory():
     )
     with_diagnostic = SelfTrainedGradientDescent(
         _cfg(T=2), callback=callback
-    ).fit_full(X, env, init)
-    without_callback = SelfTrainedGradientDescent(_cfg(T=2)).fit_full(
-        X, env, init
+    ).fit(X, env.Y * env.Delta, init)
+    without_callback = SelfTrainedGradientDescent(_cfg(T=2)).fit(
+        X, env.Y * env.Delta, init
     )
 
     torch.testing.assert_close(with_diagnostic.bias, without_callback.bias)
@@ -257,9 +234,45 @@ def test_finite_oracle_bias_diagnostic_does_not_change_the_trajectory():
         torch.testing.assert_close(actual.g, reference.g)
 
 
+def test_unlabeled_ground_truth_is_diagnostic_only():
+    env, X, _, _, init = _problem()
+    changed_labels = env.Y.clone()
+    changed_labels[env.I_U] *= -1
+    changed_env = QuenchedEnvironment(env.mu, changed_labels, env.Delta)
+    def evaluator(environment):
+        return EvaluatorCallback(
+            X_lab=X[env.I_L], Y_lab=environment.Y[env.I_L],
+            X_unl=X[env.I_U], Y_unl=environment.Y[env.I_U],
+            metrics={"unl_error", "unl_selected_error"},
+        )
+
+    reference = SelfTrainedGradientDescent(_cfg(), evaluator(env)).fit(X, env.Y * env.Delta, init)
+    changed = SelfTrainedGradientDescent(_cfg(), evaluator(changed_env)).fit(X, changed_env.Y * changed_env.Delta, init)
+    for actual, expected in zip(changed.callback.history_["unl_error"],
+                                reference.callback.history_["unl_error"]):
+        assert actual + expected == pytest.approx(1.)
+
+    torch.testing.assert_close(changed.weights, reference.weights, rtol=0., atol=0.)
+    torch.testing.assert_close(changed.bias, reference.bias, rtol=0., atol=0.)
+    for actual, expected in zip(changed.update_records_, reference.update_records_):
+        torch.testing.assert_close(actual.scores, expected.scores, rtol=0., atol=0.)
+        torch.testing.assert_close(actual.g, expected.g, rtol=0., atol=0.)
+        torch.testing.assert_close(actual.bias_residual, expected.bias_residual,
+                                   rtol=0., atol=0.)
+
+
 def test_bayes_benchmark_uses_actual_signal_scale():
     scale, sigma, p = 2., 1.3, .2
     b, m, tau = bayes_parameters(scale, sigma, p)
     assert m == scale**2 and tau == scale
     assert b == pytest.approx(sigma**2 / 2 * math.log(p / (1 - p)))
     assert population_error(b, m, tau, sigma, p) < population_error(0., m, tau, sigma, p)
+
+
+@pytest.mark.parametrize("mu, labels, indicators, message", [
+    (torch.empty(0), torch.tensor([1.]), torch.tensor([1.]), "dimension"),
+    (torch.ones(2), torch.tensor([1., -1.]), torch.tensor([1.]), "same shape"),
+])
+def test_environment_validates_complete_realized_shapes(mu, labels, indicators, message):
+    with pytest.raises(ValueError, match=message):
+        QuenchedEnvironment(mu, labels, indicators)

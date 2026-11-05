@@ -156,6 +156,46 @@ def test_near_collinear_direction_is_retained_below_rank_tolerance():
     )
 
 
+def test_cgs2_recovers_ill_conditioned_multicolumn_span():
+    K, rank = 128, 7
+    raw = torch.randn((K, rank), generator=_generator(43), dtype=torch.float64)
+    empirical_basis = math.sqrt(K) * torch.linalg.qr(raw, mode="reduced").Q
+    trajectory = torch.column_stack(
+        [empirical_basis[:, 0]]
+        + [
+            empirical_basis[:, 0] + 1e-8 * empirical_basis[:, j]
+            for j in range(1, rank)
+        ]
+    )
+    target = empirical_basis @ torch.linspace(0.5, 1.5, rank, dtype=torch.float64)
+    factor = EmpiricalOrthogonalBasis(K, eps_rank=0.0)
+    for column in trajectory.T:
+        result = factor.project_and_update(column)
+        assert not result.truncated
+
+    assert factor.rank == rank
+    beta = factor.B.T @ target / K
+    coordinate_error = torch.linalg.vector_norm(
+        factor.B @ beta - target
+    ) / torch.linalg.vector_norm(target)
+    assert torch.isfinite(coordinate_error)
+    assert coordinate_error.item() < 1e-5
+
+    # The Gram solve is a reference only: squaring the condition number loses
+    # directions that sequential CGS2 must retain in this fixture.
+    gram = trajectory.T @ trajectory / K
+    covariance = trajectory.T @ target / K
+    try:
+        normal_coefficients = torch.linalg.solve(gram, covariance)
+    except torch.linalg.LinAlgError:
+        return
+
+    normal_error = torch.linalg.vector_norm(
+        trajectory @ normal_coefficients - target
+    ) / torch.linalg.vector_norm(target)
+    assert not torch.isfinite(normal_error) or normal_error > coordinate_error
+
+
 def test_rank_truncation_is_reported_as_regularization():
     K = 80
     first, second = _near_collinear_columns(K)

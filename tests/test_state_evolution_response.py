@@ -7,9 +7,9 @@ import torch
 
 from src.asymptotics import MacroscopicStateEvolution
 from src.config import AlgorithmConfig, DataConfig
-from src.objectives import HardSelection, LogisticLoss
+from src.objectives import LogisticLoss
 from src.performance import population_error
-from src.utils import compute_abstract_pseudo_residual_from
+from src.primitives import compute_abstract_pseudo_residual_from
 
 
 def _data_config(
@@ -35,7 +35,7 @@ def _algorithm_config(
     *,
     n_iterations=2,
     pseudo_label_param=0.0,
-    include_bias=True,
+    train_bias=True,
     bias_pseudo_label_param=None,
     initial_bias=0.0,
     margin=1.0,
@@ -49,13 +49,10 @@ def _algorithm_config(
         step_size=0.1,
         penalty_param=0.1,
         pseudo_label_param=pseudo_label_param,
-        ramp_start=0,
-        ramp_end=0,
         margin_threshold=margin,
-        include_bias=include_bias,
+        train_bias=train_bias,
         initial_bias=0.0 if initial_bias is None else initial_bias,
         bias_pseudo_label_param=bias_pseudo_label_param,
-        selection_function=HardSelection(),
         **kwargs,
     )
 
@@ -72,7 +69,7 @@ def _make_state_evolution(
     supervision_ratio=0.5,
     delta=2.0,
     pseudo_label_param=0.0,
-    include_bias=True,
+    train_bias=True,
     bias_pseudo_label_param=None,
     initial_bias=0.0,
     initial_weight=None,
@@ -93,7 +90,7 @@ def _make_state_evolution(
     algo_cfg = _algorithm_config(
         n_iterations=n_iterations,
         pseudo_label_param=pseudo_label_param,
-        include_bias=include_bias,
+        train_bias=train_bias,
         bias_pseudo_label_param=bias_pseudo_label_param,
         initial_bias=initial_bias,
         margin=margin,
@@ -485,10 +482,6 @@ def _state_tensors(se):
         "parameter_innovations",
         "weight_memory",
         "residual_memory",
-        "weight_projection_coordinates",
-        "residual_projection_coordinates",
-        "weight_coordinates",
-        "residual_coordinates",
         "weight_memory_coordinates",
         "residual_memory_coordinates",
         "forward_innovation_scale",
@@ -498,12 +491,6 @@ def _state_tensors(se):
         "mean_residual",
         "selection_rate",
         "decay",
-        "weight_orthogonality_error",
-        "residual_orthogonality_error",
-        "weight_coordinate_singular_values",
-        "residual_coordinate_singular_values",
-        "weight_coordinate_condition_number",
-        "residual_coordinate_condition_number",
     )
     for name in history_names:
         for value in getattr(se, name):
@@ -644,17 +631,42 @@ def test_joint_base_samplers_preserve_deliberate_dependence():
     )
 
 
-def test_active_pi0_requires_an_explicit_joint_sample_sampler():
-    algo_cfg = _algorithm_config(n_iterations=2, pseudo_label_param=1.0)
-    algo_cfg.pseudo_label_param_schedule_[0] = 1.0
+def test_failing_sampler_restores_global_random_streams():
+    def failing_sampler(*args):
+        random.random()
+        np.random.random()
+        torch.randn(4)
+        raise RuntimeError("sampler failed")
 
-    with pytest.raises(ValueError, match="explicit sample_base_sampler"):
-        MacroscopicStateEvolution(
-            data_cfg=_data_config(supervision_ratio=0.5),
-            algo_cfg=algo_cfg,
-            K_w=13,
-            K_g=17,
+    python_state = random.getstate()
+    numpy_state = np.random.get_state()
+    torch_state = torch.get_rng_state().clone()
+    with pytest.raises(RuntimeError, match="sampler failed"):
+        _make_state_evolution(parameter_base_sampler=failing_sampler)
+    assert random.getstate() == python_state
+    restored = np.random.get_state()
+    assert restored[0] == numpy_state[0]
+    np.testing.assert_array_equal(restored[1], numpy_state[1])
+    assert restored[2:] == numpy_state[2:]
+    assert torch.equal(torch.get_rng_state(), torch_state)
+
+
+def test_active_pi0_defaults_to_score_signs_without_a_sample_sampler():
+    config = _algorithm_config(n_iterations=2, pseudo_label_param=1., margin=.3)
+    process = MacroscopicStateEvolution(
+        data_cfg=_data_config(supervision_ratio=.5), algo_cfg=config, K_w=13, K_g=17,
+    )
+    assert process.initial_pseudo_label is None
+    process.compute_trajectory()
+    for scores, residual in zip(process.preactivation, process.residual):
+        labels = torch.where(scores >= 0, 1., -1.)
+        selection = config.selection_mask(scores)
+        expected = -config.step_size * (
+            process.indicator / process.rho * config.loss_function.gradient(scores, process.label)
+            + (1 - process.indicator) * config.pseudo_label_param / (1 - process.rho)
+            * selection * config.loss_function.gradient(scores, labels)
         )
+        torch.testing.assert_close(residual, expected)
 
 
 def test_forward_pass_uses_y_init_at_t0_and_sign_of_r_later():
@@ -665,7 +677,6 @@ def test_forward_pass_uses_y_init_at_t0_and_sign_of_r_later():
         margin=0.0,
         loss_function=loss,
     )
-    algo_cfg.pseudo_label_param_schedule_[0] = 1.0
     se = MacroscopicStateEvolution(
         data_cfg=_data_config(supervision_ratio=0.5),
         algo_cfg=algo_cfg,
@@ -782,7 +793,6 @@ def test_zero_selection_has_zero_pseudo_labeled_contribution():
         label=torch.ones_like(preactivation),
         indicator=indicator,
         selection_mask=selection_mask,
-        selection_rate=preactivation.new_zeros(()),
         coef=5.0,
         rho=0.5,
         eta=0.1,
@@ -798,14 +808,14 @@ def test_state_evolution_without_bias_keeps_configured_intercept_fixed():
         K_w=47,
         K_g=53,
         n_iterations=3,
-        include_bias=False,
+        train_bias=False,
         initial_bias=0.3,
     )
 
     se.compute_trajectory()
 
-    assert se.algo_cfg.include_bias is False
-    assert not hasattr(se, "include_bias")
+    assert se.algo_cfg.train_bias is False
+    assert not hasattr(se, "train_bias")
     for bias in se.bias:
         torch.testing.assert_close(bias, torch.tensor(0.3))
         assert not bias.requires_grad
@@ -825,13 +835,13 @@ def test_state_evolution_with_bias_uses_effective_bias_recursion():
         K_w=41,
         K_g=49,
         n_iterations=2,
-        include_bias=True,
+        train_bias=True,
         initial_bias=0.7,
     )
 
     se.step(0)
 
-    assert se.algo_cfg.include_bias is True
+    assert se.algo_cfg.train_bias is True
     assert not se.bias[0].requires_grad
     torch.testing.assert_close(se.bias[0], torch.tensor(0.7))
     torch.testing.assert_close(se.bias[1], se.bias[0] + se.mean_residual[0])
@@ -844,17 +854,17 @@ def test_state_evolution_with_bias_uses_effective_bias_recursion():
 
 
 def test_algorithm_config_is_the_only_bias_configuration():
-    with_bias = _make_state_evolution(include_bias=True)
-    without_bias = _make_state_evolution(include_bias=False)
+    with_bias = _make_state_evolution(train_bias=True)
+    without_bias = _make_state_evolution(train_bias=False)
 
-    assert with_bias.algo_cfg.include_bias is True
-    assert without_bias.algo_cfg.include_bias is False
-    assert not hasattr(with_bias, "include_bias")
-    assert not hasattr(without_bias, "include_bias")
+    assert with_bias.algo_cfg.train_bias is True
+    assert without_bias.algo_cfg.train_bias is False
+    assert not hasattr(with_bias, "train_bias")
+    assert not hasattr(without_bias, "train_bias")
 
 
 def test_state_evolution_uses_configured_initial_bias_by_default():
-    algo_cfg = _algorithm_config(include_bias=False, initial_bias=0.45)
+    algo_cfg = _algorithm_config(train_bias=False, initial_bias=0.45)
     se = MacroscopicStateEvolution(
         data_cfg=_data_config(),
         algo_cfg=algo_cfg,
@@ -879,7 +889,7 @@ def test_state_evolution_bias_weight_does_not_change_the_weight_update():
         K_g=49,
         n_iterations=1,
         pseudo_label_param=1.5,
-        include_bias=True,
+        train_bias=True,
         initial_bias=0.2,
         margin=0.0,
         sample_base_sampler=_dependent_sample_sampler,
@@ -901,7 +911,6 @@ def test_state_evolution_bias_weight_does_not_change_the_weight_update():
         labeled_only.label,
         labeled_only.indicator,
         0.0,
-        labeled_only.selection_rate[0],
         time_index=0,
         initial_pseudo_label=labeled_only.initial_pseudo_label,
     )
@@ -914,6 +923,6 @@ def test_state_evolution_bias_weight_does_not_change_the_weight_update():
 
 
 def test_state_evolution_accepts_none_initial_bias_when_bias_is_disabled():
-    se = _make_state_evolution(include_bias=False, initial_bias=None)
+    se = _make_state_evolution(train_bias=False, initial_bias=None)
 
     torch.testing.assert_close(se.bias[0], torch.zeros_like(se.bias[0]))

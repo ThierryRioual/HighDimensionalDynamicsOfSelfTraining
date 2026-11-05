@@ -2,9 +2,23 @@
 
 ## Dependency flow
 
-`environment` → `dgp` → `initialization` → `primitives` → `algorithms` →
-`callbacks` / `performance`; separately, population-law samplers and the same
-`primitives` feed `asymptotics`.
+`figures/experiments.py` provides the experiment configurations, the statistical
+and Monte Carlo runners, and their plotting functions. The two notebooks import
+these definitions and retain the paper parameter choices and execution cells.
+The module does not run experiments or create figures when imported.
+
+`DataConfig` describes the population. `dgp` draws a feature matrix and an
+`environment` containing the realized sample vectors. `initialization` validates
+the initial condition against the design and observed labels. `algorithms.fit`
+runs the finite updates using `X` and `y_observed`, where `0` marks unlabeled
+observations. `callbacks` receives evaluation inputs separately and records
+the resulting diagnostics.
+
+Both finite GD and `asymptotics` use `primitives` for scores, sign conventions,
+selection weights, and pseudo-residuals, and `performance` for population risks.
+The effective-process recursion delegates its numerical factorizations to
+`orthogonal`. Pure primitives do not depend on initialization or finite-data
+containers.
 
 ## Quenched finite model
 
@@ -18,64 +32,91 @@ remains the product/MCAR convenience model.
 `IsotropicGaussian` in `src/dgp.py` generates the conditional design
 
 $$
-X_i=Y_i\mu/\sqrt d+\sigma U_i,qquad U_i\stackrel{\rm iid}{\sim}N(0,I_d),
+X_i=Y_i\mu/\sqrt d+\sigma U_i,\qquad U_i\stackrel{\rm iid}{\sim}N(0,I_d),
 $$
 
 so `Delta` controls observation, not feature generation.
 
 ## Finite self-training
 
-`SelfTrainingInitialization(b_init,w_init,Y_init)` is full indexed and
-requires `Y_init[I_L]=Y[I_L]`.  At a finite update `t`,
+`SelfTrainingInitialization(b_init,w_init,Y_init=None)` uses the initial score
+signs by default. An optional full-index `Y_init` overrides only the first step
+and requires `Y_init[I_L]=Y[I_L]`. At a finite update `t`, the default is
 
 $$
-\widehat Y^0=Y^{init},\qquad \widehat Y^t=\operatorname{sign}(r^t) (t\ge1),
+\widehat Y^t=\operatorname{sign}(r^t) \quad (t\ge0),
 \qquad \operatorname{sign}(0)=1.
 $$
 
-`SelfTrainedGradientDescent.fit_full(X, environment, initialization)` is the
-single mathematical implementation.  It freezes pseudo-labels, confidence
-mask, and `omega` before forming
+`SelfTrainedGradientDescent.fit(X, y_observed, initialization)` is the
+single mathematical implementation. It derives `Delta = (y_observed != 0)`
+and `rho = N/n`, using only the observed labels. It freezes the pseudo-labels and
+raw confidence mask before forming
 
 $$
-g_i^t=-\eta\left\{\frac{\Delta_i}{\rho}\ell'(Y_i,r_i^t)+
-\frac{(1-\Delta_i)\pi}{1-\rho}\frac{S_i^t}{\omega^t}
+g_i^t=-\eta_w\left\{\frac{\Delta_i}{\rho}\ell'(Y_i,r_i^t)+
+\frac{(1-\Delta_i)\pi}{1-\rho}S_i^t
 \ell'(\widehat Y_i^t,r_i^t)\right\},
 $$
 
-with a zero unlabeled term when `omega=0`.  The weight-vector update always
-uses this residual with pseudo-label coefficient `pseudo_label_param`.  The
+with a zero unlabeled term when no observations are selected. The selection
+fraction `omega` remains a diagnostic and does not rescale the loss. The
+weight-vector update always uses this residual with pseudo-label coefficient `pseudo_label_param`.  The
 bias uses the companion residual
 
 $$
-g_{b,i}^t=-\eta\left\{\frac{\Delta_i}{\rho}\ell'(Y_i,r_i^t)+
-\frac{(1-\Delta_i)\pi_b}{1-\rho}\frac{S_i^t}{\omega^t}
+g_{b,i}^t=-\eta_b\left\{\frac{\Delta_i}{\rho}\ell'(Y_i,r_i^t)+
+\frac{(1-\Delta_i)\pi_b}{1-\rho}S_i^t
 \ell'(\widehat Y_i^t,r_i^t)\right\},
 $$
 
-whose labeled contribution is unchanged.  If `bias_pseudo_label_param` is
-omitted, $\pi_b$ follows the ordinary pseudo-label weight (including an
-experimental schedule).  The updates are
+If `bias_pseudo_label_param` is omitted, $\pi_b=\pi$.
+The weight rate is `step_size`; the bias rate is `bias_step_size`, defaulting
+to the weight rate when unspecified. With trainable bias, the updates are
 
 $$
 b^{t+1}=b^t+n^{-1}{\bf1}^Tg_b^t,\quad
-w^{t+1}=w^t-\eta\lambda\nabla J(w^t)+\sqrt d\,X^Tg^t/n.
+w^{t+1}=w^t-\eta_w\lambda\nabla J(w^t)+\sqrt d\,X^Tg^t/n.
 $$
 
 `AlgorithmConfig.initial_bias` defaults to zero.  The value $b^0$ is included
-in every logit regardless of `include_bias`; that flag controls only whether
-the bias update is applied.  Thus `include_bias=False` defines a fixed
+in every logit regardless of `train_bias`; that flag controls only whether
+the bias update is applied.  Thus `train_bias=False` defines a fixed
 intercept, which may be nonzero.  Explicit initialization arguments in the
 low-level finite and state-evolution APIs override the configuration default.
 
-The legacy split `fit(X_lab,Y_lab,X_unl,...)` is only an adapter.  It never
-silently uses `sign(r0)`: users can explicitly call
-`compute_scores` and `compute_pseudo_labels_from_scores` for that
-theorem-external experiment.
+Both retained notebook runners use `sample` and `fit`. `sample` returns
+`(environment, X, X_test, Y_test)`; the runners construct
+`y_observed = environment.Y * environment.Delta`. `fit` requires this observed
+label vector and explicit initialization and returns the fitted estimator. The
+approximation notebook groups labeled rows before unlabeled rows to preserve
+the numerical reduction order of its former split-data path.
+
+There is no split-data adapter or implicit random initialization. Users can
+explicitly call `primitives.compute_scores` and
+`primitives.sign_with_positive_tie` to construct an explicit score-based
+initialization. Algorithm 3.2's score-sign rule is already the default of both
+retained runners and the numerical kernels. Explicit alternative first-step
+pseudo-labels remain available through `Y_init`. True unlabeled labels and the signal vector
+in the environment affect diagnostics only, not the training updates.
+
+`macroscopic_observables(t, environment=...)` and
+`finite_decomposition(X, U, t, sigma=..., environment=...)` receive the
+environment explicitly for post-training analysis. In particular, signal
+alignment `m` and true-label/residual alignment `chi` are evaluated there from
+the recorded weights and residuals, rather than inside the training loop.
 
 `FiniteStep` stores the exact frozen `g`, `omega`, labels, and observables used
 in each update.  Callback residual metrics read this record rather than
 reconstructing a different residual after the update.
+
+The shared weight-residual convention is `g = -eta_w` times the frozen score gradient;
+the finite and effective updates add this residual contribution. Callback
+score diagnostics (`population_error`, bias, norm, alignment, selected-error
+fraction) refer to the current state `t=0,...,T`. Residual histories and
+`unl_usage` refer to the preceding update, with zero entries at `t=0`. The
+approximation runner applies this same timing to the effective selection-rate
+history when assembling its comparison results.
 
 ## Effective dynamics
 
@@ -84,6 +125,14 @@ separate `K_w,K_g`, CGS2 bases with `B.T @ B/K=I`, transported `Q^[w],P^[g]`,
 and small least-squares solves.  Its Gaussian convention is
 `z_g` in sample space driving `q`, and `z_w` in parameter space driving `p`.
 No production Gram inverse or autograd response is used.
+
+The class separates initialization/validation, independent random streams,
+trajectory views, numerical helpers, the core recursion, observables, and
+compatibility accessors. Rank and truncation histories are retained in the
+effective-process records. Basis quality diagnostics are available on demand
+from the orthogonal basis, without storing unused quality histories or running
+an extra diagnostic SVD at each step. The basis returns each update's information
+in `OrthogonalizationResult`.
 
 `state_evolution_sample_base_sampler(law, ...)` adapts a joint sample-type law
 to its existing low-level sampler.  `theorem_trajectory` presents
@@ -106,8 +155,39 @@ $m^t$ is numerically zero.
 
 ## Reproducibility and extensions
 
-The runner exposes `fixed_environment` (fixed `mu,Y,Delta,Y_init,w0`, fresh
-design noise) and `resampled_environment` repetitions.  Metadata marks
-endogenous `sign(r0)`, schedules, no-bias, smooth selection, and zero
-initialisation as theorem-external.  Fixed scalar `pi` is canonical; legacy
-ramps are represented by `LinearRampSchedule` / compatibility fields.
+The retained entry points are `figures/statistical_behavior.ipynb` and
+`figures/approximation_accuracy.ipynb`. Their logic is implemented in
+`figures/experiments.py`. Its `ExperimentConfig` packages `DataConfig`,
+`AlgorithmConfig`, dimension, and seed; `MonteCarloConfig` extends these common
+fields with particle count, repetition count, and tracked metrics. Sample size
+is derived from dimension and the configured data-to-dimension ratio. Simulation
+functions accept configurations explicitly, and plotting functions consume
+their returned results. The notebooks retain the paper configurations.
+
+The statistical experiment uses separate seed streams for signal/weight
+initialization and design generation. The approximation
+experiment additionally seeds the effective process independently for each
+repetition. No artificial initial-label draws are made. The two runners retain
+their established observation order and callback timing. All numerical validation, including the independent
+coordinate-reference and ill-conditioned CGS2 checks, is in `tests/`;
+historical outputs and reference PDFs are not runtime dependencies.
+
+The notebooks explicitly select float64. `config.py` also retains its existing
+Torch default-dtype setting for compatibility; changing that import side effect
+would require a separate precision and random-draw audit. The approximation
+runner validates its supported comparison metrics before simulation, while
+the finite callback retains its broader existing metric interface.
+
+Pseudo-label weights are fixed scalars. Confidence selection uses only the
+inclusive hard rule on raw scores with independently configurable margins.
+There are no schedule, selector-strategy, threshold-normalization or
+selected-fraction loss-normalization options. Custom loss functions and
+penalties, explicit initial conditions, and independent weight/bias learning
+rates remain supported.
+
+The November 3 draft's equation (8) uses this total-pool unlabeled denominator.
+Its Algorithm 3.2 uses score-sign pseudo-labels at iteration zero, which is now
+the default of the finite algorithm, effective process, and both notebooks. The separate bias learning
+rate and optional bias-specific pseudo-label coefficient are extensions beyond
+that draft's shared rate and coefficient; the defaults recover the shared
+values. Dated audit documents preserve the earlier implementation's state.

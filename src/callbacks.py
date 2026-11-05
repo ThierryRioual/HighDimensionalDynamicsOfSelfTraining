@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Set, Optional, Literal
 
 from src.algorithms import SelfTrainedGradientDescent
-from src.performance import oracle_calibrated_bias_and_error
-from src.utils import compute_abstract_pseudo_residual_from, compute_population_error_from
+from src.performance import oracle_calibrated_bias_and_error, population_error
+from src.primitives import compute_abstract_pseudo_residual_from, sign_with_positive_tie
 
 MetricName = Literal[
     # Error terms
@@ -30,6 +30,7 @@ MetricName = Literal[
     "weight_signal_alignment",
     # Selection terms
     "unl_usage", 
+    "unl_selected_error",
     "unl_flipping_rate"
 ]
 
@@ -55,13 +56,20 @@ class TestEvaluatorCallback:
     - "test_mean_residual": Tracks E[g(X)] on the test set
     ---- 4. Other Macroscopic terms ----
     - "bias_term": Tracks the value of the intercept (b)
-    - "weight_vector_norm": Tracks the norm of the weight vector (||w||)
+    - "weight_vector_norm": Tracks tau = ||w|| / sqrt(d)
     - "weight_signal_alignment": Tracks the overlap between w and mu (requires mu)
     - Requesting "population_error" also records the auxiliary histories
       "oracle_bias" and "oracle_error" using the same weight observables.
     ---- 5. Selection terms ----
-    - "unl_usage": Fraction of unlabeled samples used for pseudo-labeling
+    - "unl_usage": Fraction of unlabeled samples used in the preceding update
+      (zero at t=0)
+    - "unl_selected_error": Fraction of all unlabeled samples selected with an
+      incorrect score-sign label, evaluated at the current scores (including t=0)
     - "unl_flipping_rate": Rate of label flipping in unlabeled data across iterations
+
+    Score-based diagnostics use the current model state at t=0,...,T.
+    Training residual diagnostics use the residual frozen in update t-1,
+    with zero residuals at t=0.
     """
 
     X_lab: Optional[torch.Tensor] = None
@@ -105,18 +113,21 @@ class TestEvaluatorCallback:
             self.history_["oracle_bias"] = []
             self.history_["oracle_error"] = []
 
-        if self.X_lab is not None and self.X_unl is not None:
-            self.X_train = torch.cat([self.X_lab, self.X_unl])
-        if self.Y_lab is not None and self.Y_unl is not None:
-            self.Y_train = torch.cat([self.Y_lab, self.Y_unl])  
+        if "train_error" in self.metrics:
+            if self.X_lab is not None and self.X_unl is not None:
+                self.X_train = torch.cat([self.X_lab, self.X_unl])
+            if self.Y_lab is not None and self.Y_unl is not None:
+                self.Y_train = torch.cat([self.Y_lab, self.Y_unl])
 
         # Validate standard data dependencies
         if "lab_error" in self.metrics:
             assert self.X_lab is not None and self.Y_lab is not None, "X_lab and Y_lab required for lab_error."
-        if {"unl_error", "unl_usage", "unl_flipping_rate"} & self.metrics:
+        if {"unl_error", "unl_flipping_rate"} & self.metrics:
             assert self.X_unl is not None, "X_unl required for unlabeled metrics."
-        if "unl_error" in self.metrics or "unl_usage" in self.metrics:
-            assert self.Y_unl is not None, "Y_unl required for unl_error/unl_usage."
+        if "unl_error" in self.metrics:
+            assert self.Y_unl is not None, "Y_unl required for unl_error."
+        if "unl_selected_error" in self.metrics:
+            assert self.X_unl is not None and self.Y_unl is not None, "X_unl and Y_unl required for unl_selected_error."
         if {"test_error", "test_label_residual_alignment", "test_mean_residual"} & self.metrics:
             assert self.X_test is not None and self.Y_test is not None, "X_test and Y_test required for test metrics."
         if "train_error" in self.metrics:
@@ -126,59 +137,17 @@ class TestEvaluatorCallback:
         if "weight_signal_alignment" in self.metrics:
             assert self.mu is not None, "mu required for weight_signal_alignment."
 
-    def _compute_pseudo_residual(self, 
-            learner: 'SelfTrainedGradientDescent', 
-            preactivations: torch.Tensor, labels: torch.Tensor, 
-            indicator_val: float, t: int, is_test_set: bool = False
-        ) -> torch.Tensor:
-        """
-        Computes the pseudo-residual for the provided samples.
-        """
-        t_clamped = min(t, learner.cfg.n_iterations - 1)
-        
-        # --- FIX 2: Prevent IPW Inflation on Test Sets ---
-        if is_test_set:
-            coef = 0.0
-            rho = 1.0
-            unl_usage = 0.0
-        else:
-            coef = learner.cfg.get_pseudo_label_weight(t_clamped)
-            n_lab = self.X_lab.shape[0] if self.X_lab is not None else 0
-            n_unl = self.X_unl.shape[0] if self.X_unl is not None else 0
-            rho = n_lab / (n_lab + n_unl) if (n_lab + n_unl) > 0 else 1.0
-            
-            if self.X_unl is not None:
-                preactivations_unl = learner.compute_preactivation(self.X_unl)
-                mask = learner.selection_mask(preactivations_unl)
-                unl_usage = mask.double().mean().item()
-            else:
-                unl_usage = 0.0
-            
-        # Use the selector's configured forward values (hard or surrogate).
-        selection_mask = learner.selection_mask(preactivations)
-        indicator = torch.tensor(indicator_val, dtype=torch.float64, device=preactivations.device)
-        
-        # 2. Call the shared math engine
-        return compute_abstract_pseudo_residual_from(
-            preactivation=preactivations, label=labels, indicator=indicator,
-            selection_mask=selection_mask, selection_rate=unl_usage,
-            coef=coef, rho=rho, eta=learner.cfg.step_size, 
-            loss_function=learner.cfg.loss_function
-        )
-
     def __call__(self, learner: 'SelfTrainedGradientDescent', t: int):
         """
-        Executes at the end of each gradient step, computing only requested metrics.
+        Evaluate requested metrics initially and after each gradient step.
         """
         
         cache = {}
-        environment = learner.environment_
+        y_observed = learner.y_observed_
 
         def get_actual_g_full():
             if t == 0 or not learner.update_records_:
-                if environment is None:
-                    return None
-                return torch.zeros(environment.n, dtype=environment.Y.dtype, device=environment.Y.device)
+                return torch.zeros_like(y_observed) if y_observed is not None else None
             # Callback t is emitted immediately after update t-1.  This is the
             # exact g frozen in that update, not a recomputation from current
             # post-update scores.
@@ -186,36 +155,49 @@ class TestEvaluatorCallback:
 
         def get_actual_g_lab():
             g = get_actual_g_full()
-            return g[environment.I_L] if g is not None and environment is not None else None
+            return g[y_observed != 0] if g is not None and y_observed is not None else None
 
         def get_actual_g_unl():
             g = get_actual_g_full()
-            return g[environment.I_U] if g is not None and environment is not None else None
+            return g[y_observed == 0] if g is not None and y_observed is not None else None
 
         # --- Lazy Getters ---
         def get_preactivations_lab():
             if "preactivations_lab" not in cache:
-                cache["preactivations_lab"] = learner.compute_preactivation(self.X_lab)
+                cache["preactivations_lab"] = learner.decision_function(self.X_lab)
             return cache["preactivations_lab"]
 
         def get_preactivations_unl():
             if "preactivations_unl" not in cache:
-                cache["preactivations_unl"] = learner.compute_preactivation(self.X_unl)
+                cache["preactivations_unl"] = learner.decision_function(self.X_unl)
             return cache["preactivations_unl"]
 
         def get_preactivations_test():
             if "preactivations_test" not in cache:
-                cache["preactivations_test"] = learner.compute_preactivation(self.X_test)
+                cache["preactivations_test"] = learner.decision_function(self.X_test)
             return cache["preactivations_test"]
+
+        def get_test_residual():
+            if "test_residual" not in cache:
+                scores = get_preactivations_test()
+                # Held-out residuals use true labels with no pseudo-label term.
+                cache["test_residual"] = compute_abstract_pseudo_residual_from(
+                    preactivation=scores, label=self.Y_test,
+                    indicator=scores.new_tensor(1.0),
+                    selection_mask=torch.zeros_like(scores),
+                    coef=0.0, rho=1.0, eta=learner.cfg.step_size,
+                    loss_function=learner.cfg.loss_function,
+                )
+            return cache["test_residual"]
 
         def get_preds_lab():
             if "preds_lab" not in cache:
-                cache["preds_lab"] = learner.predict(self.X_lab)
+                cache["preds_lab"] = sign_with_positive_tie(get_preactivations_lab())
             return cache["preds_lab"]
 
         def get_preds_unl():
             if "preds_unl" not in cache:
-                cache["preds_unl"] = learner.predict(self.X_unl)
+                cache["preds_unl"] = sign_with_positive_tie(get_preactivations_unl())
             return cache["preds_unl"]
 
         def get_preds_train():
@@ -225,7 +207,7 @@ class TestEvaluatorCallback:
         
         def get_preds_test():
             if "preds_test" not in cache:
-                cache["preds_test"] = learner.predict(self.X_test)
+                cache["preds_test"] = sign_with_positive_tie(get_preactivations_test())
             return cache["preds_test"]
 
         # --- 1. Labeled Metrics ---
@@ -279,15 +261,22 @@ class TestEvaluatorCallback:
             self.history_["test_error"].append(error)
                 
         if "test_label_residual_alignment" in self.metrics:
-            g = self._compute_pseudo_residual(learner, get_preactivations_test(), self.Y_test, 1.0, t, is_test_set=True)
+            g = get_test_residual()
             self.history_["test_label_residual_alignment"].append(torch.mean(self.Y_test * g).item())
 
         if "test_mean_residual" in self.metrics:
-            g = self._compute_pseudo_residual(learner, get_preactivations_test(), self.Y_test, 1.0, t, is_test_set=True)
+            g = get_test_residual()
             self.history_["test_mean_residual"].append(torch.mean(g).item())
 
 
         # --- 5. Pseudo-labeling Selection Metrics ---
+        if "unl_selected_error" in self.metrics:
+            scores = get_preactivations_unl()
+            selected = learner.selection_mask(scores) > 0
+            incorrect = selected & (get_preds_unl() != self.Y_unl)
+            error = incorrect.double().mean().item() if scores.numel() else 0.0
+            self.history_["unl_selected_error"].append(error)
+
         if "unl_usage" in self.metrics:
             if t > 0 and learner.update_records_:
                 usage = learner.update_records_[t - 1].omega.item()
@@ -310,7 +299,7 @@ class TestEvaluatorCallback:
             self.history_["bias_term"].append(bias_val)
         
         if "weight_vector_norm" in self.metrics:
-            # FIX 3: Dimension-normalized norm squared
+            # Dimension-normalized norm tau = ||w|| / sqrt(d).
             d = len(learner.weights)
             norm = (torch.linalg.norm(learner.weights) / (d**0.5)).item()
             self.history_["weight_vector_norm"].append(norm)
@@ -322,7 +311,7 @@ class TestEvaluatorCallback:
         if "population_error" in self.metrics:
             alignment = self.history_["weight_signal_alignment"][-1]
             weight_scale = self.history_["weight_vector_norm"][-1]
-            pop_err = compute_population_error_from(
+            pop_err = population_error(
                 b=self.history_["bias_term"][-1],
                 m=alignment,
                 tau=weight_scale,

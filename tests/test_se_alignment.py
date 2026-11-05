@@ -4,15 +4,17 @@ These tests do not assert finite-sample agreement with state evolution.  The
 finite data and Monte Carlo particles are different populations, so a precise
 comparison would require a dedicated convergence experiment with uncertainty
 quantification.  Here we check only matched initialization definitions and that
-each implementation completes its first supervised update with ``pi_0=0``.
+each implementation completes a supervised update with fixed ``pi=0``.
 """
 
 import torch
 
 from src.algorithms import SelfTrainedGradientDescent
 from src.asymptotics import MacroscopicStateEvolution
-from src.config import AlgorithmConfig, DataConfig, LinearRampSchedule
+from src.config import AlgorithmConfig, DataConfig
 from src.dgp import IsotropicGaussian
+from src.environment import QuenchedEnvironment
+from src.initialization import SelfTrainingInitialization
 
 
 def _algorithm_config(pseudo_label_param):
@@ -22,8 +24,7 @@ def _algorithm_config(pseudo_label_param):
         step_size=0.1,
         penalty_param=0.1,
         pseudo_label_param=pseudo_label_param,
-        experimental_schedule=LinearRampSchedule(1, 1),
-        include_bias=True,
+        train_bias=True,
     )
 
 
@@ -75,7 +76,7 @@ def test_matched_initialization_has_identical_macroscopic_definitions():
     ) = _matched_setup()
     se = MacroscopicStateEvolution(
         data_cfg=data_cfg,
-        algo_cfg=_algorithm_config(pseudo_label_param=3.0),
+        algo_cfg=_algorithm_config(pseudo_label_param=0.0),
         K_w=dimensions,
         K_g=47,
         initial_bias=initial_bias,
@@ -104,9 +105,7 @@ def test_finite_and_effective_process_complete_one_supervised_smoke_step():
         initial_bias,
         data_cfg,
     ) = _matched_setup()
-    self_training_cfg = _algorithm_config(pseudo_label_param=3.0)
     supervised_cfg = _algorithm_config(pseudo_label_param=0.0)
-    assert self_training_cfg.get_pseudo_label_weight(0) == 0.0
 
     dgp = IsotropicGaussian(
         cfg=data_cfg,
@@ -116,45 +115,33 @@ def test_finite_and_effective_process_complete_one_supervised_smoke_step():
         seed=29,
         signal_vector=signal,
     )
-    X_lab, Y_lab, X_unl, _, _, _ = dgp.sample(stratified=True)
-
-    finite_self_training = SelfTrainedGradientDescent(cfg=self_training_cfg)
-    finite_supervised = SelfTrainedGradientDescent(cfg=supervised_cfg)
-    finite_self_training.fit(
-        X_lab,
-        Y_lab,
-        X_unl,
-        initial_bias=initial_bias,
-        initial_weights=initial_weight.clone(),
+    environment, X, _, _ = dgp.sample(stratified=True)
+    # Preserve the former split adapter's L-then-U order and inactive t=0
+    # pseudo-label placeholders without drawing additional random numbers.
+    order = torch.cat((environment.I_L, environment.I_U))
+    environment = QuenchedEnvironment(
+        environment.mu, environment.Y[order], environment.Delta[order]
     )
-    finite_supervised.fit(
-        X_lab,
-        Y_lab,
-        X_unl,
-        initial_bias=initial_bias,
-        initial_weights=initial_weight.clone(),
+    X = X[order]
+    y_init = environment.Y.clone()
+    y_init[environment.I_U] = 1.
+    initialization = SelfTrainingInitialization(
+        initial_bias, initial_weight, y_init
     )
 
-    # pi_0=0 makes the finite first update exactly supervised, irrespective of
-    # the configured later pseudo-label weight.
-    torch.testing.assert_close(
-        finite_self_training.weights,
-        finite_supervised.weights,
-        rtol=0.0,
-        atol=0.0,
+    finite = SelfTrainedGradientDescent(cfg=supervised_cfg)
+    finite.fit(X, environment.Y * environment.Delta, initialization)
+    step = finite.update_records_[0]
+    assert torch.count_nonzero(step.g[environment.I_U]) == 0
+    expected_labeled = -supervised_cfg.step_size / environment.rho * supervised_cfg.loss_function.gradient(
+        step.scores[environment.I_L], environment.Y[environment.I_L]
     )
-    torch.testing.assert_close(
-        torch.as_tensor(finite_self_training.bias),
-        torch.as_tensor(finite_supervised.bias),
-        rtol=0.0,
-        atol=0.0,
-    )
-    assert torch.isfinite(finite_self_training.weights).all()
-    assert torch.isfinite(torch.as_tensor(finite_self_training.bias))
+    torch.testing.assert_close(step.g[environment.I_L], expected_labeled)
+    assert torch.isfinite(finite.weights).all() and torch.isfinite(finite.bias)
 
     state_evolution = MacroscopicStateEvolution(
         data_cfg=data_cfg,
-        algo_cfg=self_training_cfg,
+        algo_cfg=supervised_cfg,
         K_w=dimensions,
         K_g=53,
         initial_bias=initial_bias,

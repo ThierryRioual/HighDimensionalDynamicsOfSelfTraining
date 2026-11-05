@@ -2,10 +2,8 @@ import pytest
 import torch
 
 from src.objectives import LogisticLoss
-from src.utils import (
-    compute_abstract_pseudo_residual_from,
-    compute_population_error_from,
-)
+from src.primitives import compute_abstract_pseudo_residual_from
+from src.performance import population_error
 
 
 def _pseudo_residual(
@@ -14,7 +12,6 @@ def _pseudo_residual(
     label=None,
     indicator=None,
     selection_mask=None,
-    selection_rate=1.0,
     coef=1.0,
     rho=0.5,
     time_index=None,
@@ -31,7 +28,6 @@ def _pseudo_residual(
         label=label,
         indicator=indicator,
         selection_mask=selection_mask,
-        selection_rate=selection_rate,
         coef=coef,
         rho=rho,
         eta=0.1,
@@ -55,12 +51,12 @@ def test_omitted_time_index_preserves_sign_pseudo_labels():
     torch.testing.assert_close(actual, expected)
 
 
-def test_active_first_update_requires_initial_pseudo_labels():
-    with pytest.raises(ValueError, match="initial_pseudo_label is required"):
-        _pseudo_residual(
-            torch.tensor([1.0, -1.0], dtype=torch.float64),
-            time_index=0,
-        )
+def test_first_update_defaults_to_score_signs_with_positive_tie():
+    scores = torch.tensor([1., -1., 0.], dtype=torch.float64)
+    actual = _pseudo_residual(scores, time_index=0)
+    labels = torch.tensor([1., -1., 1.], dtype=scores.dtype)
+    expected = -.1 / (1 - .5) * LogisticLoss().gradient(scores, labels)
+    torch.testing.assert_close(actual, expected)
 
 
 def test_first_update_uses_explicit_initial_pseudo_labels():
@@ -101,7 +97,7 @@ def test_later_update_uses_sign_even_if_initial_labels_are_supplied():
     [
         {"coef": 0.0, "rho": 0.5},
         {"coef": 1.0, "rho": 1.0},
-        {"coef": 1.0, "rho": 0.5, "selection_rate": 0.0},
+        {"coef": 1.0, "rho": 0.5, "selection_mask": torch.zeros(2)},
     ],
 )
 def test_inactive_unlabeled_term_does_not_require_initial_labels(kwargs):
@@ -184,16 +180,16 @@ def test_pseudo_residual_validates_core_shapes_and_true_labels():
 def test_population_error_at_zero_effective_noise_respects_positive_tie_break(
     b, m, p, expected
 ):
-    assert compute_population_error_from(b, m, 0.0, 1.0, p) == pytest.approx(
+    assert population_error(b, m, 0.0, 1.0, p) == pytest.approx(
         expected
     )
-    assert compute_population_error_from(b, m, 2.0, 0.0, p) == pytest.approx(
+    assert population_error(b, m, 2.0, 0.0, p) == pytest.approx(
         expected
     )
 
 
 def test_population_error_nonzero_noise_formula_is_unchanged():
-    error = compute_population_error_from(
+    error = population_error(
         b=0.3,
         m=0.8,
         tau=1.2,
