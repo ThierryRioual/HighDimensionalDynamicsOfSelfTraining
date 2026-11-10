@@ -57,12 +57,12 @@ For $\kappa_-<0<\kappa_+$, define
 $$
 S_\kappa(r)=\mathbf 1_{\{r\geq\kappa_+\}\cup\{r\leq\kappa_-\}},
 \qquad
-\operatorname{sign}_+(r)=
+\mathrm{sign}_+(r)=
 \begin{cases}+1,&r\geq0,\\-1,&r<0.\end{cases}
 $$
 
 Both threshold equalities are selected. The default pseudo-label is
-$\widehat Y_i^t=\operatorname{sign}_+(r_i^t)$ at **every** iteration,
+$\widehat Y_i^t=\mathrm{sign}_+(r_i^t)$ at **every** iteration,
 including $t=0$. An explicitly supplied $Y^{\mathrm{init}}$ can replace this
 rule only at $t=0$. On labeled coordinates that override must agree with $Y$.
 The selection mask and pseudo-labels are frozen before evaluating the score
@@ -70,7 +70,7 @@ gradient: neither the threshold map nor the pseudo-label map is differentiated.
 These conventions are shared by `AlgorithmConfig.selection_mask`,
 `HardSelection`, and the functions in [`src/primitives.py`](../src/primitives.py).
 The supported special case $\kappa_-=\kappa_+=0$ selects every score and still
-uses $\operatorname{sign}_+(0)=+1$.
+uses $\mathrm{sign}_+(0)=+1$.
 
 Let $\ell(r,y)$ denote the per-observation loss and
 $\ell_r(r,y)=\partial\ell(r,y)/\partial r$ its score derivative. Write
@@ -95,7 +95,7 @@ The default loss and penalty in [`src/objectives.py`](../src/objectives.py) are
 
 $$
 \ell(r,y)=\log(1+e^{-yr}),\qquad
-\ell_r(r,y)=-y\,\operatorname{sigmoid}(-yr),\qquad
+\ell_r(r,y)=-y\,\mathrm{sigmoid}(-yr),\qquad
 J(w)=\frac12\sum_{j=1}^d w_j^2.
 $$
 
@@ -515,10 +515,10 @@ These formulas specify the exact least-squares quantities. The implementation
 $$
 \begin{aligned}
 (Q_t^{[w]})^\top&=
- \operatorname*{argmin}_{A\in\mathbb R^{r_t^{[w]}\times K_g}}
+ \mathrm*{argmin}_{A\in\mathbb R^{r_t^{[w]}\times K_g}}
  \| (\Theta_t^{[w]})^\top A-\mathring Q_t^\top\|_F^2,\\
 (P_t^{[g]})^\top&=
- \operatorname*{argmin}_{A\in\mathbb R^{r_t^{[g]}\times K_w}}
+ \mathrm*{argmin}_{A\in\mathbb R^{r_t^{[g]}\times K_w}}
  \| (\Theta_t^{[g]})^\top A-\mathring P_t^\top\|_F^2.
 \end{aligned}
 $$
@@ -639,7 +639,7 @@ $$
  \ell_r(\mathring r_i^t,\mathring Y_i)
 +\frac{(1-\mathring\Delta_i)\pi}{1-\bar\rho}
  S_\kappa(\mathring r_i^t)
- \ell_r(\mathring r_i^t,\operatorname{sign}_+(\mathring r_i^t))
+ \ell_r(\mathring r_i^t,\mathrm{sign}_+(\mathring r_i^t))
 \right].
 $$
 
@@ -740,9 +740,9 @@ Conditional on the quantities available before each new innovation, the
 fresh contributions have covariance
 
 $$
-\operatorname{Cov}(\hat v_t^{[w]}z_t^{[g]}\mid\text{forward history})
+\mathrm{Cov}(\hat v_t^{[w]}z_t^{[g]}\mid\text{forward history})
  =(\hat v_t^{[w]})^2I_{K_g},\qquad
-\operatorname{Cov}(\hat v_t^{[g]}z_t^{[w]}\mid\text{backward history})
+\mathrm{Cov}(\hat v_t^{[g]}z_t^{[w]}\mid\text{backward history})
  =(\hat v_t^{[g]})^2I_{K_w}.
 $$
 
@@ -861,7 +861,7 @@ including the positive-label tie convention.
 ### 8.2 Selected fraction and selected-error fraction
 
 With separated nonzero margins, the active state is
-$\mathfrak c^t=S_\kappa(r^t)\operatorname{sign}_+(r^t)$.
+$\mathfrak c^t=S_\kappa(r^t)\mathrm{sign}_+(r^t)$.
 The limiting diagnostics are
 
 $$
@@ -883,7 +883,7 @@ $$
 \qquad
 \hat e_{\mathrm{emp}}^t=
 \frac1{M_g}\sum_{\mathring\Delta_i=0}S_\kappa(\mathring r_i^t)
-\mathbf1_{\{\operatorname{sign}_+(\mathring r_i^t)\ne\mathring Y_i\}}.
+\mathbf1_{\{\mathrm{sign}_+(\mathring r_i^t)\ne\mathring Y_i\}}.
 $$
 
 The actual effective-process code uses **two denominator conventions**:
