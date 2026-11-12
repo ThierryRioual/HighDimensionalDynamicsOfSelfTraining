@@ -52,7 +52,7 @@ class MacroscopicStateEvolution:
 
     Residuals ``g``, fluctuations ``p``, moments ``chi,zeta`` and memory
     coefficients use the definition of the mean-field recursion in
-    ``latex/High_Dimensional_Dynamics_of_Self_Training/mean-field.tex``:
+    ``manuscript/mean-field.tex``:
     g is the score gradient; -eta appears only in the parameter updates.
 
     ``K`` is retained as a legacy alias for equal particle populations.  New

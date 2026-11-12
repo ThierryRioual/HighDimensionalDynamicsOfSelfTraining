@@ -13,7 +13,7 @@ import pytest
 from scipy.special import ndtr
 import torch
 
-from figures import experiments
+from experiments import experiments
 from src.algorithms import SelfTrainedGradientDescent
 from src.config import AlgorithmConfig, DataConfig
 
@@ -26,7 +26,7 @@ def test_notebooks_import_shared_experiment_functions():
         ("approximation_accuracy", "run_monte_carlo_experiment",
          "plot_monte_carlo_experiment", "MonteCarloConfig"),
     ]:
-        notebook = json.loads((root / "figures" / f"{name}.ipynb").read_text())
+        notebook = json.loads((root / "experiments" / f"{name}.ipynb").read_text())
         imported = set()
         for cell in notebook["cells"]:
             if cell["cell_type"] != "code":
@@ -34,7 +34,7 @@ def test_notebooks_import_shared_experiment_functions():
             source = "\n".join(line for line in cell["source"]
                                if not line.lstrip().startswith("%"))
             for node in ast.parse(source).body:
-                if isinstance(node, ast.ImportFrom) and node.module == "figures.experiments":
+                if isinstance(node, ast.ImportFrom) and node.module == "experiments.experiments":
                     imported.update(alias.name for alias in node.names)
         for attribute in (runner, plotter, config):
             assert attribute in imported and callable(getattr(experiments, attribute))

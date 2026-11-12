@@ -243,7 +243,7 @@ def plot_statistical_behavior(
     """Plot recorded decompositions; optionally save a 600 dpi PNG.
 
     Return (figure, 2D axes). The default image path is
-    pdfs/statistical_behavior_comparison.png relative to the repository root.
+    outputs/figures/statistical_behavior_comparison.png relative to the repository root.
     """
     if not results:
         raise ValueError("results must be a nonempty list.")
@@ -283,7 +283,7 @@ def plot_statistical_behavior(
                ncol=min(4, 2 * ncols), frameon=False, fontsize=9)
     if save_image:
         destination = (
-            Path(__file__).resolve().parents[1] / "pdfs" / "statistical_behavior_comparison.png"
+            Path(__file__).resolve().parents[1] / "outputs" / "figures" / "statistical_behavior_comparison.png"
             if image_path is None else Path(image_path)
         )
         if destination.suffix.lower() != ".png":
@@ -308,7 +308,7 @@ def plot_monte_carlo_experiment(
     Selection metrics use the scores at each recorded iteration.
     Return (figure, axes); no simulation is run and results are not modified.
     With save_image=True, save a 600 dpi PNG to image_path or the repository's
-    pdfs/approximation_accuracy.png by default.
+    outputs/figures/approximation_accuracy.png by default.
     """
     titles = {
         "population_error": r"Population error $\mathcal{E}^t$",
@@ -366,7 +366,7 @@ def plot_monte_carlo_experiment(
                ncol=ncols, frameon=False, fontsize=9)
     if save_image:
         destination = (
-            Path(__file__).resolve().parents[1] / "pdfs" / "approximation_accuracy.png"
+            Path(__file__).resolve().parents[1] / "outputs" / "figures" / "approximation_accuracy.png"
             if image_path is None else Path(image_path)
         )
         if destination.suffix.lower() != ".png":

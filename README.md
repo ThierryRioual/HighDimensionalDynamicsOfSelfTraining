@@ -37,7 +37,7 @@ python -m jupyterlab
 In JupyterLab, select the **Self-training (.venv)** kernel for each notebook.
 This matters when an existing kernel named `python3` points to another Python
 installation. Launch JupyterLab from the repository root. The notebooks also
-resolve imports when opened with `figures/` as the working directory.
+resolve imports when opened with `experiments/` as the working directory.
 
 The tested Apple Python build uses LibreSSL 2.8.3. JupyterLab's HTTP dependency
 may emit `NotOpenSSLWarning`; this did not prevent the numerical tests or local
@@ -48,26 +48,50 @@ notebook execution. HTTPS-dependent Jupyter features were not validated.
 | Path | Purpose |
 | --- | --- |
 | [src/](src/) | Finite GD, effective-process recursion, configuration, data generation, initialization, objectives, callbacks, and numerical linear algebra. |
-| [figures/experiments.py](figures/experiments.py) | Shared experiment configurations, runners, and plotting functions; importing it runs no experiment. |
-| [figures/](figures/) | The two maintained notebook entry points and their editable experiment settings. |
+| [experiments/experiments.py](experiments/experiments.py) | Shared experiment configurations, runners, and plotting functions; importing it runs no experiment. |
+| [experiments/](experiments/) | The two maintained notebook entry points and their editable experiment settings. |
 | [tests/](tests/) | Numerical identities, independent coordinate references, CGS2 checks, RNG checks, callback/initialization tests, and reduced experiment tests. |
 | [docs/](docs/) | Architecture notes and dated mathematical audits. Dated audits describe historical snapshots. |
-| [pdfs/](pdfs/), [outputs/](outputs/) | Reference material and historical research records; not runtime dependencies. Archived notebook copies are not maintained entry points. |
+| [docs/audits/](docs/audits/) | Historical audits and revision records, with the original audit scope preserved. |
+| [manuscript/](manuscript/) | LaTeX sources, bibliography, and versioned figure PDFs. |
+| [scripts/](scripts/) | Standalone verification utilities. |
+| `outputs/` | Generated plots, simulation records, and diagnostics; excluded from Git. |
+| [archive/](archive/) | Inventory of historical exports; the original PDF, PNG, and HTML files are retained locally. |
+
+Folder roles, naming conventions, and the mapping from the previous layout are
+documented in [repository organization](docs/repository_organization.md).
 
 ## Reproducing the figures
 
 Open the notebooks below, select the project kernel, and run their cells in order.
 Parameters are defined in their configuration cells; both import reusable code
-from `figures/experiments.py`. Neither notebook imports the other.
+from `experiments/experiments.py`. Neither notebook imports the other.
 
 | Notebook | Experiment and output | Current full configuration |
 | --- | --- | --- |
-| [statistical_behavior.ipynb](figures/statistical_behavior.ipynb) | Population-error decomposition into the optimal linear/Bayes error, alignment regret, and intercept regret; balanced and imbalanced panels in one side-by-side figure. | `d=5000`, `n=40000`, `n_iterations=400`, `seed=49`; `label_prior=0.5` then `0.2`. Edit `config_balanced`; `config_unbalanced` derives from it with `dataclasses.replace`. |
-| [approximation_accuracy.ipynb](figures/approximation_accuracy.ipynb) | One six-panel finite-GD/effective-process comparison: population error, selected fraction, selected-error fraction, bias, alignment, and weight norm. | `d=2000`, `n=16000`, `n_iterations=300`, `k=10000`, `runs=20`, `seed=42`. Edit `config`. |
+| [statistical_behavior.ipynb](experiments/statistical_behavior.ipynb) | Population-error decomposition into the optimal linear/Bayes error, alignment regret, and intercept regret; balanced and imbalanced panels in one side-by-side figure. | `d=5000`, `n=40000`, `n_iterations=400`, `seed=49`; `label_prior=0.5` then `0.2`. Edit `config_balanced`; `config_unbalanced` derives from it with `dataclasses.replace`. |
+| [approximation_accuracy.ipynb](experiments/approximation_accuracy.ipynb) | One six-panel finite-GD/effective-process comparison: population error, selected fraction, selected-error fraction, bias, alignment, and weight norm. | `d=2000`, `n=16000`, `n_iterations=300`, `k=10000`, `runs=20`, `seed=42`. Edit `config`. |
 
 `effective_process.ipynb` has been retired; its finite/effective-process
 comparison is covered by `approximation_accuracy.ipynb`. No paper figure
 numbers are assigned here.
+
+The notebooks save PNG previews to `outputs/figures/` and vector PDFs to
+`manuscript/figures/`. The manuscript includes these PDFs directly. The published
+figure configurations above are retained; renaming the folders does not rerun
+or alter their numerical results.
+
+Build the paper from the repository root with:
+
+```sh
+cd manuscript
+latexmk -pdf -outdir=build -interaction=nonstopmode -halt-on-error main.tex
+```
+
+The compiled paper is `manuscript/build/main.pdf`. For Overleaf, upload the
+contents of `manuscript/`, including its `figures/` subdirectory, and select
+`main.tex` as the main document. Exclude the local `build/` folder. Incorporate
+any independent Overleaf edits before replacing existing files.
 
 Full configurations require substantial CPU time and memory. The statistical
 notebook's dense float64 design matrix alone occupies 1.6 GB, before Gaussian
@@ -162,8 +186,8 @@ axes are shared and the four-entry legend appears once above the figure.
 
 Both plotters accept keyword-only `save_image=False` and `image_path=None`.
 With `save_image=True`, the Figure saves a 600 dpi PNG on white with tight bounds
-and padding. Defaults are `pdfs/statistical_behavior_comparison.png` and
-`pdfs/approximation_accuracy.png`, resolved from the repository root. A custom
+and padding. Defaults are `outputs/figures/statistical_behavior_comparison.png` and
+`outputs/figures/approximation_accuracy.png`, resolved from the repository root. A custom
 `image_path` must end in `.png`; relative custom paths use the current working
 directory. Directories are created only when saving is enabled. The notebook
 calls demonstrate saving with explicit paths based on `project_root`.
@@ -175,7 +199,13 @@ From the repository root with the environment activated:
 ```sh
 python -m pip check
 PYTHONPATH=. MPLBACKEND=Agg python -m pytest -q
+MPLBACKEND=Agg python scripts/check_mean_field_conventions.py
 ```
+
+The standalone convention check reads the immutable fixtures and writes its
+report to `outputs/verification/mean_field_conventions.json`. The GitHub Actions
+workflow runs the Python checks on pushes and pull requests; full paper-scale
+simulations are run separately.
 
 The suite uses pytest and runs reduced simulations rather than the full paper
 experiments. It includes independent numerical reference checks and tests that
@@ -195,7 +225,7 @@ A small standalone simulation-and-plot smoke test is:
 MPLBACKEND=Agg python - <<'PY'
 from matplotlib import pyplot as plt
 from src.config import DataConfig, AlgorithmConfig
-from figures.experiments import (
+from experiments.experiments import (
     ExperimentConfig, MonteCarloConfig,
     run_statistical_experiment, run_monte_carlo_experiment,
     plot_statistical_behavior, plot_monte_carlo_experiment,

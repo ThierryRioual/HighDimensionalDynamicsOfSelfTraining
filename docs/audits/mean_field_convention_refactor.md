@@ -1,7 +1,7 @@
 # Manuscript convention alignment
 
 The authoritative reference is
-[`mean-field.tex`](../latex/High_Dimensional_Dynamics_of_Self_Training/mean-field.tex),
+[`mean-field.tex`](../../manuscript/mean-field.tex),
 Definition `def:mean-field-recursion`, specifically `eq:g-U-definition`,
 `eq:phi-w-definition`, `eq:phi-g-definition`, and `eq:w-update-definition`.
 The manuscript was not edited.
@@ -104,7 +104,7 @@ coordinates use the same relative tolerance and `atol=1e-7`: small-step
 supervised trajectories are nearly dependent, so their coordinate
 representations are more sensitive than their represented vectors.
 The unrounded per-quantity results are in
-[`comparison.json`](../tests/fixtures/mean_field_conventions/comparison.json).
+[`comparison.json`](../../tests/fixtures/mean_field_conventions/comparison.json).
 
 The maintained `run_monte_carlo_experiment` workflow was additionally compared
 against the original class for `eta=.1,.2,.7`, two seeds, eight updates,

@@ -158,7 +158,7 @@ def test_bias_gradient_is_independent_of_rate(eta_b):
 def test_maintained_figure_runner_against_original_predictions(eta):
     import math
     import numpy as np
-    from figures.experiments import MonteCarloConfig, run_monte_carlo_experiment
+    from experiments.experiments import MonteCarloConfig, run_monte_carlo_experiment
     config = MonteCarloConfig(
         data=DataConfig(scale=1., label_prior=.4, supervision_ratio=.1,
                         data_to_dimension_ratio=2., signal_law=lambda: float(torch.randn(()))),

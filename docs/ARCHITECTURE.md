@@ -2,7 +2,7 @@
 
 ## Dependency flow
 
-`figures/experiments.py` provides the experiment configurations, the statistical
+`experiments/experiments.py` provides the experiment configurations, the statistical
 and Monte Carlo runners, and their plotting functions. The two notebooks import
 these definitions and retain the paper parameter choices and execution cells.
 The module does not run experiments or create figures when imported.
@@ -114,7 +114,7 @@ Finite GD records and callback residual diagnostics retain increment units:
 `u = -eta_w * g`, where `g` is the frozen score gradient. The existing
 `FiniteStep.g` field stores `u` for API compatibility. Effective histories
 use manuscript units `g`; the descent rates appear in the parameter updates.
-See [the convention audit](mean_field_convention_refactor.md).
+See [the convention audit](audits/mean_field_convention_refactor.md).
 
 Callback score diagnostics (`population_error`, bias, norm, alignment,
 selected-error fraction, and `unl_usage`) refer to the current state
@@ -159,9 +159,9 @@ $m^t$ is numerically zero.
 
 ## Reproducibility and extensions
 
-The retained entry points are `figures/statistical_behavior.ipynb` and
-`figures/approximation_accuracy.ipynb`. Their logic is implemented in
-`figures/experiments.py`. Its `ExperimentConfig` packages `DataConfig`,
+The retained entry points are `experiments/statistical_behavior.ipynb` and
+`experiments/approximation_accuracy.ipynb`. Their logic is implemented in
+`experiments/experiments.py`. Its `ExperimentConfig` packages `DataConfig`,
 `AlgorithmConfig`, dimension, and seed; `MonteCarloConfig` extends these common
 fields with particle count, repetition count, and tracked metrics. Sample size
 is derived from dimension and the configured data-to-dimension ratio. Simulation

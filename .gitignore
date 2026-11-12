@@ -6,11 +6,32 @@ __pycache__/
 .ipynb_checkpoints/
 .vscode/
 
+# Generated experiment results and local historical exports
+/outputs/
+/archive/legacy_exports/
+/archive/manuscript_legacy_figures/
+/archive/local_state/
+
 # Generated documents and figures
 *.pdf
 *.png
 *.svg
 *.html
+
+# The manuscript requires these versioned vector assets.
+!/manuscript/figures/*.pdf
+
+# LaTeX compilation products
+/manuscript/build/
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
 
 # Local application state
 .DS_Store

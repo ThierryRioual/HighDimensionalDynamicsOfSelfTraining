@@ -20,4 +20,4 @@ regression test. Both classes used the same working-tree runner.
 
 `comparison.json` and `workflow_comparison.json` report absolute differences
 between the original and refactored implementation after converting units.
-See `docs/mean_field_convention_refactor.md` for tolerances and scope.
+See `docs/audits/mean_field_convention_refactor.md` for tolerances and scope.

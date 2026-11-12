@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import pytest
 
-from figures import experiments
+from experiments import experiments
 
 
 @pytest.fixture(autouse=True)
@@ -75,7 +75,7 @@ def test_saving_options_are_optional_and_keyword_only(plot_case):
 def test_saving_disabled_has_no_filesystem_effects(plot_case, tmp_path, monkeypatch):
     plot, args, filename, _ = plot_case
     fake_repo = tmp_path / "repository"
-    monkeypatch.setattr(experiments, "__file__", str(fake_repo / "figures" / "experiments.py"))
+    monkeypatch.setattr(experiments, "__file__", str(fake_repo / "experiments" / "experiments.py"))
 
     def forbidden(*args, **kwargs):
         raise AssertionError("saving disabled must not call Figure.savefig")
@@ -166,7 +166,7 @@ def test_custom_png_is_high_resolution_white_and_keeps_shared_legend(
 def test_default_png_uses_repository_output_directory(plot_case, tmp_path, monkeypatch):
     plot, args, filename, _ = plot_case
     fake_repo = tmp_path / "repository"
-    monkeypatch.setattr(experiments, "__file__", str(fake_repo / "figures" / "experiments.py"))
+    monkeypatch.setattr(experiments, "__file__", str(fake_repo / "experiments" / "experiments.py"))
     calls = []
 
     def record_savefig(fig, filename, **kwargs):
@@ -176,7 +176,7 @@ def test_default_png_uses_repository_output_directory(plot_case, tmp_path, monke
     fig, _ = plot(*args, save_image=True)
     assert len(calls) == 1
     assert calls[0][0] is fig
-    assert calls[0][1] == fake_repo / "pdfs" / filename
+    assert calls[0][1] == fake_repo / "outputs" / "figures" / filename
     assert calls[0][1].parent.is_dir()
 
 

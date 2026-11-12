@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import pytest
 
-from figures import experiments
+from experiments import experiments
 
 
 def _recorded_result(iterations, offset=0.):

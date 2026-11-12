@@ -9,12 +9,12 @@ refer to the current source. Exact coordinate identities, particle
 approximations, and numerical rank regularization are distinguished below.
 
 The maintained comparison entry point is
-[`figures/approximation_accuracy.ipynb`](../figures/approximation_accuracy.ipynb),
+[`experiments/approximation_accuracy.ipynb`](../experiments/approximation_accuracy.ipynb),
 which calls `run_monte_carlo_experiment` in
-[`figures/experiments.py`](../figures/experiments.py).
+[`experiments/experiments.py`](../experiments/experiments.py).
 The former `effective_process.ipynb` and `effective_process_demo.ipynb` are
 retired. The other maintained notebook,
-[`figures/statistical_behavior.ipynb`](../figures/statistical_behavior.ipynb),
+[`experiments/statistical_behavior.ipynb`](../experiments/statistical_behavior.ipynb),
 computes a finite-model error decomposition and does not run the particle
 process.
 
@@ -1107,4 +1107,4 @@ conventions, not a particle-limit theorem or a long-horizon accuracy bound.
 
 For conversion from the former effective increment convention, seeded
 regression evidence, and the orientation of parameter Gaussian innovations,
-see [the convention audit](mean_field_convention_refactor.md).
+see [the convention audit](audits/mean_field_convention_refactor.md).

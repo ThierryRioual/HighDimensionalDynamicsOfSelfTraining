@@ -1,9 +1,11 @@
-"""Run with MPLBACKEND=Agg python3 tests/mean_field_convention_report.py."""
+"""Run with MPLBACKEND=Agg python3 scripts/check_mean_field_conventions.py."""
 import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+project_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / "tests"))
 from test_mean_field_conventions import (
     ATOL, RTOL, COORDINATE_ATOL, COORDINATES, BASELINE, FIXTURES, METADATA,
     make_process, snapshot, response_structure, old_over_new,
@@ -33,5 +35,7 @@ for index, config in enumerate(METADATA['configs']):
             difference = (left - right).abs().max().item() if left.numel() else 0.
             report['max_absolute_difference_by_quantity'][name] = max(
                 difference, report['max_absolute_difference_by_quantity'].get(name, 0.))
-(FIXTURES / 'comparison.json').write_text(json.dumps(report, indent=2) + '\n')
+report_path = project_root / 'outputs' / 'verification' / 'mean_field_conventions.json'
+report_path.parent.mkdir(parents=True, exist_ok=True)
+report_path.write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps(report, indent=2))
