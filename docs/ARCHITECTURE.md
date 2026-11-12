@@ -54,9 +54,9 @@ and `rho = N/n`, using only the observed labels. It freezes the pseudo-labels an
 raw confidence mask before forming
 
 $$
-g_i^t=-\eta_w\left\{\frac{\Delta_i}{\rho}\ell'(Y_i,r_i^t)+
+g_i^t=-\eta_w\left[\frac{\Delta_i}{\rho}\ell'(Y_i,r_i^t)+
 \frac{(1-\Delta_i)\pi}{1-\rho}S_i^t
-\ell'(\widehat Y_i^t,r_i^t)\right\},
+\ell'(\widehat Y_i^t,r_i^t)\right],
 $$
 
 with a zero unlabeled term when no observations are selected. The selection
@@ -65,9 +65,9 @@ weight-vector update always uses this residual with pseudo-label coefficient `ps
 bias uses the companion residual
 
 $$
-g_{b,i}^t=-\eta_b\left\{\frac{\Delta_i}{\rho}\ell'(Y_i,r_i^t)+
+g_{b,i}^t=-\eta_b\left[\frac{\Delta_i}{\rho}\ell'(Y_i,r_i^t)+
 \frac{(1-\Delta_i)\pi_b}{1-\rho}S_i^t
-\ell'(\widehat Y_i^t,r_i^t)\right\},
+\ell'(\widehat Y_i^t,r_i^t)\right],
 $$
 
 If `bias_pseudo_label_param` is omitted, $\pi_b=\pi$.
