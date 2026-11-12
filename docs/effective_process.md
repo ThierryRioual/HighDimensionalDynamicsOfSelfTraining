@@ -57,7 +57,10 @@ $$
 S_\kappa(r)=\mathbf 1_{\{r\geq\kappa_+\}\cup\{r\leq\kappa_-\}},
 \qquad
 \mathrm{sign}_+(r)=
-\begin{cases}+1,&r\geq0,\\-1,&r<0.\end{cases}
+\begin{cases}
++1,&r\geq0,\\
+-1,&r<0.
+\end{cases}
 $$
 
 Both threshold equalities are selected. The default pseudo-label is
@@ -357,9 +360,9 @@ coefficients instead identify the source weight or residual trajectory.
 base, sample base, sample innovations, and parameter innovations. Their
 stream identifiers are $11,23,37,53$, with seeds
 
-$$
+```math
 s_a=(\texttt{mc\_seed}+1\,000\,003a)\bmod(2^{63}-1).
-$$
+```
 
 The scalar signal callback is sampled in an isolated global RNG
 context with stream $83$. Custom-sampler calls also isolate and restore the
@@ -937,9 +940,9 @@ The callback is called before any update and after each update. Bias, norm,
 alignment, population error, selected-error fraction, and `unl_usage` refer
 to the current state $t=0,\ldots,T$:
 
-$$
+```math
 \texttt{unl\_usage}[t]=\omega^t,\qquad 0\leq t\leq T.
-$$
+```
 
 Finite usage is evaluated directly from current unlabeled scores; it requires
 `X_unl` but no diagnostic labels. The effective comparison uses
