@@ -1,0 +1,219 @@
+\section{Related Work}
+\label{sec:related-work}
+
+\subsection{Self-Training}
+\label{subsec:st}
+
+Despite its popularity, self-training does not always improve
+predictive performance, which can depend on initialization,
+hyperparameters, and the unlabeled data
+\cite{oliver2018realistic,su2021realistic}.
+While self-training has been studied extensively in empirical work
+\cite{amini2025survey,vanengelen2020survey,yang2023survey,kage2026review},
+its theoretical understanding remains limited.
+To address the challenges discussed in Section~\ref{sec:introduction},
+existing theoretical analyses have considered various
+simplifications of the self-training procedure.
+
+For instance, Wei et al.~\cite{wei2021theoretical} establish accuracy guarantees
+for fixed pseudo-labelers with consistency regularization.
+Oymak and Gulcu~\cite{oymak2020} analyze confidence-thresholded
+averaging estimators, using fresh batches for iterative characterization.
+Frei et al.~\cite{frei2022selftraining} establish accuracy guarantees
+for gradient-based self-training with fresh batches.
+Other theoretical analyses investigate iterative
+self-training under different structural assumptions.
+Chen et al.~\cite{chen2020selftraining} study gradient-based
+self-training under domain shift.
+He et al.~\cite{he2022information} derive information-theoretic
+generalization expressions.
+Zhang et al.~\cite{zhang2022unlabeled} establish convergence and
+generalization guarantees for neural-network regression.
+Li et al.~\cite{li2025fixmatch} analyze FixMatch-like
+gradient updates with adaptive pseudo-labels on fixed datasets.
+Heidarizadeh et al.~\cite{heidarizadeh2026confidence} derive
+generalization bounds under gradual domain shift.
+Closer to our proportional-asymptotic setting,
+Takahashi~\cite{takahashi2026role} derives sharp predictions
+for linear classifiers on Gaussian mixtures, using fresh batches
+and stagewise minimization.
+Takanami et al.~\cite{takanami2025effect} analyze repeated-data
+self-distillation with temperature-controlled soft pseudo-labels,
+including hard pseudo-labels as a limiting case, and stagewise
+minimization, but without confidence selection.
+Both works rely on non-rigorous replica calculations from physics.
+
+Our analysis combines gradient updates, confidence selection,
+and repeated data reuse within a single rigorous framework.
+The algorithm incorporates pseudo-labels refreshed at each
+gradient step~\cite{lee2013pseudolabel}, hard pseudo-labeling
+and confidence-based selection~\cite{sohn2020fixmatch},
+and allows asymmetric confidence thresholds for the two
+predicted classes, motivated by class-dependent selection
+strategies~\cite{zhang2021flexmatch}.
+To the best of our knowledge, no previous analysis establishes
+rigorous, asymptotically exact empirical trajectory laws for
+both parameter coordinates and training scores with this
+combination of features in the proportional regime.
+
+\subsection{Self-Distillation}
+\label{subsec:sd}
+
+A related procedure is self-distillation, where a student learns
+from the predictions of a previously trained teacher, possibly
+alongside the original labels.
+While the two procedures are closely related, their objectives
+typically differ.
+Self-distillation aims to improve an existing estimator through
+regularization, denoising, or feature transfer, whereas
+semi-supervised self-training seeks to exploit the structure
+of unlabeled data to improve a classifier trained on limited
+labeled observations.
+
+Self-distillation has a substantial theoretical literature,
+particularly in regression, where explicit expressions or
+tractable characterizations of successive minimizers allow
+precise analysis through spectral and random matrix methods.
+Mobahi et al.~\cite{mobahi2020selfdistillation} characterize
+regularization through spectral filtering.
+Das and Sanghavi~\cite{das2023understanding} study the effects
+of regularization and label noise, while Pareek et
+al.~\cite{pareek2024understanding} establish improvements
+from repeated distillation.
+Wu et al.~\cite{wu2026selftraininghelpshurtsdenoising} derive
+high-dimensional risk recursions revealing a trade-off between
+denoising and signal forgetting.
+Further precise results are obtained by Dang et al.~\cite{dang2026}
+and Lecoiu et al.~\cite{lecoiu2026}.
+Classification has also been studied.
+Das and Sanghavi~\cite{das2023understanding} establish accuracy
+improvements for logistic classifiers under restrictive feature
+assumptions, while Takanami et al.~\cite{takanami2025effect}
+derive replica predictions for repeated-data Gaussian-mixture
+classification.
+Javanmard et al.~\cite{javanmard2025selfboost} derive 
+AMP-based characterizations of iterative retraining with reused data, 
+combining model predictions with noisy observed labels in 
+Gaussian-mixture and generalized-linear models.
+
+These works primarily analyze successive fitted predictors,
+often exploiting special structure to obtain explicit statistical
+characterizations.
+Our setting instead studies the optimization dynamics themselves,
+where confidence selection of hard pseudo-labels creates
+discontinuities at the selection thresholds, and repeated
+data reuse couples successive gradient updates.
+These features prevent the direct spectral reductions available
+in much of the self-distillation literature.
+
+\subsection{Adaptive Training Procedures}
+\label{subsec:adapt}
+
+Our work relates to optimization procedures in which the
+training objective depends on the current model.
+In performative prediction, model deployment changes the
+distribution of subsequent observations.
+Perdomo et al.~\cite{perdomo2020performative} and
+Mendler-D\"unner et al.~\cite{mendlerdunner2020stochastic}
+establish convergence guarantees for repeated risk
+minimization and stochastic optimization, with further
+results on decision-dependent distributions
+in~\cite{drusvyatskiy2023stochastic,cutler2024stochastic}.
+Related work on adaptive sample selection includes
+iterative trimmed-loss minimization, for which
+Shen and Sanghavi~\cite{shen2019trimmed} establish
+convergence and statistical guarantees, and
+Aravkin and Davis~\cite{aravkin2020trimmed} derive
+optimization complexity guarantees.
+Nonconvex optimization also arises in semi-supervised
+support vector machines, where several methods have been
+developed~\cite{chapelle2008optimization,
+collobert2006large, piccialli2024}.
+
+Our finite-dimensional convergence analysis is related
+to these approaches to adaptive and nonconvex optimization, but
+we derive empirical trajectory laws for parameter coordinates
+and training scores in the proportional high-dimensional regime,
+accounting for adaptive hard pseudo-labels, confidence
+selection, and repeated data reuse.
+
+
+\subsection{High-Dimensional Dynamics}
+\label{subsec:high-dim-dynamics}
+
+The high-dimensional behavior of first-order optimization
+algorithms has been studied through several approaches.
+Paquette et al.~\cite{paquette2022} derive risk trajectories
+for stochastic gradient descent on high-dimensional quadratic
+objectives, while Ben Arous et
+al.~\cite{arous2021online,arous2023highdimensional}
+study scaling limits and effective dynamics of online
+stochastic gradient descent in nonconvex inference problems.
+Another approach originates from statistical physics, where
+mean-field methods simplify systems with many interacting
+degrees of freedom by describing their collective behavior
+through macroscopic observables.
+This viewpoint has motivated a substantial literature on
+statistical inference and learning
+\cite{mezard2009information,zdeborova2016statistical}.
+Dynamical mean-field theory (DMFT) extends this approach
+to evolving systems, describing limiting trajectories
+through representative \emph{effective stochastic processes}.
+When the same random data are repeatedly reused, these
+processes generally involve memory terms and temporally
+correlated Gaussian fluctuations.
+
+Rigorous DMFT descriptions of first-order methods have
+been established by Celentano, Cheng, and
+Montanari~\cite{celentano2026highdimensionalasymptoticsordermethods}
+through a reduction to approximate message passing (AMP),
+and by Gerbelot et al.~\cite{gerbelot2024rigorous}
+through iterative Gaussian conditioning.
+Mignacco et al.~\cite{Mignacco_2021} derive dynamical
+mean-field equations for gradient-based classification
+of Gaussian mixtures, providing a related statistical-physics
+analysis without confidence selection.
+AMP is closely related to DMFT.
+Its key feature is the Onsager correction, which compensates
+for correlations generated by repeated matrix use,
+leading to a simpler effective description through
+\emph{state evolution}: deterministic recursions tracking
+the limiting distributions of the iterates.
+For Gaussian matrices, rigorous AMP analyses use Gaussian
+conditioning, as in Bolthausen~\cite{bolthausen2009}
+and Bayati and Montanari~\cite{bayati2011dynamics};
+see also~\cite{feng2022unifying}.
+Ranasinghe et al.~\cite{ranasinghe2026state} extend scalar
+AMP state evolution to certain discontinuous denoisers, although applying
+their results to our recursion requires an AMP reduction.
+Yang's tensor programs provide another framework for
+characterizing limiting coordinate laws of random-matrix
+computations, including neural-network training
+\cite{yang2020neuralmatrixlaws,yang2022}.
+Applying these frameworks to our recursion requires accommodating 
+hard confidence selection, evolving scalar parameters such as the 
+intercept that shift the selection boundaries, 
+and a mean-shifted Gaussian design.
+Beyond finite-horizon characterization, the long-time
+behavior of effective processes presents additional challenges.
+Celentano et
+al.~\cite{celentano2026highdimensionalasymptoticsordermethods}
+derive fixed-point equations under exponential convergence
+conditions, while Chen and
+Shen~\cite{chen2025learningsingleindexmodel}
+establish long-time DMFT convergence under suitable local
+curvature assumptions.
+Fan et al.~\cite{fan2025dynamicalmeanfieldanalysisadaptivepropagation,
+fan2025dynamicalmeanfieldanalysisadaptivereplica}
+study finite-horizon and equilibrium behavior of adaptive
+Langevin dynamics under additional assumptions.
+
+These frameworks provide general tools for analyzing
+high-dimensional dynamics.
+For our recursion, a direct application requires additional
+arguments for discontinuous confidence selection combined
+with evolving scalar shifts and data reuse.
+We develop a self-contained Gaussian conditioning
+argument tailored to our recursion, constructing the Gaussian
+innovations, projections, and limiting effective processes.
+We further establish long-time convergence of these processes.

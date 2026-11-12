@@ -1,0 +1,640 @@
+\subsection{Mean-field limit of the self-training dynamics}
+\label{subsec:mean-field}
+
+Fix a finite iteration horizon $T\in\mathbb N$.
+We describe the high-dimensional training dynamics through the
+empirical distributions of coordinate trajectories.
+
+Our main result constructs two effective stochastic processes,
+$(\tilde w^t)_{t\geq0}$ and $(\tilde r^t)_{t\geq0}$,
+through a coupled recursion.
+Under the assumptions below, for every pair of
+pseudo-Lipschitz functions of order $2$
+(Definition~\ref{definition:pseudo-lipschitz})
+$F,H:\mathbb R^{T+2}\to\mathbb R$, it establishes,
+as $d\to\infty$,
+\begin{align*}
+    \frac1d\sum_{k=1}^d
+        F(\mu_k,w_k^0,\ldots,w_k^T)
+    &\xrightarrow{\mathbb P}
+    \tilde{\mathbb E}
+    \bigl[F(\tilde\mu,\tilde w^0,\ldots,\tilde w^T)\bigr],
+    \\
+    \frac1n\sum_{i=1}^n
+        H(Y_i,r_i^0,\ldots,r_i^T)
+    &\xrightarrow{\mathbb P}
+    \tilde{\mathbb E}
+    \bigl[H(\tilde Y,\tilde r^0,\ldots,\tilde r^T)\bigr].
+\end{align*}
+Here, $w^t\in\mathbb R^d$ and $b^t\in\mathbb R$ are generated
+by Algorithm~\ref{alg:self-training}, and we define
+\[
+    r^t:=b^t\mathbf1_n+\frac{Xw^t}{\sqrt d},
+    \qquad t\geq0.
+\]
+These formulas express limiting empirical averages as expectations
+of the effective processes. Together with convergence of the
+intercept, they determine the asymptotic signal alignment,
+weight norm, and population classification error.
+
+Intuitively, the effective processes describe the trajectories
+of a typical weight coordinate and a typical training score,
+much as an effective single-particle process describes the behavior
+of a typical particle in a large interacting physical system.
+Data reuse introduces memory terms and temporally correlated
+Gaussian randomness, capturing the dependence on earlier
+interactions with the training data.
+
+The effective description depends on both the update functions
+and the asymptotic behavior of the initialization.
+We first impose regularity conditions on the loss and penalty.
+
+\begin{assumption}[Regularity of loss and penalty]
+\label{assumption:regularity-of-loss-and-penalty}
+The functions $r\mapsto\ell(y,r)$, for $y\in\{-1,+1\}$,
+and $u\mapsto j(u)$ are differentiable.
+There exist dimension-independent constants
+$L_\ell,L_j\in(0,\infty)$ such that
+\[
+    |\ell'(y,r)-\ell'(y,s)|
+    \leq L_\ell|r-s|,
+    \qquad
+    |j'(u)-j'(v)|
+    \leq L_j|u-v|
+\]
+for every $y\in\{-1,+1\}$ and $r,s,u,v\in\mathbb R$.
+Moreover, $\ell'(y,\cdot)$ is nonconstant for each
+$y\in\{-1,+1\}$.
+\end{assumption}
+The initial parameters $b^{\mathrm{init}}\in\mathbb R$ and
+$w^{\mathrm{init}}\in\mathbb R^d$ are deterministic and may
+depend on $d$. Define the joint empirical law of the signal
+and initial weight coordinates by
+\[
+    \nu_{(\mu,w^{\mathrm{init}})}
+    :=
+    \frac1d\sum_{k=1}^d
+        \delta_{(\mu_k,w_k^{\mathrm{init}})}.
+\]
+We also impose the following asymptotic conditions.
+
+\begin{assumption}[Quenched initialization]
+\label{assumption:quenched-initialization}
+The following conditions hold as $d\to\infty$:
+\begin{enumerate}
+    \item Convergence of the joint empirical law:
+    \begin{equation}
+        \nu_{(\mu,w^{\mathrm{init}})}
+        \xrightarrow{W_2}
+        \bar\nu_{(\mu,w^{\mathrm{init}})}
+        \in\mathscr P_2(\mathbb R^2).
+        \label{eq:backward-init}
+    \end{equation}
+
+    \item Convergence of the initial intercept:
+    \begin{align}
+        b^{\mathrm{init}}
+        \longrightarrow
+        \bar b^{\mathrm{init}}\in\mathbb R.
+    \end{align}
+
+    \item Positive limiting weight second moment:
+    \begin{equation}
+        (\bar\tau^{\mathrm{init}})^2
+        :=
+        \int_{\mathbb R^2}w^2\,
+        \bar\nu_{(\mu,w^{\mathrm{init}})}(du,dw)
+        >0.
+        \label{eq:positive-init-mean-field-weight-norm}
+    \end{equation}
+\end{enumerate}
+\end{assumption}
+By Lemma~\ref{lemma:wasserstein-lipschitz-pushforward}
+and uniqueness of Wasserstein limits, $\bar\nu_\mu$ is the
+first marginal of $\bar\nu_{(\mu,w^{\mathrm{init}})}$.
+The limiting law $\bar\nu_{(\mu,w^{\mathrm{init}})}$ and intercept
+$\bar b^{\mathrm{init}}$ provide the initial data for the effective
+description. By requiring the initialization to be deterministic
+relative to the Gaussian design noise and to have a positive
+limiting weight second moment, we exclude zero initialization
+and classifiers fitted to the same training data, while allowing
+classifiers trained exogenously. Throughout this subsection,
+we also fix the hyperparameters $\eta>0$, $\lambda,\pi\geq0$,
+and $\kappa_-<0<\kappa_+$ independently of the dimension.
+
+\subsubsection{Construction of the effective processes}
+
+The effective processes are constructed on two probability spaces. Let
+\[
+    (\tilde\Omega^{[g]},\tilde{\mathcal F}^{[g]},
+        \tilde{\mathbb P}^{[g]})
+    \qquad\text{and}\qquad
+    (\tilde\Omega^{[w]},\tilde{\mathcal F}^{[w]},
+        \tilde{\mathbb P}^{[w]})
+\]
+be, respectively, the sample-side and parameter-side mean-field
+probability spaces. The sample-side space supports
+\[
+    (\tilde Y,\tilde\Delta)\sim\bar\nu_{(Y,\Delta)}
+    \qquad\text{and}\qquad
+    (z_t^{[g]})_{t\geq0}
+    \stackrel{\mathrm{i.i.d.}}{\sim}\mathcal N(0,1),
+\]
+while the parameter-side space supports
+\[
+    (\tilde\mu,\tilde w^0)
+    \sim\bar\nu_{(\mu,w^{\mathrm{init}})}
+    \qquad\text{and}\qquad
+    (z_t^{[w]})_{t\geq0}
+    \stackrel{\mathrm{i.i.d.}}{\sim}\mathcal N(0,1).
+\]
+On each space, the Gaussian sequence is independent of the
+corresponding pair of base variables.
+The two recursions interact through deterministic expectations
+and coefficients; no joint law between their random variables
+is prescribed. The convergence theorem compares their laws
+with the finite-dimensional empirical measures, without requiring
+a coupling with the original training dynamics.
+
+In the following, we write simply $\tilde{\mathbb P}$ and
+$\tilde{\mathbb E}$ for probability and expectation on either
+mean-field probability space. The relevant space is determined by
+the random variables appearing in the expression. For notational convenience, we also set $\ell'(0,r):=0$ for every
+$r\in\mathbb R$, so that unselected observations contribute zero.
+
+\begin{definition}[Mean-field recursion]
+\label{def:mean-field-recursion}
+Fix a deterministic initial intercept $\bar b^0:=\bar b^{\mathrm{init}}$. We recursively define 
+\begin{align*}
+    (\tilde q^t,\tilde r^t,\tilde{\mathfrak c}^t,\tilde g^t)_{t\ge0}, 
+    \quad 
+    (\tilde p^t,\tilde w^t)_{t\ge0},
+    \quad
+    (\bar b^t,\bar m^t,\bar\zeta^t,\bar\chi^t)_{t\ge0},
+\end{align*}
+the sample-side processes, the parameter-side processes, and the deterministic macroscopic quantities respectively. We also define the projection, memory, and innovation coefficients below.
+Write the weight and residual correlation kernels as
+\begin{align}
+    \bar C^{[w]}(s,t)
+    &:=
+    \tilde{\mathbb E}
+    [
+        \tilde w^s\tilde w^t
+    ],
+    &
+    \bar C^{[g]}(s,t)
+    &:=
+    \tilde{\mathbb E}
+    [
+        \tilde g^s\tilde g^t
+    ].
+    \label{eq:correlation-kernel-definition}
+\end{align}
+Under the hypotheses of Theorem~\ref{theorem:trajectory},
+Lemma~\ref{lemma:mf-proof-nondegeneracy} establishes
+well-definedness of the recursion, uniqueness of the
+coefficient systems' solutions, and finite second moments
+of all coordinates. It also establishes absolute continuity
+of the score law at every finite time.
+
+The construction proceeds in the order
+\[
+    \tilde w^t
+    \longrightarrow(\tilde q^t,\tilde r^t,\tilde g^t)
+    \longrightarrow(\tilde p^t,\tilde w^{t+1}).
+\]
+
+For every $t\ge0$, define the following quantities:
+
+\begin{itemize}[wide]
+    \item Weight-side projection and memory coefficients:
+    \begin{align}
+    \sum_{s=0}^{t-1}
+        \bar C^{[w]}(u,s)\bar\alpha^{[w]}(t,s)
+    &=
+    \bar C^{[w]}(u,t),
+    \qquad 0\le u<t,
+    \label{eq:alpha-w-definition}
+    \\[-7pt]
+    \tilde w_\perp^t
+    &:=
+    \tilde w^t
+    -
+    \sum_{s=0}^{t-1}
+        \bar\alpha^{[w]}(t,s)\tilde w^s,
+    \\[-7pt]
+    \sum_{s=0}^{t-1}
+        \bar C^{[g]}(u,s)\bar\phi^{[w]}(t,s)
+    &=
+    \tilde{\mathbb E}
+    [
+        \tilde p^u\tilde w_\perp^t
+    ],
+    \qquad 0\le u<t,
+    \label{eq:phi-w-definition}
+    \\[-7pt]
+    \bar v_t^{[w]}
+    &:=
+    \left(
+        \tilde{\mathbb E}
+        [
+            (\tilde w_\perp^t)^2
+        ]
+    \right)^{1/2}.
+\end{align}
+
+    \item Residual-side projection and memory coefficients:
+    \begin{align}
+    \sum_{s=0}^{t-1}
+        \bar C^{[g]}(u,s)\bar\alpha^{[g]}(t,s)
+    &=
+    \bar C^{[g]}(u,t),
+    \qquad 0\le u<t,
+    \label{eq:alpha-g-definition}
+    \\[-7pt]
+    \tilde g_\perp^t
+    &:=
+    \tilde g^t
+    -
+    \sum_{s=0}^{t-1}
+        \bar\alpha^{[g]}(t,s)\tilde g^s,
+    \\[-7pt]
+    \sum_{s=0}^{t}
+        \bar C^{[w]}(u,s)\bar\phi^{[g]}(t,s)
+    &=
+    \tilde{\mathbb E}
+    [
+        \tilde q^u\tilde g_\perp^t
+    ],
+    \qquad 0\le u\le t,
+    \label{eq:phi-g-definition}
+    \\[-7pt]
+    \bar v_t^{[g]}
+    &:=
+    \left(
+        \tilde{\mathbb E}
+        [
+            (\tilde g_\perp^t)^2
+        ]
+    \right)^{1/2}.
+\end{align}
+
+    \item Cumulative forward memory coefficients and Gaussian process:
+    \begin{align}
+    \bar\gamma^{[w]}(t,s)
+    &:=
+    \bar\phi^{[w]}(t,s)
+    +
+    \sum_{u=s+1}^{t-1}
+        \bar\alpha^{[w]}(t,u)
+        \bar\gamma^{[w]}(u,s),
+    \qquad 0\le s<t,
+    \\[-7pt]
+    \xi_t^{[g]}
+    &:=
+    \sum_{u=0}^{t-1}
+        \bar\alpha^{[w]}(t,u)\xi_u^{[g]}
+    +
+    \bar v_t^{[w]}z_t^{[g]}.
+    \label{eq:xi-g-definition}
+\end{align}
+
+    \item Cumulative backward memory coefficients and Gaussian process:
+\begin{align}
+    \bar\gamma^{[g]}(t,s)
+    &:=
+    \bar\phi^{[g]}(t,s)
+    +
+    \sum_{u=s}^{t-1}
+        \bar\alpha^{[g]}(t,u)
+        \bar\gamma^{[g]}(u,s),
+    \qquad 0\le s\le t,
+    \label{eq:Gamma-g-definition}
+    \\[-7pt]
+    \xi_t^{[w]}
+    &:=
+    \sum_{u=0}^{t-1}
+        \bar\alpha^{[g]}(t,u)\xi_u^{[w]}
+    +
+    \bar v_t^{[g]}z_t^{[w]}.
+    \label{eq:xi-w-definition}
+\end{align}
+
+\item Forward fluctuation:
+\vspace{-21pt}
+\begin{align}
+    \tilde q^t
+    &:=
+    \frac{1}{\sqrt{\bar\delta}}
+    \sum_{s=0}^{t-1}
+        \bar\gamma^{[w]}(t,s)\tilde g^s
+    +
+    \xi_t^{[g]}.
+    \label{eq:q-memory-definition}
+\end{align}
+
+\item Backward fluctuation:
+\vspace{-21pt}
+\begin{align}
+    \tilde p^t
+    &:=
+    \sqrt{\bar\delta}
+    \sum_{s=0}^{t}
+        \bar\gamma^{[g]}(t,s)\tilde w^s
+    +
+    \xi_t^{[w]}.
+    \label{eq:p-memory-definition}
+\end{align}
+
+\item The macroscopic quantities:
+\begin{align}
+    \bar b^{t+1}
+    :=
+    \bar b^t
+    -
+    \eta\bar\zeta^t,
+    \qquad
+    \bar m^t
+    :=
+    \tilde{\mathbb E}
+    [
+        \tilde\mu\tilde w^t
+    ],
+    \qquad
+    \bar\zeta^t
+    :=
+    \tilde{\mathbb E}
+    [
+        \tilde g^t
+    ],
+    \qquad
+    \bar\chi^t
+    :=
+    \tilde{\mathbb E}
+    [
+        \tilde Y\tilde g^t
+    ].
+\end{align}
+
+\item The sample side process:
+\begin{align}
+    \tilde r^t
+    :=
+    \bar b^t
+    +
+    \bar m^t\tilde Y
+    +
+    \sigma\tilde q^t,
+    \qquad
+    \tilde{\mathfrak c}^t
+    :=
+    \mathbf 1_{\{\tilde r^t\ge\kappa_+\}}
+    -
+    \mathbf 1_{\{\tilde r^t\le\kappa_-\}}.
+    \label{eq:mean-field-score}
+\end{align}
+\vspace{-21pt}
+\begin{align}
+    \tilde g^t
+    :=
+    \tilde g_{\mathcal L}^t
+    +
+    \pi\tilde g_{\mathcal U}^t,
+    \qquad
+    \tilde g_{\mathcal L}^t
+    :=
+    \frac{\tilde\Delta}{\bar\rho}
+    \ell'
+    \left(
+        \tilde Y,\tilde r^t
+    \right),
+    \qquad
+    \tilde g_{\mathcal U}^t
+    :=
+    \frac{1-\tilde\Delta}{1-\bar\rho}
+    \left| \tilde{\mathfrak c}^t \right|
+    \ell'
+    \left(
+        \tilde{\mathfrak c}^t,\tilde r^t
+    \right).
+    \label{eq:g-U-definition}
+\end{align}
+
+\item The parameter side process:
+\begin{align}
+    \tilde w^{t+1}
+    &:=
+    \tilde w^t
+    -
+    \eta
+    \left[
+        \lambda j'(\tilde w^t)
+        +
+        \bar\chi^t\tilde\mu
+        +
+        \frac{\sigma}{\sqrt{\bar\delta}}
+        \tilde p^t
+    \right].
+    \label{eq:w-update-definition}
+\end{align}
+\end{itemize}
+\end{definition}
+
+\subsubsection{Mean-field convergence}
+
+The following theorem identifies the effective trajectory laws
+as the limits of the finite-dimensional empirical measures.
+
+\begin{theorem}[Mean-field trajectory convergence]
+\label{theorem:trajectory}
+Suppose that Assumption~\ref{assumption:asymptotic-regime},
+Assumption~\ref{assumption:regularity-of-loss-and-penalty},
+and Assumption~\ref{assumption:quenched-initialization} hold.
+
+For every fixed $T\in\mathbb N$, the following convergences hold
+as $d\to\infty$:
+\begin{enumerate}[label=(\roman*),wide]
+    \item \emph{Parameter-side trajectory convergence.}
+    \begin{align}
+        W_2\left(
+            \frac1d\sum_{k=1}^d
+                \delta_{(\mu_k,w_k^0,\ldots,w_k^T)},
+            \mathscr L(\tilde\mu,\tilde w^0,\ldots,\tilde w^T)
+        \right)
+        &\xrightarrow{\mathbb P}0.
+        \label{eq:parameter-trajectory-limit}
+    \end{align}
+
+    \item \emph{Sample-side trajectory convergence.}
+    \begin{align}
+        W_2\left(
+            \frac1n\sum_{i=1}^n
+                \delta_{(Y_i,\Delta_i,r_i^0,\ldots,r_i^T)},
+            \mathscr L(
+                \tilde Y,\tilde\Delta,\tilde r^0,\ldots,\tilde r^T
+            )
+        \right)
+        &\xrightarrow{\mathbb P}0.
+        \label{eq:sample-trajectory-limit}
+    \end{align}
+
+    \item \emph{Intercept convergence.}
+    \begin{align}
+        \max_{0\leq t\leq T}|b^t-\bar b^t|
+        &\xrightarrow{\mathbb P}0.
+        \label{eq:mean-field-bias-convergence}
+    \end{align}
+\end{enumerate}
+Here, the finite dimensional sequences $(w^t)_{t \ge 0}$, $(b^t)_{t \ge 0}$ and $(r^t)_{t \ge 0}$ are generated by Algorithm~\ref{alg:self-training}, and
+probability is taken with respect to the finite-dimensional
+Gaussian design noise. The limiting trajectory laws are
+deterministic probability measures.
+\end{theorem}
+By Corollary~\ref{corollary:wasserstein-empirical-observables},
+the trajectory convergence implies convergence in probability
+of empirical averages of pseudo-Lipschitz functions of order $2$.
+The following corollary records the resulting limits for
+macroscopic observables and classification error.
+Define
+\begin{align}
+    m^t
+    &:=
+    \frac{\mu^\top w^t}{d},
+    &
+    \tau^t
+    &:=
+    \frac{\|w^t\|}{\sqrt d},
+    \\
+    C^{[w]}(s,t)
+    &:=
+    \frac{(w^s)^\top w^t}{d},
+    &
+    \omega^t
+    &:=
+    \frac1M\sum_{j\in I_{\mathcal U}}S_\kappa(r_j^t).
+    \label{eq:finite-dimensional-trajectory-observables}
+\end{align}
+The quantity $m^t$ measures signal alignment, $\tau^t$ is the normalized
+weight norm, and $\omega^t$ is the selected fraction of unlabeled
+observations.
+Define also the selected-error fraction
+\[
+    e^t
+    :=
+    \frac1M\sum_{j\in I_{\mathcal U}}
+        \mathbf1_{\{\mathfrak C(\theta^t)_j=-Y_j\}}.
+\]
+This is the fraction of all unlabeled observations that
+are selected with an incorrect pseudo-label.
+The corresponding limiting weight norm is
+\[
+    \bar\tau^t
+    :=
+    \left(\tilde{\mathbb E}[(\tilde w^t)^2]\right)^{1/2}
+    =
+    \sqrt{\bar C^{[w]}(t,t)}
+    >0.
+\]
+Positivity follows from
+Lemma~\ref{lemma:mf-proof-nondegeneracy}.
+
+\begin{corollary}[Macroscopic observables and classification error]
+\label{cor:mean-field-observables}
+Under the assumptions of Theorem~\ref{theorem:trajectory}, for every
+fixed $s,t\geq0$,
+\begin{align}
+    m^t
+    &\xrightarrow{\mathbb P}\bar m^t,
+    &
+    \tau^t
+    &\xrightarrow{\mathbb P}\bar\tau^t,
+    &
+    C^{[w]}(s,t)
+    &\xrightarrow{\mathbb P}\bar C^{[w]}(s,t),
+    &
+    \omega^t
+    &\xrightarrow{\mathbb P}\bar\omega^t,
+    &
+    e^t
+    &\xrightarrow{\mathbb P}\bar e^t,
+    \label{eq:mean-field-observable-convergence}
+\end{align}
+where
+\[
+    \bar\omega^t
+    :=
+    \frac{
+        \tilde{\mathbb E}
+        [(1-\tilde\Delta)S_\kappa(\tilde r^t)]
+    }{1-\bar\rho},
+    \qquad
+    \bar e^t
+    :=\tilde{\mathbb P}
+        (\tilde{\mathfrak c}^{\,t}=-\tilde Y\mid\tilde\Delta=0).
+\]
+
+Let $\mathcal D$ denote the observed training data.
+Independently of $\mathcal D$, draw
+$Y_{\mathrm{test}}\in\{-1,+1\}$ with
+$\mathbb P(Y_{\mathrm{test}}=+1)=p$ and
+$Z_{\mathrm{test}}\sim\mathcal N(0_d,I_d)$, independently, and set
+\[
+    X_{\mathrm{test}}
+    :=\frac{Y_{\mathrm{test}}\mu}{\sqrt d}+\sigma Z_{\mathrm{test}}.
+\]
+Define the conditional test error by
+\[
+    \mathcal E^t
+    :=\mathbb P\!\left(
+        f_{\theta^t}(X_{\mathrm{test}})\neq Y_{\mathrm{test}}
+        \,\middle|\,\mathcal D
+    \right).
+\]
+Then, for every fixed $t\geq0$,
+\begin{align}
+    \mathcal E^t
+    &\xrightarrow{\mathbb P}
+    \bar{\mathcal E}^t
+    :=
+    \bar p\,
+    \Phi\left(
+        \frac{-\bar b^t-\bar m^t}{\sigma\bar\tau^t}
+    \right)
+    +
+    (1-\bar p)\,
+    \Phi\left(
+        \frac{\bar b^t-\bar m^t}{\sigma\bar\tau^t}
+    \right),
+    \label{eq:mean-field-classification-error}
+\end{align}
+where $\Phi$ is the standard Gaussian distribution function.
+\end{corollary}
+
+The proof of Theorem~\ref{theorem:trajectory} uses iterative
+Gaussian conditioning following
+Bolthausen and Bayati--Montanari
+\cite{bolthausen2014,bayati2011dynamics};
+it is presented in Appendix~\ref{sec:proof-mean-field}.
+We apply conditioning directly to the alternating forward
+and backward matrix products, deriving memory coefficients
+through orthogonal projections rather than a
+reduction to AMP. 
+Defining these coefficients through Gaussian inner products
+avoids differentiating the discontinuous selection rule and
+retains the contributions associated with its threshold jumps.
+
+The main probabilistic step is to reveal the history through
+successive linear observations of the Gaussian design matrix.
+Although the observation directions depend on previous
+iterates, they are fixed conditional on the preceding history.
+The conditional matrix law therefore remains Gaussian and
+admits a decomposition into its conditional mean and a
+projected Gaussian term generated from fresh randomness.
+The conditional means produce the memory terms, while the
+remaining randomness produces the innovations.
+
+The rest of the argument establishes convergence of the
+projection coefficients and empirical trajectory laws.
+In particular, it verifies nondegeneracy and controls the
+discontinuous feedback using the absence of atoms at its
+discontinuity points.

@@ -1,0 +1,86 @@
+{
+  "configs": [
+    {
+      "eta": 0.03,
+      "mode": "supervised"
+    },
+    {
+      "eta": 0.03,
+      "mode": "self_training"
+    },
+    {
+      "eta": 0.03,
+      "mode": "truncated"
+    },
+    {
+      "eta": 0.3,
+      "mode": "supervised"
+    },
+    {
+      "eta": 0.3,
+      "mode": "self_training"
+    },
+    {
+      "eta": 0.3,
+      "mode": "truncated"
+    },
+    {
+      "eta": 1.0,
+      "mode": "supervised"
+    },
+    {
+      "eta": 1.0,
+      "mode": "self_training"
+    },
+    {
+      "eta": 1.0,
+      "mode": "truncated"
+    },
+    {
+      "eta": 2.0,
+      "mode": "supervised"
+    },
+    {
+      "eta": 2.0,
+      "mode": "self_training"
+    },
+    {
+      "eta": 2.0,
+      "mode": "truncated"
+    }
+  ],
+  "histories": [
+    "weight",
+    "bias",
+    "preactivation",
+    "residual",
+    "bias_residual",
+    "forward_noise",
+    "backward_noise",
+    "weight_memory_coordinates",
+    "residual_memory_coordinates",
+    "forward_innovation_scale",
+    "backward_innovation_scale",
+    "weight_signal_alignments",
+    "label_residual_alignments",
+    "mean_residual",
+    "mean_bias_residual",
+    "selection_rate",
+    "weight_norm",
+    "error",
+    "oracle_bias",
+    "oracle_error",
+    "decay",
+    "weight_rank",
+    "residual_rank",
+    "weight_rank_truncated",
+    "residual_rank_truncated"
+  ],
+  "source_sha256": "0c89f4ebec01964e6d03008d881891b486a5ca8a7f19197bce4095265d3777e3",
+  "torch": "2.8.0",
+  "seed": 123,
+  "K_w": 53,
+  "K_g": 71,
+  "iterations": 5,
+  "driver": "gelsd"
+}

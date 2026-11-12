@@ -181,10 +181,10 @@ def test_custom_loss_penalty_and_initialization_match_the_finite_objective():
     selection = config.selection_mask(scores)
     lab = process.indicator / process.rho * (scores - process.label)
     pseudo = (1 - process.indicator) / (1 - process.rho) * selection * (scores - torch.where(scores >= 0, 1., -1.))
-    torch.testing.assert_close(process.residual[0], -.2 * (lab + .7 * pseudo))
-    torch.testing.assert_close(process.bias_residual[0], -.03 * (lab + .2 * pseudo))
+    torch.testing.assert_close(process.residual[0], lab + .7 * pseudo)
+    torch.testing.assert_close(process.bias_residual[0], lab + .2 * pseudo)
     expected_weight = (process.weight[0] - .2 * .1 * process.weight[0] ** 3
-                       + torch.mean(process.label * process.residual[0]) * process.signal
-                       + .8 / math.sqrt(2.) * process.backward_noise[0])
+                       - .2 * torch.mean(process.label * process.residual[0]) * process.signal
+                       - .2 * .8 / math.sqrt(2.) * process.backward_noise[0])
     torch.testing.assert_close(process.weight[1], expected_weight)
-    torch.testing.assert_close(process.bias[1], process.bias[0] + process.bias_residual[0].mean())
+    torch.testing.assert_close(process.bias[1], process.bias[0] - .03 * process.bias_residual[0].mean())

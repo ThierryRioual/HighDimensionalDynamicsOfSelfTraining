@@ -62,34 +62,44 @@ def pseudo_residual(
     rho: float,
     loss_function,
 ) -> torch.Tensor:
-    """Finite/particle vector ``g=-eta`` times the frozen score gradient."""
+    """Finite-update increment ``u=-eta*g``; g is the frozen score gradient."""
+
+    return -eta * frozen_score_gradient(
+        scores=scores, Y=Y, Delta=Delta, Yhat=Yhat, selection=selection,
+        pi=pi, rho=rho, loss_function=loss_function,
+    )
+
+
+def frozen_score_gradient(
+    *, scores: torch.Tensor, Y: torch.Tensor, Delta: torch.Tensor,
+    Yhat: torch.Tensor, selection: torch.Tensor, pi: float, rho: float,
+    loss_function,
+) -> torch.Tensor:
+    """Manuscript residual g: frozen score gradient, without a learning rate."""
 
     labelled = torch.zeros_like(scores) if rho == 0 else Delta / rho * loss_function.gradient(scores, Y)
     if pi == 0 or rho >= 1 or not torch.any((1 - Delta) * selection != 0):
-        return -eta * labelled
+        return labelled
     unlabeled = ((1 - Delta) * pi / (1 - rho) * selection
                  * loss_function.gradient(scores, Yhat))
-    return -eta * (labelled + unlabeled)
+    return labelled + unlabeled
 
 
-def compute_abstract_pseudo_residual_from(
+def compute_abstract_score_gradient_from(
     preactivation: torch.Tensor,
     label: torch.Tensor,
     indicator: torch.Tensor,
     selection_mask: torch.Tensor,
     coef: float,
     rho: float,
-    eta: float,
     loss_function,
     time_index: Optional[int] = None,
     initial_pseudo_label: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """
-    Validate and adapt particle score inputs to the shared pseudo-residual.
+    Validate particle inputs and evaluate the manuscript residual g.
 
-    Finite GD calls pseudo_residual directly; the effective process and optional
-    callback residual diagnostics use this adapter. Both use g = -eta times
-    the frozen score gradient.
+    The step size and descent sign are applied only in parameter updates.
 
     Score signs are used at every iteration by default. At ``time_index=0``,
     explicit ``initial_pseudo_label`` values optionally override that rule. The unlabeled term is normalized by
@@ -146,14 +156,13 @@ def compute_abstract_pseudo_residual_from(
     indicator = indicator.to(dtype=preactivation.dtype)
     if coef == 0.0 or rho >= 1.0 or not torch.any((1 - indicator) * selection_mask != 0):
         # No pseudo-labelled term is active.
-        return pseudo_residual(
+        return frozen_score_gradient(
             scores=preactivation,
             Y=label,
             Delta=indicator,
             Yhat=label,
             selection=torch.zeros_like(selection_mask),
             pi=0.0,
-            eta=eta,
             rho=rho,
             loss_function=loss_function,
         )
@@ -184,14 +193,30 @@ def compute_abstract_pseudo_residual_from(
     # a positive time while sharing the same pseudo-residual implementation.
     effective_time = 1 if time_index is None else time_index
     y_pseudo = pseudo_labels(effective_time, preactivation, y_init)
-    return pseudo_residual(
+    return frozen_score_gradient(
         scores=preactivation,
         Y=label,
         Delta=indicator,
         Yhat=y_pseudo,
         selection=selection_mask,
         pi=coef,
-        eta=eta,
         rho=rho,
         loss_function=loss_function,
+    )
+
+
+def compute_abstract_pseudo_residual_from(
+    preactivation: torch.Tensor, label: torch.Tensor, indicator: torch.Tensor,
+    selection_mask: torch.Tensor, coef: float, rho: float, eta: float,
+    loss_function, time_index: Optional[int] = None,
+    initial_pseudo_label: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """Finite-update adapter: return -eta times the frozen score gradient.
+
+    Retained for finite GD callback compatibility. Mean-field quantities use
+    compute_abstract_score_gradient_from directly, in manuscript units.
+    """
+    return -eta * compute_abstract_score_gradient_from(
+        preactivation, label, indicator, selection_mask, coef, rho,
+        loss_function, time_index, initial_pseudo_label,
     )

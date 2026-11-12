@@ -3,8 +3,8 @@
 This note describes the implementation in
 [`MacroscopicStateEvolution`](../src/asymptotics.py) and
 [`src/orthogonal.py`](../src/orthogonal.py), checked on November 5, 2026.
-The accompanying manuscript section, **Implementation Details**, supplies the
-mathematical interpretation and notation. Statements about numerical operations
+The accompanying manuscript supplies the mathematical interpretation in
+Definition 4.6 (the mean-field recursion) and Section 5.1. Statements about numerical operations
 refer to the current source. Exact coordinate identities, particle
 approximations, and numerical rank regularization are distinguished below.
 
@@ -78,14 +78,18 @@ $\eta_w$ for `step_size`, $\pi$ for `pseudo_label_param`, and $\lambda$ for
 `penalty_param`. For $0<\rho_n<1$, the code's weight residual is
 
 $$
-g_i^t=-\eta_w\left[
+u_i^t=-\eta_w\left[
 \frac{\Delta_i}{\rho_n}\ell_r(r_i^t,Y_i)
 +\frac{(1-\Delta_i)\pi}{1-\rho_n}
  S_\kappa(r_i^t)\ell_r(r_i^t,\widehat Y_i^t)
 \right].
 $$
 
-**The learning rate and minus sign are already included in $g^t$.**
+**The finite increment $u^t$ includes the learning rate and descent sign.**
+The manuscript and effective implementation instead use the score gradient
+$g^t=-u^t/\eta_w$ for positive $\eta_w$; at zero rate, $g^t$ is still
+computed directly from the bracketed expression. The finite API retains
+`FiniteStep.g` and callback residual names for these increments.
 There is no division by the selected fraction. Thus the unlabeled part uses
 the total unlabeled pool, rather than the selected pool, as its denominator.
 For $\rho_n=1$ the unlabeled term is omitted; a finite fit requires $N>0$.
@@ -103,7 +107,7 @@ For a separable penalty $J(w)=\sum_j j(w_j)$, set
 $h^t=-\eta_w\lambda j'(w^t)$ coordinatewise. The implemented finite update is
 
 $$
-w^{t+1}=w^t+h^t+\frac{\sqrt d}{n}X^\top g^t.
+w^{t+1}=w^t+h^t+\frac{\sqrt d}{n}X^\top u^t.
 $$
 
 Custom loss and penalty implementations can be supplied through the current
@@ -116,16 +120,16 @@ $h^t=-\eta_w\lambda w^t$.
 The defaults use the same residual for weights and intercept. The code also
 supports a separate bias rate $\eta_b$ (`bias_step_size`) and pseudo-label
 coefficient $\pi_b$ (`bias_pseudo_label_param`). When the bias is trainable,
-define $g_b^t$ by the preceding residual formula with
+define $u_b^t$ by the preceding residual formula with
 $(\eta_w,\pi)$ replaced by $(\eta_b,\pi_b)$. Then
 
 $$
-b^{t+1}=b^t+\frac1n\sum_i g_{b,i}^t.
+b^{t+1}=b^t+\frac1n\sum_i u_{b,i}^t.
 $$
 
-The defaults are $\eta_b=\eta_w$ and $\pi_b=\pi$, hence $g_b^t=g^t$.
+The defaults are $\eta_b=\eta_w$ and $\pi_b=\pi$, hence $u_b^t=u^t$.
 With `train_bias=False`, $b^{t+1}=b^t$; the fixed bias remains in every score.
-In that case the implementation retains $g_b^t=g^t$ for diagnostics but does
+In that case the implementation retains $u_b^t=u^t$ for diagnostics but does
 not apply its mean. The bias is not penalized.
 
 ### 1.3 Exact finite decomposition and proportional regime
@@ -134,9 +138,9 @@ Introduce the finite observables and fluctuations
 
 $$
 m^t=\frac{\mu^\top w^t}{d},\qquad
-\chi^t=\frac{Y^\top g^t}{n},\qquad
+\chi_u^t=\frac{Y^\top u^t}{n},\qquad
 q^t=\frac{Uw^t}{\sqrt d},\qquad
-p^t=\frac{U^\top g^t}{\sqrt n}.
+p_u^t=\frac{U^\top u^t}{\sqrt n}.
 $$
 
 Substitution into the score and weight updates gives the exact identities
@@ -144,12 +148,17 @@ Substitution into the score and weight updates gives the exact identities
 $$
 r^t=b^t\mathbf 1_n+m^tY+\sigma q^t,
 \qquad
-w^{t+1}=w^t+h^t+\chi^t\mu+
-\frac{\sigma}{\sqrt{\delta_n}}p^t.
+w^{t+1}=w^t+h^t+\chi_u^t\mu+
+\frac{\sigma}{\sqrt{\delta_n}}p_u^t.
 $$
 
 These are the identities evaluated by
-`SelfTrainedGradientDescent.finite_decomposition`. They explain all powers of
+`SelfTrainedGradientDescent.finite_decomposition`, whose existing `chi` and
+`p` fields store $\chi_u^t$ and $p_u^t$. In manuscript units the corresponding
+quantities are $\chi^t=Y^\top g^t/n$ and $p^t=U^\top g^t/\sqrt n$,
+and the weight update subtracts
+$\eta_w(\chi^t\mu+\sigma p^t/\sqrt{\delta_n})$.
+These identities explain all powers of
 $d,n,\delta_n$ used below. The effective recursion describes the proportional
 regime $n,d\to\infty$ with $\delta_n\to\bar\delta\in(0,\infty)$,
 $\rho_n\to\bar\rho$, and limiting coordinate laws for the environment and
@@ -216,7 +225,8 @@ $$
 \widetilde r^t=\bar b^t+\bar m^t\widetilde Y+\sigma\widetilde q^t,
 $$
 
-and evaluate $\widetilde g^t$ using the residual in Section 1, with
+and evaluate $\widetilde g^t$ using the bracketed score gradient in Section 1
+(without the factor $-\eta_w$), with
 $\rho_n$ replaced by $\bar\rho$ and the effective score sign as default
 pseudo-label. The backward quantities are
 
@@ -245,14 +255,17 @@ $$
 \bar\chi^t&=\widetilde{\mathbb E}[\widetilde Y\widetilde g^t],
 &\bar\zeta_b^t&=\widetilde{\mathbb E}[\widetilde g_b^t],\\
 \widetilde h^t&=-\eta_w\lambda j'(\widetilde w^t),
-&\widetilde w^{t+1}&=\widetilde w^t+\widetilde h^t+
- \bar\chi^t\widetilde\mu+
- \frac{\sigma}{\sqrt{\bar\delta}}\widetilde p^t.
+&\widetilde w^{t+1}&=\widetilde w^t+\widetilde h^t-
+ \eta_w\bar\chi^t\widetilde\mu-
+ \eta_w\frac{\sigma}{\sqrt{\bar\delta}}\widetilde p^t.
 \end{aligned}
 $$
 
-For trainable bias, $\bar b^{t+1}=\bar b^t+\bar\zeta_b^t$;
-otherwise it is unchanged. Under the default shared residual,
+For trainable bias, $\bar b^{t+1}=\bar b^t-\eta_b\bar\zeta_b^t$;
+otherwise it is unchanged. Here $\widetilde g_b^t$ uses the same raw gradient
+formula with $\pi$ replaced by $\pi_b$; its rate is applied only in the
+intercept update. With a fixed intercept, its diagnostic equals
+$\widetilde g^t$. Under the default shared residual,
 $\bar\zeta_b^t=\bar\zeta^t=
 \widetilde{\mathbb E}[\widetilde g^t]$.
 
@@ -634,7 +647,7 @@ For $\bar\rho=1$, `compute_selection_rate` returns zero.
 The residual is evaluated coordinatewise as
 
 $$
-\mathring g_i^t=-\eta_w\left[
+\mathring g_i^t=\left[
 \frac{\mathring\Delta_i}{\bar\rho}
  \ell_r(\mathring r_i^t,\mathring Y_i)
 +\frac{(1-\mathring\Delta_i)\pi}{1-\bar\rho}
@@ -644,7 +657,7 @@ $$
 $$
 
 The same first-step override and zero-unlabeled-term conventions as in
-Section 1 apply. In particular, $\hat\omega_{\mathrm{pop}}^t$ is a
+Section 1 apply, without incorporating a learning rate into the residual. In particular, $\hat\omega_{\mathrm{pop}}^t$ is a
 diagnostic and is **not** an argument that rescales this residual.
 The companion bias residual is also computed when its settings differ.
 This is the order in `MacroscopicStateEvolution.forward_pass`.
@@ -683,13 +696,13 @@ $$
 &\hat\zeta^t&=\frac1{K_g}\mathbf 1^\top\mathring g^t,
 &\hat\zeta_b^t&=\frac1{K_g}\mathbf 1^\top\mathring g_b^t,\\
 \mathring h^t&=-\eta_w\lambda j'(\mathring w^t),
-&\mathring w^{t+1}&=\mathring w^t+\mathring h^t+
- \hat\chi^t\mathring\mu+
- \frac{\sigma}{\sqrt{\bar\delta}}\mathring p^t.
+&\mathring w^{t+1}&=\mathring w^t+\mathring h^t-
+ \eta_w\hat\chi^t\mathring\mu-
+ \eta_w\frac{\sigma}{\sqrt{\bar\delta}}\mathring p^t.
 \end{aligned}
 $$
 
-If the bias is trainable, set $\hat b^{t+1}=\hat b^t+\hat\zeta_b^t$;
+If the bias is trainable, set $\hat b^{t+1}=\hat b^t-\eta_b\hat\zeta_b^t$;
 otherwise retain $\hat b^t$. The code stores the weight and bias residual
 means separately as `mean_residual` and `mean_bias_residual`.
 `_backward_pass` performs these operations; the public `backward_pass`
@@ -922,23 +935,21 @@ code does; it is not a diagnostic of the override's label errors.
 ### 8.3 Recorded time indices
 
 The callback is called before any update and after each update. Bias, norm,
-alignment, population error, and selected-error fraction therefore refer to
-the current state $t=0,\ldots,T$. In contrast, `unl_usage` records the
-selection used by the **preceding** parameter update:
+alignment, population error, selected-error fraction, and `unl_usage` refer
+to the current state $t=0,\ldots,T$:
 
 $$
-\texttt{unl\_usage}[0]=0,\qquad
-\texttt{unl\_usage}[t]=\omega^{t-1},\quad1\leq t\leq T.
+\texttt{unl\_usage}[t]=\omega^t,\qquad 0\leq t\leq T.
 $$
 
-For finite GD, $\omega^{t-1}$ is the preceding update's empirical fraction.
-For the effective comparison, the runner explicitly assembles
-`[0.0] + se.selection_rate[:T]`, using the population-denominator estimate.
-The unshifted current estimates remain available in `se.selection_rate`.
-This lag is independent of the denominator issue above. One cannot infer
-$e[t]\leq\texttt{unl\_usage}[t]$ by comparing the recorded arrays at the
-same array index.
-See [`TestEvaluatorCallback`](../src/callbacks.py) and the comparison runner.
+Finite usage is evaluated directly from current unlabeled scores; it requires
+`X_unl` but no diagnostic labels. The effective comparison uses
+`se.selection_rate[:T+1]`, retaining its population denominator.
+The finite selected-error fraction is bounded by usage at every common time.
+For the effective particle estimates, their different empirical versus
+population denominators can prevent that exact finite-particle inequality.
+Residual callback diagnostics still describe the preceding update and start
+at zero. See [`TestEvaluatorCallback`](../src/callbacks.py).
 
 ### 8.4 Auxiliary stationary-intercept diagnostic
 
@@ -1005,8 +1016,8 @@ For each repetition, the runner:
 3. Constructs `MacroscopicStateEvolution` with `mc_seed=seed + 47`, the same
    population and algorithm configurations, `K=config.k`, and the joint
    sample-type-law adapter. It calls `compute_trajectory()` once.
-4. Records the finite and effective trajectories, including the selection
-   lag described above, without substituting finite realized vectors into
+4. Records finite and effective trajectories at the current score times,
+   without substituting finite realized vectors into
    the particle system.
 
 The initial effective parameter coordinates have the same law as the finite
@@ -1093,3 +1104,6 @@ streams, innovation dimensions, initialization, and terminal conventions.
 The Gram pseudoinverses used in reference tests are not part of production
 updates. Agreement on these fixtures verifies those identities and
 conventions, not a particle-limit theorem or a long-horizon accuracy bound.
+For conversion from the former effective increment convention, seeded
+regression evidence, and the orientation of parameter Gaussian innovations,
+see [the convention audit](mean_field_convention_refactor.md).

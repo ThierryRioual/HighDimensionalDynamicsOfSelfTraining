@@ -21,7 +21,7 @@ import torch
 from src.config import AlgorithmConfig, DataConfig
 from src.orthogonal import EmpiricalOrthogonalBasis, solve_transported_history
 from src.performance import oracle_calibrated_bias_and_error, population_error
-from src.primitives import compute_abstract_pseudo_residual_from
+from src.primitives import compute_abstract_score_gradient_from
 
 
 DeviceLike = Union[str, torch.device]
@@ -49,6 +49,11 @@ class TheoremTrajectoryView:
 @dataclass
 class MacroscopicStateEvolution:
     """Numerically integrate the effective dynamics by particle averaging.
+
+    Residuals ``g``, fluctuations ``p``, moments ``chi,zeta`` and memory
+    coefficients use the definition of the mean-field recursion in
+    ``latex/High_Dimensional_Dynamics_of_Self_Training/mean-field.tex``:
+    g is the score gradient; -eta appears only in the parameter updates.
 
     ``K`` is retained as a legacy alias for equal particle populations.  New
     code may set ``K_w`` and ``K_g`` independently; they are Monte Carlo
@@ -201,8 +206,10 @@ class MacroscopicStateEvolution:
             self._randn(self.K_g, self._sample_innovation_generator)
             for _ in range(length)
         ]
+        # Symmetry of N(0,1): orient the parameter stream so seeded weight
+        # trajectories are preserved when descent is applied in the update.
         self.parameter_innovations = [
-            self._randn(self.K_w, self._parameter_innovation_generator)
+            -self._randn(self.K_w, self._parameter_innovation_generator)
             for _ in range(length)
         ]
 
@@ -766,9 +773,7 @@ class MacroscopicStateEvolution:
         bias_eta = self.algo_cfg.get_bias_step_size()
         if not self.algo_cfg.train_bias:
             self.bias_residual[t] = g
-        elif bias_eta == 0:
-            self.bias_residual[t] = torch.zeros_like(g)
-        elif bias_pseudo_weight == pseudo_weight and bias_eta == self.eta:
+        elif bias_pseudo_weight == pseudo_weight:
             self.bias_residual[t] = g
         else:
             self.bias_residual[t] = self.compute_pseudo_residual_from(
@@ -864,15 +869,15 @@ class MacroscopicStateEvolution:
             return self.bias[t + 1], self.weight[t + 1]
 
         next_bias = (
-            current_bias + zeta
+            current_bias - self.algo_cfg.get_bias_step_size() * zeta
             if self.algo_cfg.train_bias
             else current_bias.detach().clone()
         )
         next_weight = (
             current_weight
             + h
-            + chi * self.signal
-            + (self.sigma / math.sqrt(self.delta)) * p
+            - self.eta * chi * self.signal
+            - self.eta * (self.sigma / math.sqrt(self.delta)) * p
         )
         self.bias[t + 1] = next_bias
         self.weight[t + 1] = next_weight
@@ -892,18 +897,22 @@ class MacroscopicStateEvolution:
         selection: Optional[torch.Tensor] = None,
         eta: Optional[float] = None,
     ) -> torch.Tensor:
+        """Return manuscript g, independent of the learning rate.
+
+        ``eta`` is retained as an unused compatibility keyword. Bias and weight
+        rates are applied explicitly in their respective parameter updates.
+        """
         selection_mask = (
             self.selection_mask(preactivation)
             if selection is None else selection
         )
-        return compute_abstract_pseudo_residual_from(
+        return compute_abstract_score_gradient_from(
             preactivation=preactivation,
             label=label,
             indicator=indicator,
             selection_mask=selection_mask,
             coef=coef,
             rho=self.rho,
-            eta=self.eta if eta is None else eta,
             loss_function=self.algo_cfg.loss_function,
             time_index=time_index,
             initial_pseudo_label=initial_pseudo_label,

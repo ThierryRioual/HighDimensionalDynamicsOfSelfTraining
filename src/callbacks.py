@@ -61,8 +61,8 @@ class TestEvaluatorCallback:
     - Requesting "population_error" also records the auxiliary histories
       "oracle_bias" and "oracle_error" using the same weight observables.
     ---- 5. Selection terms ----
-    - "unl_usage": Fraction of unlabeled samples used in the preceding update
-      (zero at t=0)
+    - "unl_usage": Fraction selected by current unlabeled scores, including t=0
+      (requires X_unl)
     - "unl_selected_error": Fraction of all unlabeled samples selected with an
       incorrect score-sign label, evaluated at the current scores (including t=0)
     - "unl_flipping_rate": Rate of label flipping in unlabeled data across iterations
@@ -122,7 +122,7 @@ class TestEvaluatorCallback:
         # Validate standard data dependencies
         if "lab_error" in self.metrics:
             assert self.X_lab is not None and self.Y_lab is not None, "X_lab and Y_lab required for lab_error."
-        if {"unl_error", "unl_flipping_rate"} & self.metrics:
+        if {"unl_error", "unl_flipping_rate", "unl_usage"} & self.metrics:
             assert self.X_unl is not None, "X_unl required for unlabeled metrics."
         if "unl_error" in self.metrics:
             assert self.Y_unl is not None, "Y_unl required for unl_error."
@@ -278,10 +278,11 @@ class TestEvaluatorCallback:
             self.history_["unl_selected_error"].append(error)
 
         if "unl_usage" in self.metrics:
-            if t > 0 and learner.update_records_:
-                usage = learner.update_records_[t - 1].omega.item()
-            else:
-                usage = 0.0
+            scores = get_preactivations_unl()
+            usage = (
+                (learner.selection_mask(scores) > 0).double().mean().item()
+                if scores.numel() else 0.0
+            )
             self.history_["unl_usage"].append(usage)
 
         if "unl_flipping_rate" in self.metrics:

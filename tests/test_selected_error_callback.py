@@ -35,8 +35,7 @@ def test_selected_error_boundaries_and_empty_selection(threshold, expected):
     omega = learner.selection_mask(scores).double().mean().item()
     assert 0 <= expected <= omega <= 1
     assert omega == pytest.approx(4/6 if threshold == 1 else 0.)
-    # Preserve legacy usage timing: its initial entry is zero.
-    assert cb.history_["unl_usage"] == [0.]
+    assert cb.history_["unl_usage"] == pytest.approx([omega])
 
 
 def test_selected_error_tracks_current_scores_and_does_not_change_training():
@@ -54,12 +53,11 @@ def test_selected_error_tracks_current_scores_and_does_not_change_training():
         omega = (c != 0).double().mean().item()
         assert cb.history_["unl_selected_error"][t] == pytest.approx(expected)
         assert 0 <= expected <= omega <= 1
+        assert cb.history_["unl_usage"][t] == pytest.approx(omega)
         torch.testing.assert_close(w, reference.weight_history_[t], rtol=0, atol=0)
     torch.testing.assert_close(learner.bias, reference.bias, rtol=0, atol=0)
-    assert cb.history_["unl_usage"] == [0.] + [float(s.omega) for s in learner.update_records_]
-    # Legacy usage entry t+1 belongs to scores at t.
-    for error, omega in zip(cb.history_["unl_selected_error"][:-1],
-                            cb.history_["unl_usage"][1:]):
+    for error, omega in zip(cb.history_["unl_selected_error"],
+                            cb.history_["unl_usage"]):
         assert 0 <= error <= omega <= 1
 
 
@@ -106,11 +104,14 @@ def test_callback_history_serializes_selected_error(tmp_path):
     torch.testing.assert_close(torch.tensor(restored["unl_selected_error"]), trajectory)
 
 
-def test_usage_requires_no_evaluation_data():
+def test_usage_requires_unlabeled_scores_but_no_labels():
+    with pytest.raises(AssertionError, match="X_unl required"):
+        EvaluatorCallback(metrics={"unl_usage"})
     X, env, cfg, init, _ = _problem(T=2)
-    callback = EvaluatorCallback(metrics={"unl_usage"})
-    learner = SelfTrainedGradientDescent(cfg, callback).fit(X, env.Y * env.Delta, init)
-    assert callback.history_["unl_usage"] == [0.] + [float(s.omega) for s in learner.update_records_]
+    callback = EvaluatorCallback(X_unl=X[env.I_U], metrics={"unl_usage"})
+    SelfTrainedGradientDescent(cfg, callback).fit(X, env.Y * env.Delta, init)
+    assert len(callback.history_["unl_usage"]) == cfg.n_iterations + 1
+    assert callback.history_["unl_usage"][0] == pytest.approx(4/6)
 
 
 def test_callback_combines_training_data_only_for_training_error():

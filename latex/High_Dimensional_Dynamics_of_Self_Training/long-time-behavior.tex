@@ -1,0 +1,265 @@
+\subsection{Long-time mean-field convergence and stabilization}
+\label{subsec:long-time}
+
+We now study the effective dynamics as $t\to\infty$.
+Finite-dimensional convergence and fixed-horizon trajectory
+convergence do not by themselves establish convergence of the
+effective process. We first show that exact finite-dimensional
+identification times diverge in probability. Under additional
+conditions, we then prove convergence of the effective parameters
+and scores, together with almost-sure eventual stabilization of
+the active pseudo-label state of a representative unlabeled
+observation.
+
+Write
+$\tilde{\mathbb P}_{\mathcal U}
+:=\tilde{\mathbb P}(\,\cdot\mid\tilde\Delta=0)$.
+
+\subsubsection{Nonuniformity of finite-dimensional identification}
+
+Recall the effective active pseudo-label state $\tilde{\mathfrak c}^{\,t}$ from \eqref{eq:mean-field-score}, 
+and define the configuration discrepancy by
+\[
+    \bar h(s,t)
+    :=
+    \tilde{\mathbb P}
+        (\tilde{\mathfrak c}^{\,s}
+            \neq\tilde{\mathfrak c}^{\,t} \mid \tilde \Delta = 0).
+\]
+Thus $\bar h(t,t+1)$ is the probability that a representative
+unlabeled observation changes its active pseudo-label state
+during the next update.
+
+\begin{proposition}[Divergence of exact identification times]
+\label{prop:identification-time-divergence}
+Suppose Assumptions~\ref{assumption:asymptotic-regime},
+\ref{assumption:quenched-initialization}, and
+\ref{assumption:regularity-of-loss-and-penalty} hold.
+Then
+\[
+    \bar h(t,t+1)>0
+    \quad \text{for every finite} \quad t\geq1,
+\]
+and the identification time \eqref{eq:identification-time} diverges in probability:
+\[
+    T_{\mathrm{id}}
+    \xrightarrow{\mathbb P}+\infty
+    \qquad\text{as} \qquad d\to\infty.
+\]
+\end{proposition}
+
+The geometric estimate in Theorem~\ref{thm:st-convergence}
+is obtained after exact identification, whose time diverges
+in probability with the dimension.
+The theorem therefore does not provide a dimension-uniform
+onset for this estimate.
+
+
+\subsubsection{Convergence of the effective process}
+
+\begin{assumption}[Conditions for long-time convergence]
+\label{assumption:long-time-loss-penalty}
+In addition to
+Assumption~\ref{assumption:finite-dim-loss-penalty},
+we assume the following:
+\begin{enumerate}
+    \item There exists a dimension-independent constant
+    $B_\ell\in(0,\infty)$ such that
+    \[
+        |\ell'(y,r)|\leq B_\ell,
+        \qquad y\in\{-1,+1\},\quad r\in\mathbb R.
+    \]
+
+    \item There exists a dimension-independent constant
+    $m_j\in(0,\infty)$ such that
+    \[
+        j''(u)\geq m_j,
+        \qquad u\in\mathbb R.
+    \]
+
+    \item The penalty satisfies $j(0)=0$.
+\end{enumerate}
+\end{assumption}
+Assumption~\ref{assumption:finite-dim-loss-penalty}
+implies Assumption~\ref{assumption:regularity-of-loss-and-penalty}
+with the same constants $L_\ell,L_j$.
+Under Assumption~\ref{assumption:asymptotic-regime},
+\begin{align}
+    p_{\mathcal L}
+    :=
+    \frac1N\sum_{i\in I_{\mathcal L}}
+        \mathbf1_{\{Y_i=+1\}}
+    \longrightarrow
+    \bar p_{\mathcal L}
+    :=
+    \tilde{\mathbb P}(\tilde Y = +1 \mid \tilde \Delta = 1).
+    \label{eq:limiting-labeled-class-proportion}
+\end{align}
+For long-time convergence, we require
+$\bar p_{\mathcal L}\in(0,1)$.
+Introduce the Hilbert space and effective parameter
+\[
+    \mathcal H
+    :=\mathbb R\times L^2(\tilde{\mathbb P}^{[w]}),
+    \qquad
+    \|(b,u)\|_{\mathcal H}^2
+    :=b^2+\tilde{\mathbb E}[u^2],
+    \qquad
+    \tilde\theta^t:=(\bar b^t,\tilde w^t).
+\]
+The Hilbert space $\mathcal H$ is distinct from the history
+$\sigma$-fields $\mathcal H_t^{[g]}$ and $\mathcal H_t^{[w]}$.
+Each effective process is realized jointly over time on its
+corresponding probability space from
+Definition~\ref{def:mean-field-recursion}.
+To specify a dimension-independent step-size condition, define
+\begin{align}
+    \bar s_\mu
+    :=\left(\tilde{\mathbb E}[\tilde\mu^2]\right)^{1/2}
+    , \quad
+    \bar K_{\mathcal L}
+    :=\bar s_\mu+
+    \sigma\left(1+\frac1{\sqrt{\bar\rho\bar\delta}}\right)
+    , \quad
+    \bar K_{\mathcal U}
+    :=\bar s_\mu+
+    \sigma\left(
+        1+\frac1{\sqrt{(1-\bar\rho)\bar\delta}}
+    \right), \label{eq:s-mu-k-bar}
+\end{align}
+and
+\begin{align}
+    \Lambda_{\mathrm{bd}}
+    :=
+    \lambda L_j+L_\ell(1+\bar K_{\mathcal L}^2)
+    +\pi L_\ell(1+\bar K_{\mathcal U}^2).
+    \label{eq:lambda-bd}
+\end{align}
+We impose the sufficient condition
+\begin{align}
+    0<\eta<\frac2{\Lambda_{\mathrm{bd}}}.
+    \label{eq:mean-field-long-time-step-size}
+\end{align}
+
+\begin{theorem}[Convergence of the effective process]
+\label{thm:effective-process-convergence}
+Assume the hypotheses of Theorem~\ref{theorem:trajectory}
+and Assumption~\ref{assumption:long-time-loss-penalty}.
+Suppose also that $\lambda>0$, $\pi>0$,
+$\kappa_-<0<\kappa_+$, $\bar p_{\mathcal L}\in(0,1)$,
+and \eqref{eq:mean-field-long-time-step-size} holds.
+Then there exist
+\[
+    \tilde\theta^\infty
+    =
+    (\bar b^\infty,\tilde w^\infty)
+    \in\mathcal H,
+    \qquad
+    \tilde r^\infty
+    \in L^2(\tilde{\mathbb P}^{[g]})
+\]
+such that, as $t\to\infty$,
+\begin{align}
+    \|\tilde\theta^t-\tilde\theta^\infty\|_{\mathcal H}
+    \longrightarrow0,
+    \qquad
+    \|\tilde r^t-\tilde r^\infty\|_
+        {L^2(\tilde{\mathbb P}^{[g]})}
+    \longrightarrow0.
+    \label{eq:effective-score-convergence}
+\end{align}
+Moreover, there exists a random variable
+$\tilde{\mathfrak c}^{\,\infty}\in\{-1,0,+1\}$ such that,
+$\tilde{\mathbb P}_{\mathcal U}$-almost surely,
+\[
+    \tilde{\mathfrak c}^{\,t}
+    =
+    \tilde{\mathfrak c}^{\,\infty}
+    \qquad\text{for all sufficiently large }t,
+\]
+On labeled observations, choose the extension
+\[
+    \tilde{\mathfrak c}^{\,\infty}
+    :=
+    \mathbf1_{\{\tilde r^\infty\geq\kappa_+\}}
+    -
+    \mathbf1_{\{\tilde r^\infty\leq\kappa_-\}},
+    \qquad \tilde\Delta=1.
+\]
+\end{theorem}
+
+The proof of Theorem~\ref{thm:effective-process-convergence}
+proceeds in three steps:
+\begin{enumerate}
+    \item Passing the finite-dimensional descent inequality to the
+    trajectory limit gives a decreasing mean-field potential and
+    square-summable parameter increments.
+
+    \item A bound on configuration switching in terms of consecutive
+    squared increments gives summable switching probabilities and
+    almost-sure eventual stabilization of the representative
+    configuration.
+
+    \item Branch-stability estimates combine vanishing increments
+    with control of configuration discrepancies to make the effective
+    parameters Cauchy. Completeness gives parameter convergence in $\mathcal{H}$,
+    and a uniform bound on score differences gives convergence
+    of the scores in $L^2(\tilde{\mathbb P}^{[g]})$.
+\end{enumerate}
+The quantitative estimates and the full proof are given in
+Appendix~\ref{sec:proof-long-time}.
+The theorem also gives convergence of statistics determined by the
+active pseudo-label state.
+
+\begin{corollary}[Stabilization of selection and selected errors]
+\label{cor:mean-field-selection-stabilization}
+Under the assumptions of
+Theorem~\ref{thm:effective-process-convergence},
+recall $\bar\omega^t,\bar e^t$ from
+Corollary~\ref{cor:mean-field-observables}.
+Equivalently,
+\[
+    \bar\omega^t
+    =\tilde{\mathbb P}(\tilde{\mathfrak c}^{\,t}\neq0
+        \mid\tilde\Delta=0),
+    \qquad
+    \bar e^t
+    =\tilde{\mathbb P}(\tilde{\mathfrak c}^{\,t}=-\tilde Y
+        \mid\tilde\Delta=0).
+\]
+Then
+\[
+    \bar\omega^t\longrightarrow
+    \tilde{\mathbb P}
+        (\tilde{\mathfrak c}^{\,\infty}\neq0 \mid \tilde \Delta = 0 ),
+    \qquad
+    \bar e^t\longrightarrow
+    \tilde{\mathbb P}
+        (\tilde{\mathfrak c}^{\,\infty}=-\tilde Y \mid  \tilde \Delta = 0),
+\]
+and both sequences have finite total variation:
+\[
+    \sum_{t=1}^{\infty}
+        |\bar\omega^{t+1}-\bar\omega^t|
+    <\infty,
+    \qquad
+    \sum_{t=1}^{\infty}
+        |\bar e^{t+1}-\bar e^t|
+    <\infty.
+\]
+If, additionally,
+\[
+    \tilde{\mathbb P}
+        (\tilde r^\infty\in\{\kappa_-,\kappa_+\})=0,
+\]
+then
+\[
+    \tilde{\mathfrak c}^{\,\infty}
+    =
+    \mathbf1_{\{\tilde r^\infty\geq\kappa_+\}}
+    -
+    \mathbf1_{\{\tilde r^\infty\leq\kappa_-\}}
+    \qquad
+    \tilde{\mathbb P}\text{-almost surely}.
+\]
+\end{corollary}

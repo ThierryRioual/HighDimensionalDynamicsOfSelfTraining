@@ -1,0 +1,310 @@
+\section{Proofs from Section~\ref{sec:numerical}}
+\label{sec:proof-numerical}
+
+\begin{proof}[Proof of Proposition~\ref{prop:bayes-risk}]
+Let $\phi=\Phi'$ denote the standard Gaussian density.
+For $\alpha>0$,
+\[
+    \frac{\partial}{\partial\beta}
+        \mathcal E_p(\alpha,\beta)
+    =
+    \phi(\alpha+\beta)
+    \bigl((1-p)e^{2\alpha\beta}-p\bigr).
+\]
+The derivative changes sign from negative to positive at
+$\beta_\star(\alpha;p)$, proving the first assertion.
+
+To identify the finite-dimensional Bayes error, consider an
+independent test observation. For all sufficiently large $d$,
+we have $p\in(0,1)$ and $s_\mu>0$, and its posterior log-odds satisfy
+\[
+    \log
+    \frac{
+        \mathbb P(Y_{\mathrm{test}}=+1
+            \mid X_{\mathrm{test}}=x)
+    }{
+        \mathbb P(Y_{\mathrm{test}}=-1
+            \mid X_{\mathrm{test}}=x)
+    }
+    =
+    \frac{2\mu^\top x}{\sigma^2\sqrt d}
+    +
+    \log\frac{p}{1-p}.
+\]
+Choosing the class with the larger posterior probability
+minimizes the conditional misclassification probability.
+Thus the Bayes rule is an affine classifier of the form
+considered here. With $s_\mu=\|\mu\|/\sqrt d$ as defined in
+Section~\ref{subsec:classification-error}, its normalized parameters are
+\[
+    \frac{s_\mu}{\sigma},
+    \qquad
+    \frac{\sigma}{2s_\mu}\log\frac{p}{1-p}.
+\]
+Since $s_\mu\to\bar s_\mu>0$ and $p\to\bar p\in(0,1)$,
+continuity of the Gaussian distribution function proves
+\eqref{eq:bayes-classification-error}.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:weighted-pseudo-label-contributions}]
+Fix a finite $t\geq0$.
+The second-moment bounds from
+Lemma~\ref{lemma:mf-proof-nondegeneracy}, together with the
+linear growth of the loss and penalty derivatives, ensure
+that all expectations below are finite.
+
+\begin{enumerate}[label=(\roman*),wide]
+    \item \emph{Weighted pseudo-label contributions.}
+    The sign assumption gives $\tilde A^t\geq0$, and the
+    convention $\ell'(0,r)=0$ gives $\tilde A^t=0$ on
+    $\{\tilde{\mathfrak c}^{\,t}=0\}$.
+    Since $\tilde{\mathfrak c}^{\,t}\in\{-1,0,+1\}$,
+    \[
+        |\tilde{\mathfrak c}^{\,t}|\,
+        \ell'(\tilde{\mathfrak c}^{\,t},\tilde r^t)
+        =
+        -\tilde{\mathfrak c}^{\,t}\tilde A^t.
+    \]
+    Consequently, the definition of the unlabeled residual
+    yields
+    \[
+        \tilde g_{\mathcal U}^t
+        =
+        -\frac{1-\tilde\Delta}{1-\bar\rho}
+            \tilde{\mathfrak c}^{\,t}\tilde A^t.
+    \]
+    Using
+    $\tilde{\mathbb P}(\tilde\Delta=0)=1-\bar\rho>0$,
+    we obtain
+    \[
+    \begin{aligned}
+        \tilde{\mathbb E}[\tilde g_{\mathcal U}^t]
+        &=
+        -\tilde{\mathbb E}\left[
+            \tilde{\mathfrak c}^{\,t}\tilde A^t
+            \,\middle|\,\tilde\Delta=0
+        \right],\\
+        \tilde{\mathbb E}[\tilde Y\tilde g_{\mathcal U}^t]
+        &=
+        -\tilde{\mathbb E}\left[
+            \tilde Y\tilde{\mathfrak c}^{\,t}\tilde A^t
+            \,\middle|\,\tilde\Delta=0
+        \right].
+    \end{aligned}
+    \]
+    The pointwise identities
+    \[
+        -\tilde{\mathfrak c}^{\,t}
+        =
+        \mathbf1_{\{\tilde{\mathfrak c}^{\,t}=-1\}}
+        -
+        \mathbf1_{\{\tilde{\mathfrak c}^{\,t}=+1\}},
+    \]
+    and
+    \[
+        -\tilde Y\tilde{\mathfrak c}^{\,t}
+        =
+        \mathbf1_{\{\tilde{\mathfrak c}^{\,t}=-\tilde Y\}}
+        -
+        \mathbf1_{\{\tilde{\mathfrak c}^{\,t}=\tilde Y\}},
+    \]
+    therefore prove
+    \eqref{eq:weighted-pseudo-label-imbalance}
+    and \eqref{eq:weighted-pseudo-label-correctness}.
+
+    For logistic loss,
+    \[
+        \ell'(y,r)=-\frac{y}{1+e^{yr}}.
+    \]
+    On selected observations,
+    $\tilde{\mathfrak c}^{\,t}\tilde r^t=|\tilde r^t|$
+    and $(\tilde{\mathfrak c}^{\,t})^2=1$, so
+    \[
+        \tilde A^t
+        =
+        \frac{1}{1+e^{|\tilde r^t|}}.
+    \]
+    On unselected observations, $\tilde A^t=0$.
+    Combining these cases gives the stated formula.
+
+    \item \emph{Intercept and overlap updates.}
+    The decompositions of $\bar\zeta^t$ and $\bar\chi^t$
+    follow from
+    \[
+        \tilde g^t
+        =
+        \tilde g_{\mathcal L}^t
+        +
+        \pi\tilde g_{\mathcal U}^t,
+        \qquad
+        \bar\zeta^t=\tilde{\mathbb E}[\tilde g^t],
+        \qquad
+        \bar\chi^t=\tilde{\mathbb E}[\tilde Y\tilde g^t].
+    \]
+    The intercept update
+    \eqref{eq:statistical-intercept-drift} is part of
+    Definition~\ref{def:mean-field-recursion}.
+
+    Substituting \eqref{eq:p-memory-definition} into
+    \eqref{eq:w-update-definition} gives
+    \[
+        \tilde w^{t+1}-\tilde w^t
+        =
+        -\eta\left[
+            \lambda j'(\tilde w^t)
+            +
+            \bar\chi^t\tilde\mu
+            +
+            \sigma\sum_{s=0}^{t}
+                \bar\gamma^{[g]}(t,s)\tilde w^s
+            +
+            \frac{\sigma}{\sqrt{\bar\delta}}\xi_t^{[w]}
+        \right].
+    \]
+    By \eqref{eq:xi-w-definition}, $\xi_t^{[w]}$ is a
+    deterministic linear combination of the centered
+    Gaussian inputs $z_0^{[w]},\ldots,z_t^{[w]}$.
+    These inputs are independent of
+    $(\tilde\mu,\tilde w^0)$, and hence
+    \[
+        \tilde{\mathbb E}[\tilde\mu\,\xi_t^{[w]}]=0.
+    \]
+    Multiplying the weight increment by $\tilde\mu$,
+    taking expectations, and using
+    \[
+        \bar m^s
+        =
+        \tilde{\mathbb E}[\tilde\mu\tilde w^s],
+        \qquad
+        \bar s_\mu^2
+        =
+        \tilde{\mathbb E}[\tilde\mu^2],
+    \]
+    proves \eqref{eq:statistical-overlap-update}.
+\end{enumerate}
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:zero-intercept-symmetry}]
+Fix a finite horizon $T$.
+We reflect the label and all sample-side Gaussian innovations,
+keeping the deterministic coefficients and macroscopic
+quantities fixed.
+
+\begin{enumerate}[wide]
+    \item \emph{Reflection of the inputs.}
+    By \eqref{eq:balance-within-supervision}, Gaussian
+    symmetry, and independence of the innovations from
+    the base variables,
+    \begin{equation}
+        (\tilde Y,\tilde\Delta,z_0^{[g]},\ldots,z_T^{[g]})
+        \stackrel{\mathrm d}{=}
+        (-\tilde Y,\tilde\Delta,-z_0^{[g]},\ldots,-z_T^{[g]}).
+        \label{eq:sample-input-reflection}
+    \end{equation}
+    Set
+    \[
+        \tilde Y^\sharp:=-\tilde Y,
+        \qquad
+        \tilde\Delta^\sharp:=\tilde\Delta,
+        \qquad
+        z_t^{[g],\sharp}:=-z_t^{[g]}.
+    \]
+    A superscript $\sharp$ denotes a sample-side variable
+    evaluated through the same recursion at these reflected
+    inputs. Since the recursion is a measurable function
+    of its inputs and deterministic coefficients,
+    \eqref{eq:sample-input-reflection} implies equality
+    of the original and reflected joint sample-side laws.
+    The Gaussian recursion \eqref{eq:xi-g-definition}
+    is linear in the innovations, so
+    \begin{equation}
+        \xi_t^{[g],\sharp}=-\xi_t^{[g]},
+        \qquad 0\leq t\leq T.
+        \label{eq:gaussian-input-oddness}
+    \end{equation}
+
+    \item \emph{Induction over the updates.}
+    Suppose that
+    \[
+        \bar b^t=0,
+        \qquad
+        \tilde g^{s,\sharp}=-\tilde g^s
+        \quad\text{for every }s<t.
+    \]
+    These conditions hold at $t=0$ by assumption and
+    the empty-history convention.
+    Equation~\eqref{eq:q-memory-definition} and
+    \eqref{eq:gaussian-input-oddness} give
+    \(
+        \tilde q^{t,\sharp}=-\tilde q^t
+    \).
+    Using \eqref{eq:mean-field-score} and the induction hypothesis
+    $\bar b^t=0$, we obtain
+    \[
+        \tilde r^{t,\sharp}
+        =
+        \bar b^t-\bar m^t\tilde Y-\sigma\tilde q^t
+        =
+        -\tilde r^t.
+    \]
+    Under symmetric thresholds, the active pseudo-label
+    map is odd, including at the thresholds. Hence
+    \(
+        \tilde{\mathfrak c}^{\,t,\sharp}
+        =
+        -\tilde{\mathfrak c}^{\,t}
+    \).
+    The loss symmetry \eqref{eq:loss-label-score-symmetry}
+    now gives
+    \[
+        \tilde g_{\mathcal L}^{t,\sharp}
+        =
+        \frac{\tilde\Delta}{\bar\rho}
+            \ell'(-\tilde Y,-\tilde r^t)
+        =
+        -\tilde g_{\mathcal L}^t.
+    \]
+    For selected unlabeled observations, the same symmetry,
+    together with invariance of
+    $|\tilde{\mathfrak c}^{\,t}|$ under reflection, gives
+    \(
+        \tilde g_{\mathcal U}^{t,\sharp}
+        =
+        -\tilde g_{\mathcal U}^t
+    \).
+    For unselected observations both sides are zero.
+    Therefore $\tilde g^{t,\sharp}=-\tilde g^t$.
+
+    Both residual components are integrable by loss
+    regularity and the finite second moment of $\tilde r^t$.
+    Equality of the original and reflected laws thus implies,
+    for $A\in\{\mathcal L,\mathcal U\}$,
+    \[
+        \tilde{\mathbb E}[\tilde g_A^t]
+        =
+        \tilde{\mathbb E}[\tilde g_A^{t,\sharp}]
+        =
+        -\tilde{\mathbb E}[\tilde g_A^t],
+    \]
+    so both expectations vanish.
+    Consequently,
+    \[
+        \bar\zeta^t
+        =
+        \tilde{\mathbb E}[\tilde g^t]
+        =0,
+        \qquad
+        \bar b^{t+1}
+        =
+        \bar b^t-\eta\bar\zeta^t
+        =0.
+    \]
+    This closes the induction.
+\end{enumerate}
+The pathwise identities
+$\tilde r^{t,\sharp}=-\tilde r^t$ for $0\leq t\leq T$,
+combined with \eqref{eq:sample-input-reflection}, prove
+\eqref{eq:joint-score-reflection}.
+Since $T$ was arbitrary, the conclusions hold at every
+finite time.
+\end{proof}

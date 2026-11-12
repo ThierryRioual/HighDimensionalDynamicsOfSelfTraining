@@ -1,0 +1,3198 @@
+\section{Proofs from Section~\ref{subsec:mean-field}}
+\label{sec:proof-mean-field}
+
+Throughout this section, the hypotheses of
+Theorem~\ref{theorem:trajectory} hold.
+We first establish well-definedness of the recursion in
+Definition~\ref{def:mean-field-recursion}
+in Section~\ref{subsec:well-definedness-effective}.
+We introduce notation and state the master recursion in
+Section~\ref{subsec:notation-master-rec}.
+After proving the supporting lemmas in
+Section~\ref{subsec:supporting-lem}, we establish the master
+recursion in Section~\ref{subsec:proof-master-rec}
+and deduce the trajectory theorem and its corollary in
+Section~\ref{subsec:proof-trajectory}.
+Fix $T\in\mathbb N$.
+
+\subsection{Well-definedness of the effective process}
+\label{subsec:well-definedness-effective}
+
+For $a\in\{w,g\}$, write
+\[
+    \bar C_t^{[a]}
+    :=
+    \bigl(\bar C^{[a]}(s,u)\bigr)_{0\leq s,u\leq t},
+    \qquad
+    \bar\alpha_t^{[a]}
+    :=
+    \bigl(\bar\alpha^{[a]}(t,s)\bigr)_{0\leq s<t}.
+\]
+We also write
+\[
+    \bar\phi_t^{[w]}
+    :=
+    \bigl(\bar\phi^{[w]}(t,s)\bigr)_{0\leq s<t},
+    \qquad
+    \bar\phi_t^{[g]}
+    :=
+    \bigl(\bar\phi^{[g]}(t,s)\bigr)_{0\leq s\leq t}.
+\]
+Coefficient vectors are column vectors, and matrices and
+vectors with empty index sets are understood to be empty.
+
+\begin{lemma}[Well-definedness and positive innovations]
+        \label{lemma:mf-proof-nondegeneracy}
+        Under the hypotheses of Theorem~\ref{theorem:trajectory},
+        the effective recursion in
+        Definition~\ref{def:mean-field-recursion}
+        uniquely determines the sample-side
+        and parameter-side joint trajectory laws at every finite
+        horizon, and all its coordinates have finite second moments. For every $t\geq0$,
+        \[
+            \bar C_t^{[w]}\succ0,
+            \qquad
+            \bar C_t^{[g]}\succ0,
+            \qquad
+            \bar v_t^{[w]}>0,
+            \qquad
+            \bar v_t^{[g]}>0.
+        \]
+        Moreover, $\tilde r^t$ has an absolutely continuous distribution and
+        \[
+            \tilde{\mathbb P}
+            (\tilde r^t\in\{0,\kappa_-,\kappa_+\})=0.
+        \]
+        \end{lemma}
+
+        \begin{proof}
+        Fix the base variables and independent Gaussian innovation
+        sequences specified in
+        Definition~\ref{def:mean-field-recursion}.
+        We construct the processes in the order
+        \[
+            \tilde w^t
+            \ \longrightarrow\
+            (\tilde q^t,\tilde r^t,\tilde g^t)
+            \ \longrightarrow\
+            (\tilde p^t,\tilde w^{t+1}).
+        \]
+        We use the following one-step forms of the effective fluctuations:
+        \begin{align}
+            \tilde q^t
+            &=
+            \sum_{s=0}^{t-1}
+                \bar\alpha^{[w]}(t,s)\tilde q^s
+            +
+            \frac1{\sqrt{\bar\delta}}
+            \sum_{s=0}^{t-1}
+                \bar\phi^{[w]}(t,s)\tilde g^s
+            +
+            \bar v_t^{[w]}z_t^{[g]},
+            \label{eq:mf-proof-forward-one-step}\\
+            \tilde p^t
+            &=
+            \sum_{s=0}^{t-1}
+                \bar\alpha^{[g]}(t,s)\tilde p^s
+            +
+            \sqrt{\bar\delta}
+            \sum_{s=0}^{t}
+                \bar\phi^{[g]}(t,s)\tilde w^s
+            +
+            \bar v_t^{[g]}z_t^{[w]}.
+            \label{eq:mf-proof-backward-one-step}
+        \end{align}
+        Whenever the coefficients involved have been constructed,
+        these identities follow from the cumulative-memory definitions:
+        substituting the representations of the previous fluctuations
+        and collecting coefficients gives precisely the defining
+        recursions for $\bar\gamma^{[w]}$, $\bar\gamma^{[g]}$,
+        $\xi^{[g]}$, and $\xi^{[w]}$.
+        
+        \begin{enumerate}[wide]
+            \item \emph{Initialization.}
+            The initialization assumption gives
+            \[
+                \tilde{\mathbb E}
+                [\tilde\mu^2+(\tilde w^0)^2]<\infty,
+                \qquad
+                \bar b^0\in\mathbb R,
+            \]
+            and
+            \[
+                \bar C_0^{[w]}
+                =
+                \tilde{\mathbb E}[(\tilde w^0)^2]
+                =
+                (\bar v_0^{[w]})^2
+                >0.
+            \]
+            At $t=0$, coefficient systems and sums involving
+            earlier times are empty.
+        
+            \item \emph{Forward construction and residual nondegeneracy.}
+            Suppose that the parameter variables have been constructed
+            through $\tilde w^t$ and $\tilde p^{t-1}$, and the sample
+            variables through time $t-1$, all with finite second moments.
+            Suppose also that $\bar b^t$ and the previously constructed
+            deterministic coefficients are finite, and that
+            \[
+                \bar C_t^{[w]}\succ0,
+                \qquad
+                \bar C_{t-1}^{[g]}\succ0
+                \quad\text{when }t\geq1.
+            \]
+            The systems defining $\bar\alpha_t^{[w]}$ and
+            $\bar\phi_t^{[w]}$ have unique solutions:
+            their coefficient matrices are
+            $\bar C_{t-1}^{[w]}$ and $\bar C_{t-1}^{[g]}$,
+            respectively.
+            All entries on their right-hand sides are finite
+            by Cauchy--Schwarz.
+            The projection normal equations give
+            \[
+                (\bar v_t^{[w]})^2
+                =
+                \inf_{a\in\mathbb R^t}
+                \tilde{\mathbb E}
+                \left[
+                    \left(
+                        \tilde w^t-\sum_{s=0}^{t-1}a_s\tilde w^s
+                    \right)^2
+                \right].
+            \]
+            For $t\geq1$, this quantity is strictly positive:
+            otherwise $\tilde w^t$ would belong to the linear span
+            of its predecessors in $L^2$, contradicting
+            $\bar C_t^{[w]}\succ0$.
+            Positivity at $t=0$ follows from the initialization.
+            The forward recursion therefore defines $\tilde q^t\in L^2$.
+            Also,
+            $\bar m^t=\tilde{\mathbb E}[\tilde\mu\tilde w^t]$
+            is finite, so the score equation defines $\tilde r^t\in L^2$.
+        
+            On the sample-side space, set
+            \[
+                \mathcal H_t^{[g]}
+                :=
+                \sigma(
+                    \tilde Y,\tilde\Delta,
+                    z_0^{[g]},\ldots,z_{t-1}^{[g]}
+                ).
+            \]
+            The one-step forward identity and the score equation give
+            \begin{equation}
+                \tilde r^t
+                =
+                A_t+\sigma\bar v_t^{[w]}z_t^{[g]},
+                \qquad
+                A_t\in L^2(\mathcal H_t^{[g]}),
+                \label{eq:mf-proof-score-fresh-noise}
+            \end{equation}
+            where $z_t^{[g]}$ is independent of $\mathcal H_t^{[g]}$.
+            Since $\sigma\bar v_t^{[w]}>0$,
+            \[
+                \mathscr L(\tilde r^t\mid\mathcal H_t^{[g]})
+                =
+                \mathcal N\bigl(A_t,\sigma^2(\bar v_t^{[w]})^2\bigr).
+            \]
+            In particular, for every Lebesgue-null Borel set
+            $B\subseteq\mathbb R$,
+            \[
+                \tilde{\mathbb P}(\tilde r^t\in B)
+                =
+                \tilde{\mathbb E}
+                \left[
+                    \tilde{\mathbb P}
+                    (\tilde r^t\in B\mid\mathcal H_t^{[g]})
+                \right]
+                =0.
+            \]
+            Thus $\tilde r^t$ has an absolutely continuous distribution,
+            and it assigns zero probability to
+            $\{0,\kappa_-,\kappa_+\}$.
+            The Lipschitz assumptions imply
+            \[
+                |\ell'(y,r)|
+                \leq
+                \max_{y'\in\{-1,+1\}}|\ell'(y',0)|
+                +L_\ell|r|.
+            \]
+            Since the selection indicators are bounded and
+            $\bar\rho\in(0,1)$, there is a deterministic constant
+            $C<\infty$ such that
+            \[
+                |\tilde g^t|\leq C(1+|\tilde r^t|).
+            \]
+            Consequently, $\tilde g^t\in L^2$.
+            We next prove positivity of its innovation.
+            Since $\tilde{\mathbb P}(\tilde\Delta=1)=\bar\rho>0$,
+            there exists $y^\star\in\{-1,+1\}$ such that
+            \[
+                E^\star
+                :=
+                \{\tilde Y=y^\star,\tilde\Delta=1\}
+                \quad\text{satisfies}\quad
+                \tilde{\mathbb P}(E^\star)>0.
+            \]
+            This event belongs to $\mathcal H_t^{[g]}$, and on it
+            \[
+                \tilde g^t
+                =
+                \frac1{\bar\rho}\ell'(y^\star,\tilde r^t).
+            \]
+            Conditionally on almost every history in $E^\star$,
+            the score has a Gaussian density that is strictly positive
+            on $\mathbb R$.
+            Since $\ell'(y^\star,\cdot)$ is continuous and nonconstant,
+            its value under this Gaussian law cannot be almost surely
+            constant. Indeed, such constancy would imply that the
+            function is constant Lebesgue-almost everywhere, and
+            continuity would then make it constant everywhere.
+            Hence
+            \[
+                \operatorname{Var}
+                (\tilde g^t\mid\mathcal H_t^{[g]})>0
+                \quad\text{almost surely on }E^\star,
+            \]
+            and therefore
+            \[
+                \tilde{\mathbb E}
+                \left[
+                    \operatorname{Var}
+                    (\tilde g^t\mid\mathcal H_t^{[g]})
+                \right]>0.
+            \]
+            The previous residuals are $\mathcal H_t^{[g]}$-measurable.
+            For any $a\in\mathbb R^t$, the conditional square expansion
+            gives
+            \[
+            \begin{aligned}
+                \tilde{\mathbb E}
+                \left[
+                    \left(
+                        \tilde g^t-\sum_{s=0}^{t-1}a_s\tilde g^s
+                    \right)^2
+                \right]
+                =
+                \tilde{\mathbb E}
+                \left[
+                    \operatorname{Var}
+                    (\tilde g^t\mid\mathcal H_t^{[g]})
+                \right]
+                +
+                \tilde{\mathbb E}
+                \left[
+                    \left(
+                        \tilde{\mathbb E}
+                        [\tilde g^t\mid\mathcal H_t^{[g]}]
+                        -\sum_{s=0}^{t-1}a_s\tilde g^s
+                    \right)^2
+                \right].
+            \end{aligned}
+            \]
+            The residual projection is well defined because
+            $\bar C_{t-1}^{[g]}$ is positive definite when $t\geq1$.
+            Taking the infimum over $a$ yields
+            \begin{equation}
+                (\bar v_t^{[g]})^2
+                \geq
+                \tilde{\mathbb E}
+                \left[
+                    \operatorname{Var}
+                    (\tilde g^t\mid\mathcal H_t^{[g]})
+                \right]
+                >0.
+                \label{eq:mf-proof-residual-positive-innovation}
+            \end{equation}
+            It follows that $\bar C_t^{[g]}\succ0$.
+            Indeed, a vanishing linear combination of
+            $\tilde g^0,\ldots,\tilde g^t$ with a nonzero coefficient
+            of $\tilde g^t$ would contradict
+            \eqref{eq:mf-proof-residual-positive-innovation}.
+            A nontrivial combination with zero last coefficient
+            is excluded by $\bar C_{t-1}^{[g]}\succ0$.
+            At $t=0$, positivity follows directly from
+            $(\bar v_0^{[g]})^2>0$.
+        
+            Finally,
+            $\bar\zeta^t=\tilde{\mathbb E}[\tilde g^t]$ and
+            $\bar\chi^t=\tilde{\mathbb E}[\tilde Y\tilde g^t]$
+            are finite, and so is
+            $\bar b^{t+1}=\bar b^t-\eta\bar\zeta^t$.
+        
+            \item \emph{Backward construction and the next weight innovation.}
+            The residual projection coefficients have already been
+            determined, and the system defining $\bar\phi_t^{[g]}$
+            has coefficient matrix $\bar C_t^{[w]}\succ0$.
+            Its right-hand side is finite by Cauchy--Schwarz.
+            Hence the backward coefficients are uniquely determined,
+            and the backward recursion defines $\tilde p^t\in L^2$.
+        
+            On the parameter-side space, set
+            \[
+                \mathcal H_t^{[w]}
+                :=
+                \sigma(
+                    \tilde\mu,\tilde w^0,
+                    z_0^{[w]},\ldots,z_{t-1}^{[w]}
+                ).
+            \]
+            All weights through time $t$ and backward fluctuations
+            through time $t-1$ are measurable with respect to this
+            history.
+            The one-step backward identity and the parameter update
+            therefore give
+            \begin{equation}
+                \tilde w^{t+1}
+                =
+                B_t
+                -
+                \frac{\eta\sigma}{\sqrt{\bar\delta}}
+                \bar v_t^{[g]}z_t^{[w]},
+                \qquad
+                B_t\in L^2(\mathcal H_t^{[w]}).
+                \label{eq:mf-proof-weight-fresh-noise}
+            \end{equation}
+            Here square integrability follows from the preceding
+            moment bounds and
+            \[
+                |j'(u)|\leq |j'(0)|+L_j|u|.
+            \]
+            Since $z_t^{[w]}$ is independent of $\mathcal H_t^{[w]}$,
+            \[
+                \operatorname{Var}
+                (\tilde w^{t+1}\mid\mathcal H_t^{[w]})
+                =
+                \frac{\eta^2\sigma^2}{\bar\delta}
+                (\bar v_t^{[g]})^2.
+            \]
+            The next weight projection is well defined because its
+            coefficient matrix is $\bar C_t^{[w]}\succ0$.
+            Applying the same conditional square expansion as above,
+            now to linear combinations of
+            $\tilde w^0,\ldots,\tilde w^t$, yields
+            \begin{equation}
+            \begin{aligned}
+                (\bar v_{t+1}^{[w]})^2
+                =
+                \inf_{a\in\mathbb R^{t+1}}
+                \tilde{\mathbb E}
+                \left[
+                    \left(
+                        \tilde w^{t+1}
+                        -\sum_{s=0}^{t}a_s\tilde w^s
+                    \right)^2
+                \right]
+                \geq
+                \tilde{\mathbb E}
+                \left[
+                    \operatorname{Var}
+                    (\tilde w^{t+1}\mid\mathcal H_t^{[w]})
+                \right]
+                =
+                \frac{\eta^2\sigma^2}{\bar\delta}
+                (\bar v_t^{[g]})^2
+                >0.
+            \end{aligned}
+            \label{eq:mf-proof-weight-positive-innovation}
+            \end{equation}
+            The same linear-independence argument used for the
+            residuals proves $\bar C_{t+1}^{[w]}\succ0$.
+            Thus the induction hypotheses hold at time $t+1$.
+        \end{enumerate}
+        
+        Starting from the initialization, this alternating construction
+        establishes the stated moment bounds, positive definiteness,
+        positive innovations, and absolute continuity at every finite time.
+        The pseudo-label variables are bounded, and the remaining
+        Gaussian and memory variables are finite linear combinations
+        of variables already shown to have finite second moments.
+        
+        At every half-step, the coefficient systems have unique solutions,
+        their moments are determined by the previously constructed laws,
+        and the new variables are specified functions of the existing
+        variables and fresh Gaussian innovations.
+        Thus the recursion is uniquely determined once the base variables
+        and innovation sequences are fixed, and its sample-side and
+        parameter-side trajectory laws are uniquely determined.
+        \end{proof}
+
+\subsection{Notation and master recursion}
+\label{subsec:notation-master-rec}
+
+We first rewrite Algorithm~\ref{alg:self-training} in matrix form
+to isolate its dependence on the Gaussian design noise.
+Let $X$ and $Y$ denote the design matrix and label vector
+\[
+    X
+    :=
+    \begin{bmatrix}
+        X_1^\top\\
+        \vdots\\
+        X_n^\top
+    \end{bmatrix}
+    \in\mathbb R^{n\times d},
+    \qquad
+    Y:=
+    \begin{bmatrix}
+        Y_1 \\
+        \vdots \\
+        Y_n
+    \end{bmatrix}
+    \in\mathbb R^n.
+\]
+By \eqref{eq:gaussian-mixture-model}, the design matrix can be expressed as
+\[
+    X=\frac{Y\mu^\top}{\sqrt d}+\sigma U,
+\]
+where $U\in\mathbb R^{n\times d}$ has independent standard
+Gaussian entries.
+Define the residual vector $g^t\in\mathbb R^n$ by
+\begin{align}
+    g_i^t
+    :=
+    \frac{\Delta_i}{\rho}\ell'(Y_i,r_i^t)
+    +
+    \frac{\pi(1-\Delta_i)}{1-\rho}
+        S_i^t\ell'(\widehat Y_i^t,r_i^t),
+    \qquad i\in[\![1,n]\!].
+    \label{eq:residual-map}
+\end{align}
+The recursion in Algorithm~\ref{alg:self-training} then becomes
+\begin{align}
+    \begin{cases}
+    \displaystyle 
+        r^t
+        =
+        b^t1_n+\frac{Xw^t}{\sqrt d},\\[5pt]
+        \displaystyle 
+        b^{t+1}
+        =
+        b^t-\eta\frac{1_n^\top g^t}{n},\\[5pt]
+        \displaystyle 
+        w^{t+1}
+        =
+        w^t-\eta\left[
+            \lambda\nabla J(w^t)
+            +\frac{\sqrt d}{n}X^\top g^t
+        \right],
+    \end{cases}
+    \hspace{-10pt}
+    \iff 
+    \begin{cases}
+    \displaystyle 
+        r^t
+        =
+        b^t1_n+ m^t Y + \sigma q^t,\\[10pt]
+        \displaystyle 
+        b^{t+1}
+        =
+        b^t-\eta \zeta^t ,\\[5pt]
+        \displaystyle 
+        w^{t+1}
+        =
+        w^t-\eta\left[
+            \lambda\nabla J(w^t)
+            +
+            \chi^t \mu 
+            +\frac{\sigma}{\sqrt \delta} p^t
+        \right],
+    \end{cases}
+    \label{eq:finite-dimensional-mean-field-iterations}
+\end{align}
+where
+\begin{align}
+    m^t := \frac{\mu^\top w^t}{d}, \quad q^t :=  \frac{U w^t}{\sqrt d}
+    , \quad 
+    \zeta^t := \frac{1_n^\top g^t}{n}, \quad \chi^t := \frac{Y^\top g^t}{n}, \quad p^t := \frac{U^\top g^t}{\sqrt n}.
+    \label{eq:finite-dim-macro}
+\end{align}
+For a vector sequence $(a^s)_{0 \le s \le T}$ in $\mathbb R^m$,
+we collect its history through time $t$ in the trajectory matrix
+\[
+    A_t:=
+    \begin{bmatrix}
+        a^0 & \cdots & a^t
+    \end{bmatrix}
+    \in\mathbb R^{m\times(t+1)},
+    \qquad 0\leq t\leq T,
+\]
+with $A_{-1}$ understood to be empty.
+We write $W_t$, $P_t$, $Q_t$, $G_t$, $R_t$ for the trajectory matrices
+of $w^t$, $p^t$, $q^t$, $g^t$, $r^t$, respectively.
+Row notation and the associated empirical measures are
+defined in Appendix~\ref{subsec:empirical-measures}.
+
+\begin{definition}[Algorithmic half-step filtrations]
+\label{def:algorithmic-half-step-filtration}
+For every \(t\in[\![0,T]\!]\), define
+\begin{align}
+    \mathcal F_t^{[w]}
+    &:=
+    \sigma\!\left(b^k,w^k:k\in[\![0,t]\!]\right),\\
+    \mathcal F_t^{[g]}
+    &:=
+    \sigma\!\left(r^k:k\in[\![0,t]\!]\right).
+\end{align}
+Set $\mathcal F_{-1}^{[g]}:=\{\varnothing, \Omega\}$.
+These are the canonical filtrations generated by the parameter trajectory and
+the preactivation trajectory, respectively.
+Since $b^0=b^{\mathrm{init}}$ and $w^0=w^{\mathrm{init}}$
+are deterministic in the quenched model, \(\mathcal F_0^{[w]}\) is trivial.
+We define the \emph{forward half-step filtration}
+\((\mathcal F_t)_{t\in[\![0,T]\!]}\) and the \emph{backward half-step
+filtration} \((\mathcal F_t^+)_{t\in[\![0,T]\!]}\) by
+\begin{align}
+    \mathcal F_t
+    &:=
+    \mathcal F_t^{[w]}\vee\mathcal F_{t-1}^{[g]},
+    \label{eq:algorithmic-filtration-Ft}\\
+    \mathcal F_t^+
+    &:=
+    \mathcal F_t^{[w]}\vee\mathcal F_t^{[g]}.
+    \label{eq:algorithmic-filtration-Ft+}
+\end{align}
+The half-step filtrations satisfy
+\[
+    \mathcal F_0
+    \subseteq
+    \mathcal F_0^+
+    \subseteq
+    \mathcal F_1
+    \subseteq
+    \mathcal F_1^+
+    \subseteq\cdots\subseteq
+    \mathcal F_T
+    \subseteq
+    \mathcal F_T^+.
+\]
+The sigma-algebra \(\mathcal F_t\) represents the information available
+immediately before the forward multiplication by \(U\), whereas
+\(\mathcal F_t^+\) represents the information available immediately before
+the backward multiplication by \(U^\top\) in \eqref{eq:finite-dimensional-mean-field-iterations}.
+\end{definition}
+The following lemma expresses the algorithmic filtrations in
+terms of the forward and backward fluctuation histories.
+
+\begin{lemma}[Equivalent fluctuation-history filtrations]
+\label{lemma:equivalent-algorithmic-filtrations}
+For every \(t\in[\![0,T]\!]\),
+\begin{align}
+    \mathcal F_t
+    &=
+    \sigma(Q_{t-1},P_{t-1})
+    =
+    \sigma(Q_{t-1},W_t,P_{t-1},G_{t-1}),
+    \label{eq:equivalent-forward-filtration}\\
+    \mathcal F_t^+
+    &=
+    \sigma(Q_t,P_{t-1})
+    =
+    \sigma(Q_t,W_t,P_{t-1},G_{t-1}).
+    \label{eq:equivalent-backward-filtration}
+\end{align}
+In particular, $W_t,G_{t-1}$ are $\mathcal F_t$-measurable,
+and $W_t,G_t$ are $\mathcal F_t^+$-measurable.
+\end{lemma}
+
+\begin{proof}
+The initialization is deterministic, so $\mathcal F_0$ is trivial.
+Given $\mathcal F_t$, the score equation shows that adjoining
+$r^t$ is equivalent to adjoining $q^t$, since $\sigma>0$.
+Similarly, given $\mathcal F_t^+$, the intercept update is
+already determined, and adjoining $w^{t+1}$ is equivalent to
+adjoining $p^t$, since $\eta\sigma>0$. Thus
+\[
+    \mathcal F_t^+
+    =\mathcal F_t\vee\sigma(q^t),
+    \qquad
+    \mathcal F_{t+1}
+    =\mathcal F_t^+\vee\sigma(p^t),
+\]
+with the second identity understood for $t<T$.
+The claimed identities follow by induction, and the
+measurability assertions follow from the definitions.
+\end{proof}
+For any matrix $A$, let $A^\dagger$ denote its
+Moore--Penrose pseudoinverse and write
+\[
+    \Pi_A:=AA^\dagger,
+    \qquad
+    \Pi_A^\perp:=I-\Pi_A.
+\]
+Thus $\Pi_A$ is the orthogonal projector onto the column space
+of $A$, with $\Pi_\emptyset=0$.
+At each time $t$, define the normalized finite-dimensional Gram matrices
+\[
+ C_{t}^{[w]}:=\frac1dW_t^\top W_t,
+ \qquad
+ C_{t}^{[g]}:=\frac1nG_t^\top G_t.
+\]
+At the forward half-step, let
+\begin{align}
+ \alpha_{t}^{[w]}
+ &:=
+ (C_{t-1}^{[w]})^\dagger
+ \frac{W_{t-1}^\top w^t}{d},
+ &
+ w_{\perp}^t
+ &:=
+ w^t-W_{t-1}\alpha_{t}^{[w]},
+ \label{eq:finite-forward-projection-lemmas}\\
+ \phi_{t}^{[w]}
+ &:=
+ (C_{t-1}^{[g]})^\dagger
+ \frac{P_{t-1}^\top w_{\perp}^t}{d},
+ &
+ v_{t}^{[w]}
+ &:=
+ \frac{\|w_{\perp}^t\|}{\sqrt d}.
+ \label{eq:finite-forward-memory-lemmas}
+\end{align}
+At \(t=0\), both coefficient vectors are empty and
+\(w_{\perp}^0=w^0\). At the backward half-step, for \(t<T\), let
+\begin{align}
+ \alpha_{t}^{[g]}
+ &:=
+ (C_{t-1}^{[g]})^\dagger
+ \frac{G_{t-1}^\top g^t}{n},
+ &
+ g_{\perp}^t
+ &:=
+ g^t-G_{t-1}\alpha_{t}^{[g]},
+ \label{eq:finite-backward-projection-lemmas}\\
+ \phi_{t}^{[g]}
+ &:=
+ (C_{t}^{[w]})^\dagger
+ \frac{Q_t^\top g_{\perp}^t}{n},
+ &
+ v_{t}^{[g]}
+ &:=
+ \frac{\|g_{\perp}^t\|}{\sqrt n}.
+ \label{eq:finite-backward-memory-lemmas}
+\end{align}
+At \(t=0\), \(\alpha_{0}^{[g]}\) is empty and
+\(g_{\perp}^0=g^0\).
+
+The notation above parallels that of
+Definition~\ref{def:mean-field-recursion}.
+Effective random quantities generally carry tildes and
+deterministic mean-field quantities carry bars.
+Gaussian innovations are an exception: $z_t^{[g]}$ and
+$z_t^{[w]}$ denote finite-dimensional vectors in conditional
+finite-dimensional representations and scalar standard
+Gaussians in effective-process formulas.
+Their dimensions and roles are specified at each use.
+We use the empirical measure notation introduced in
+Definition~\ref{definition:empirical-measures}.
+
+For the effective trajectory vectors, write
+\[
+\begin{aligned}
+    \tilde W_t&:=(\tilde w^0,\ldots,\tilde w^t)^\top,
+    &\tilde P_t&:=(\tilde p^0,\ldots,\tilde p^t)^\top,\\
+    \tilde Q_t&:=(\tilde q^0,\ldots,\tilde q^t)^\top,
+    &\tilde G_t&:=(\tilde g^0,\ldots,\tilde g^t)^\top,\\
+    \tilde R_t&:=(\tilde r^0,\ldots,\tilde r^t)^\top.
+\end{aligned}
+\]
+Vectors indexed by $-1$ are empty.
+
+For random elements $\xi,\xi'$ defined on a common extension
+and a sub-$\sigma$-field $\mathcal G$, we write
+$\xi\stackrel d=_{\mathcal G}\xi'$ when
+\[
+    \mathscr L(\xi\mid\mathcal G)
+    =
+    \mathscr L(\xi'\mid\mathcal G)
+    \qquad\text{almost surely}.
+\]
+The conditioning $\sigma$-field is identified with its pullback
+to the extension. In particular,
+$(A,\xi)\stackrel d=(A,\xi')$ for every
+$\mathcal G$-measurable random element $A$.
+Auxiliary Gaussian variables are constructed on product
+extensions independently of the corresponding conditioning
+history.
+
+\begin{proposition}[Master recursion and conditional Gaussian decomposition]
+\label{proposition:master-recursion}
+Suppose that
+Assumption~\ref{assumption:asymptotic-regime},
+Assumption~\ref{assumption:quenched-initialization},
+and Assumption~\ref{assumption:regularity-of-loss-and-penalty} hold.
+
+The well-definedness, moment, and nondegeneracy conclusions
+of Lemma~\ref{lemma:mf-proof-nondegeneracy} hold.
+In each conditional-law representation below, $\check U$ denotes
+an auxiliary standard Gaussian matrix independent of the
+corresponding conditioning sigma-algebra.
+The following assertions hold.
+
+\begin{description}[wide]
+    \item[$(\mathsf F_t)$ Forward half-step:]
+    For $0\leq t\leq T$:
+    \begin{enumerate}[label=(\roman*),wide]
+        \item \emph{Information and conditional matrix law.}
+        The matrices $W_t,G_{t-1}$ are $\mathcal F_t$-measurable by
+        Lemma~\ref{lemma:equivalent-algorithmic-filtrations}.
+        The conditional matrix law and its mean are given by
+        \eqref{eq:mf-proof-matrix-forward}
+        and \eqref{eq:mf-proof-mean-forward}.
+
+        \item \emph{Projection coefficients and nondegeneracy.}
+        As $d\to\infty$,
+        \begin{align}
+            v_t^{[w]}
+            &\xrightarrow{\mathbb P}\bar v_t^{[w]}>0,
+            &
+            C_t^{[w]}
+            &\xrightarrow{\mathbb P}\bar C_t^{[w]}\succ0,
+            \label{eq:master-forward-nondegeneracy}
+            \\
+            \alpha_t^{[w]}
+            &\xrightarrow{\mathbb P}\bar\alpha_t^{[w]},
+            &
+            \phi_t^{[w]}
+            &\xrightarrow{\mathbb P}\bar\phi_t^{[w]}.
+            \label{eq:master-forward-coefficient-convergence}
+        \end{align}
+
+        \item \emph{Conditional forward fluctuation.}
+        One has
+        \begin{align}
+            q^t
+            &\stackrel d=_{\mathcal F_t}
+            Q_{t-1}\alpha_t^{[w]}
+            +\frac1{\sqrt\delta}G_{t-1}\phi_t^{[w]}
+            +v_t^{[w]}z_t^{[g]}
+            +\varepsilon_t^{[g]},
+            \label{eq:conditional-q-decomposition-lemmas}
+        \end{align}
+        where $z_t^{[g]}\sim\mathcal N(0,I_n)$ is independent
+        of $\mathcal F_t$ and
+        \(
+            \varepsilon_t^{[g]}
+            :=
+            -v_t^{[w]}\Pi_{G_{t-1}}z_t^{[g]}
+        \).
+        Moreover,
+        \begin{equation}
+            \mathbb E\left[
+                \frac{\|\varepsilon_t^{[g]}\|^2}{n}
+                \Bigm|\mathcal F_t
+            \right]
+            \leq
+            (v_t^{[w]})^2\frac tn,
+            \label{eq:forward-projection-error-lemmas}
+        \end{equation}
+        and, by tightness of $v_t^{[w]}$, we have
+        \(
+            \|\varepsilon_t^{[g]}\|^2 / n
+            \xrightarrow{\mathbb P}0
+        \).
+
+        \item \emph{Sample-side empirical extension.}
+        The joint empirical law satisfies
+        \begin{equation}
+            W_2 \left(
+            \nu(Y,\Delta,Q_t,G_{t-1},R_t)
+            , \,  
+            \mathscr L(
+                \tilde Y,\tilde\Delta,
+                \tilde Q_t,\tilde G_{t-1},\tilde R_t
+                )
+            \right)
+            \xrightarrow{\mathbb P}
+            0.
+            \label{eq:master-forward-empirical-law}
+        \end{equation}
+        In addition,
+        \(
+            m^t\xrightarrow{\mathbb P}\bar m^t
+        \).
+        For $t<T$, one also has
+        \begin{equation}
+            W_2 \left(
+            \nu{(Y,\Delta,Q_t,G_t,R_t)}
+            , \,
+            \mathscr L(
+                \tilde Y,\tilde\Delta,
+                \tilde Q_t,\tilde G_t,\tilde R_t
+            )
+            \right)
+            \xrightarrow{\mathbb P}
+            0
+            ,
+            \label{eq:master-forward-residual-extension}
+        \end{equation}
+        and
+        \begin{equation}
+            \zeta^t\xrightarrow{\mathbb P}\bar\zeta^t,
+            \qquad
+            \chi^t\xrightarrow{\mathbb P}\bar\chi^t,
+            \qquad
+            b^{t+1}\xrightarrow{\mathbb P}\bar b^{t+1}.
+            \label{eq:master-backward-macroscopic-convergence}
+        \end{equation}
+    \end{enumerate}
+
+    \item[$(\mathsf B_t)$ Backward half-step:]
+    For $0\leq t<T$:
+    \begin{enumerate}[label=(\roman*),wide]
+        \item \emph{Information and conditional matrix law.}
+        The matrices $W_t,G_t$ are $\mathcal F_t^+$-measurable by
+        Lemma~\ref{lemma:equivalent-algorithmic-filtrations}.
+        The conditional matrix law and its mean are given by
+        \eqref{eq:mf-proof-matrix-backward}
+        and \eqref{eq:mf-proof-mean-backward}.
+
+        \item \emph{Projection coefficients and nondegeneracy.}
+        As $d\to\infty$,
+        \begin{align}
+            v_t^{[g]}
+            &\xrightarrow{\mathbb P}\bar v_t^{[g]}>0,
+            &
+            C_t^{[g]}
+            &\xrightarrow{\mathbb P}\bar C_t^{[g]}\succ0,
+            \label{eq:master-residual-nondegeneracy}
+            \\
+            \alpha_t^{[g]}
+            &\xrightarrow{\mathbb P}\bar\alpha_t^{[g]},
+            &
+            \phi_t^{[g]}
+            &\xrightarrow{\mathbb P}\bar\phi_t^{[g]}.
+            \label{eq:master-backward-coefficient-convergence}
+        \end{align}
+
+        \item \emph{Conditional backward fluctuation.}
+        One has
+        \begin{align}
+            p^t
+            &\stackrel d=_{\mathcal F_t^+}
+            P_{t-1}\alpha_t^{[g]}
+            +\sqrt\delta\,W_t\phi_t^{[g]}
+            +v_t^{[g]}z_t^{[w]}
+            +\varepsilon_t^{[w]},
+            \label{eq:conditional-p-decomposition-lemmas}
+        \end{align}
+        where $z_t^{[w]}\sim\mathcal N(0,I_d)$ is independent
+        of $\mathcal F_t^+$ and
+        \(
+            \varepsilon_t^{[w]}
+            :=
+            -v_t^{[g]}\Pi_{W_t}z_t^{[w]}.
+        \)
+        Moreover,
+        \begin{equation}
+            \mathbb E\left[
+                \frac{\|\varepsilon_t^{[w]}\|^2}{d}
+                \Bigm|\mathcal F_t^+
+            \right]
+            \leq
+            (v_t^{[g]})^2\frac{t+1}{d},
+            \label{eq:backward-projection-error-lemmas}
+        \end{equation}
+        and, by tightness of $v_t^{[g]}$, we have
+        \(
+            \|\varepsilon_t^{[w]}\|^2 / d
+            \xrightarrow{\mathbb P}0
+        \).
+
+        \item \emph{Parameter-side empirical extension.}
+        The joint empirical law satisfies
+        \begin{equation}
+            W_2 \left( 
+            \nu{(\mu,W_{t+1},P_t)} 
+            , \, 
+            \mathscr L(
+                \tilde\mu,\tilde W_{t+1},\tilde P_t
+            )
+            \right)
+            \xrightarrow{\mathbb P}
+            0
+            .
+            \label{eq:master-backward-empirical-law}
+        \end{equation}
+    \end{enumerate}
+\end{description}
+\end{proposition}
+
+\subsection{Supporting lemmas}
+\label{subsec:supporting-lem}
+
+    \subsubsection{Empirical convergence}
+
+        We establish general lemmas,
+        Lemmas~\ref{lemma:mf-proof-empirical-stability}
+        and~\ref{lemma:mf-proof-gaussian-extension},
+        used in the proof of the master recursion in 
+        Proposition~\ref{proposition:master-recursion}.
+        Throughout this subsection, the superscript $(m)$
+        denotes the number of rows, with convergence understood
+        along the underlying sequence of arrays.
+        We apply these lemmas with $m=d$ for parameter-side
+        empirical laws and $m=n(d)$ for sample-side empirical laws.
+
+        All convergence-in-probability statements below have
+        deterministic limits and depend only on the joint law of
+        the objects at each dimension. We may therefore realize
+        the objects at all dimensions on a common product
+        probability space, preserving their within-dimension joint
+        laws. We use this convention when extracting almost-surely
+        convergent subsequences.
+
+        \begin{lemma}[Stability of empirical laws]
+        \label{lemma:mf-proof-empirical-stability}
+        Fix an integer $k\geq1$ and a closed set
+        $\mathcal X\subseteq\mathbb R^k$.
+        Consider a sequence of random matrices, with row counts
+        $m\to\infty$, of the form
+        \[
+            H^{(m)}
+            :=
+            \begin{bmatrix}
+                (h_1^{(m)})^\top\\
+                \vdots\\
+                (h_m^{(m)})^\top
+            \end{bmatrix}
+            \in\mathbb R^{m\times k},
+            \qquad
+            h_i^{(m)}\in\mathcal X
+            \quad\text{almost surely}.
+        \]
+        Suppose
+        \[
+            W_2\left(
+                \nu(H^{(m)}),
+                \mathscr L(\tilde H)
+            \right)
+            \xrightarrow{\mathbb P}0,
+            \qquad
+            \mathscr L(\tilde H)\in\mathscr P_2(\mathcal X).
+        \]
+        Then the following statements hold.
+        
+        \begin{enumerate}[wide]
+            \item \emph{Moment and Gram-matrix convergence.}
+            One has
+            \[
+                \frac1m\sum_{i=1}^m h_i^{(m)}
+                \xrightarrow{\mathbb P}
+                \tilde{\mathbb E}[\tilde H],
+                \qquad
+                K^{(m)}
+                :=
+                \frac1m(H^{(m)})^\top H^{(m)}
+                \xrightarrow{\mathbb P}
+                K
+                :=
+                \tilde{\mathbb E}[\tilde H\tilde H^\top].
+            \]
+            In particular,
+            \[
+                K\succ0
+                \quad\Longrightarrow\quad
+                (K^{(m)})^\dagger
+                \xrightarrow{\mathbb P}K^{-1}.
+            \]
+        
+            \item \emph{Stability under rowwise transformations.}
+            Let $\beta^{(m)}\in\mathbb R^p$ be random vectors satisfying
+            \[
+                \beta^{(m)}
+                \xrightarrow{\mathbb P}
+                \bar\beta\in\mathbb R^p,
+            \]
+            where $p$ and $\bar\beta$ are fixed.
+            Let
+            \(
+                F:\mathbb R^p\times\mathcal X\longrightarrow\mathbb R^q
+            \)
+            be measurable, with $q$ fixed.
+            Suppose $F$ is continuous at $(\bar\beta,x)$ for
+            $\mathscr L(\tilde H)$-almost every $x$, with continuity
+            understood relative to $\mathbb R^p\times\mathcal X$, and
+            \[
+                \exists\,C,\varepsilon>0
+                \quad
+                \forall\,\|\beta-\bar\beta\|<\varepsilon,
+                \quad
+                \forall\,x\in\mathcal X,
+                \quad
+                \|F(\beta,x)\|\leq C(1+\|x\|).
+            \]
+            Define $F^{(m)}\in\mathbb R^{m\times q}$ by
+            \[
+                F^{(m)}(i)
+                :=
+                F(\beta^{(m)},h_i^{(m)})^\top.
+            \]
+            Then
+            \[
+                W_2\left(
+                    \nu(H^{(m)},F^{(m)}),
+                    \mathscr L\bigl(
+                        \tilde H,F(\bar\beta,\tilde H)
+                    \bigr)
+                \right)
+                \xrightarrow{\mathbb P}0.
+            \]
+        \end{enumerate}
+        \end{lemma}
+        
+        \begin{proof}
+        Recall that convergence in probability is equivalent to the
+        following subsequence property: every subsequence admits a
+        further subsequence converging almost surely to the same limit
+        \cite[Lemma~5.2]{kallenberg2021foundations}.
+        
+        Starting from any subsequence $(m_k)_k$, extract a further
+        subsequence $(m_{k_j})_j$ along which the assumed Wasserstein convergence
+        and, for part~2, coefficient convergence hold almost surely.
+        Fix an outcome $\omega \in \Omega$ where these convergences hold and all the rows
+        belong to $\mathcal X$.
+        Suppressing the subsequence indices by denoting $m := m_{k_j}$, the realized matrices
+        and coefficients form deterministic sequences satisfying
+        \[
+            W_2\bigl(\nu(H^{(m)}),\mathscr L(\tilde H)\bigr)
+            \longrightarrow0,
+            \qquad
+            \beta^{(m)}\longrightarrow\bar\beta
+            .
+        \]
+        We prove the conclusions for these deterministic sequences.
+        By the coupling characterization of Wasserstein convergence
+        (see \cite[Definition~6.8 and Theorem~6.9]{villani2009optimal},
+        together with
+        \cite[Theorems~5.12 and~5.31 and Lemma~5.11(ii)]
+        {kallenberg2021foundations}),
+        there exist random vectors $X^{(m)},X$ on an auxiliary
+        probability space such that
+        \[
+            \mathscr L(X^{(m)})=\nu(H^{(m)}),
+            \qquad
+            \mathscr L(X)=\mathscr L(\tilde H),
+            \qquad
+            \mathbb E\|X^{(m)}-X\|^2\longrightarrow0.
+        \]
+        Their marginal laws are supported on $\mathcal X$.
+        Consequently, $X$ and all the $X^{(m)}$ belong to
+        $\mathcal X$ simultaneously almost surely.
+        
+        \begin{enumerate}[wide]
+            \item \emph{Moment and Gram-matrix convergence.}
+            Since
+            \[
+                \mathbb E[X^{(m)}]
+                =
+                \frac1m\sum_{i=1}^m h_i^{(m)},
+                \qquad
+                \mathbb E[X]
+                =
+                \tilde{\mathbb E}[\tilde H],
+            \]
+            the first-moment assertion follows from
+            \[
+                \|\mathbb E[X^{(m)}]-\mathbb E[X]\|
+                \leq
+                \left(
+                    \mathbb E\|X^{(m)}-X\|^2
+                \right)^{1/2}
+                \longrightarrow0.
+            \]
+            For the second moments, write
+            \[
+                X^{(m)}(X^{(m)})^\top-XX^\top
+                =
+                (X^{(m)}-X)(X^{(m)})^\top
+                +
+                X(X^{(m)}-X)^\top.
+            \]
+            Taking expectations and applying Cauchy--Schwarz yields
+            \[
+            \begin{aligned}
+                \left\|
+                    \mathbb E[X^{(m)}(X^{(m)})^\top]
+                    -
+                    \mathbb E[XX^\top]
+                \right\|_{\mathrm F}
+                \leq
+                \left(
+                    \mathbb E\|X^{(m)}-X\|^2
+                \right)^{1/2}
+                \left[
+                    \left(\mathbb E\|X^{(m)}\|^2\right)^{1/2}
+                    +
+                    \left(\mathbb E\|X\|^2\right)^{1/2}
+                \right]
+                \longrightarrow0.
+            \end{aligned}
+            \]
+            Here the bracketed factor is bounded because
+            $X^{(m)}\to X$ in $L^2$.
+            The two moment matrices are $K^{(m)}$ and $K$,
+            respectively, proving Gram-matrix convergence.
+            If $K\succ0$, then, for all sufficiently large $m$,
+            \[
+                \lambda_{\min}(K^{(m)})
+                \geq
+                \lambda_{\min}(K)
+                -
+                \|K^{(m)}-K\|_{\mathrm{op}}
+                >
+                \frac{\lambda_{\min}(K)}2.
+            \]
+            Thus $(K^{(m)})^\dagger=(K^{(m)})^{-1}$ eventually,
+            and continuity of matrix inversion gives
+            \[
+                (K^{(m)})^\dagger\longrightarrow K^{-1}.
+            \]
+            Applying the same argument to coordinate projections
+            proves the assertions for fixed subcollections of columns.
+        
+            \item \emph{Stability under rowwise transformations.}
+            The deterministic coefficient convergence and the coupling
+            imply
+            \[
+                (\beta^{(m)},X^{(m)})
+                \xrightarrow{\mathbb P}
+                (\bar\beta,X)
+            \]
+            as random elements of $\mathbb R^p\times\mathcal X$,
+            equipped with its relative Euclidean metric.
+            Since $F$ is continuous at $(\bar\beta,X)$ almost surely,
+            the continuous mapping theorem
+            \cite[Lemma~5.3]{kallenberg2021foundations} gives
+            \[
+                F(\beta^{(m)},X^{(m)})
+                \xrightarrow{\mathbb P}
+                F(\bar\beta,X).
+            \]        
+            To strengthen this to $L^2$ convergence, observe that
+            $(\|X^{(m)}\|^2)_m$ is uniformly integrable because
+            $X^{(m)}\to X$ in $L^2$.
+            For all sufficiently large $m$,
+            $\|\beta^{(m)}-\bar\beta\|<\varepsilon$.
+            Since the coupled variables belong to $\mathcal X$,
+            the growth assumption gives
+            \[
+            \begin{aligned}
+                \|F(\beta^{(m)},X^{(m)})
+                    -F(\bar\beta,X)\|^2
+                \leq
+                2\|F(\beta^{(m)},X^{(m)})\|^2
+                +
+                2\|F(\bar\beta,X)\|^2
+                \leq
+                4C^2\bigl(
+                    2+\|X^{(m)}\|^2+\|X\|^2
+                \bigr).
+            \end{aligned}
+            \]
+            Thus the squared differences are uniformly integrable
+            for all sufficiently large $m$.
+            Their convergence to zero in probability and Vitali's
+            convergence theorem
+            \cite[Theorem~5.12]{kallenberg2021foundations}
+            yield
+            \[
+                \mathbb E\left[
+                    \|F(\beta^{(m)},X^{(m)})
+                        -F(\bar\beta,X)\|^2
+                \right]
+                \longrightarrow0.
+            \]
+            The joint vectors
+            \[
+                (X^{(m)},F(\beta^{(m)},X^{(m)}))
+                \qquad\text{and}\qquad
+                (X,F(\bar\beta,X))
+            \]
+            have laws $\nu(H^{(m)},F^{(m)})$ and
+            $\mathscr L(\tilde H,F(\bar\beta,\tilde H))$,
+            respectively.
+            Their coupling therefore gives
+            \[
+            \begin{aligned}
+                W_2^2\left(
+                    \nu(H^{(m)},F^{(m)}),
+                    \mathscr L(\tilde H,F(\bar\beta,\tilde H))
+                \right)
+                \leq
+                \mathbb E\|X^{(m)}-X\|^2
+                +
+                \mathbb E\left[
+                    \|F(\beta^{(m)},X^{(m)})
+                        -F(\bar\beta,X)\|^2
+                \right]
+                \longrightarrow0.
+            \end{aligned}
+            \]
+        \end{enumerate}
+        Applying these deterministic conclusions along the extracted
+        subsequences gives almost-sure convergence there.
+        Since the initial subsequence was arbitrary, the subsequence
+        characterization proves both assertions in probability.
+        \end{proof}
+
+        \begin{lemma}[Conditional Gaussian extension]
+        \label{lemma:mf-proof-gaussian-extension}
+        Fix an integer $k\geq1$.
+        Along a sequence of row counts $m\to\infty$, let
+        \[
+            H^{(m)}\in\mathbb R^{m\times k},
+            \qquad
+            c^{(m)}\in\mathbb R^k,
+            \qquad
+            v^{(m)}\geq0
+        \]
+        be $\mathcal G^{(m)}$-measurable, and let
+        $x^{(m)}\in\mathbb R^m$ be random.
+        Suppose, as $m\to\infty$,
+        \[
+            W_2\left(
+                \nu(H^{(m)}),
+                \mathscr L(\tilde H)
+            \right)\xrightarrow{\mathbb P}0,
+            \qquad
+            c^{(m)}\xrightarrow{\mathbb P}\bar c,
+            \qquad
+            v^{(m)}\xrightarrow{\mathbb P}\bar v,
+        \]
+        where
+        $\mathscr L(\tilde H)\in\mathscr P_2(\mathbb R^k)$,
+        and $\bar c\in\mathbb R^k$, $\bar v\geq0$ are deterministic.
+        Assume that, for each $m$,
+        \begin{align}
+            x^{(m)}
+            \stackrel d=_{\mathcal G^{(m)}}
+            H^{(m)}c^{(m)}+v^{(m)}z^{(m)}+e^{(m)},
+            \label{eq:conditional-representation}
+        \end{align}
+        where $z^{(m)}\sim\mathcal N(0,I_m)$ is independent of
+        $\mathcal G^{(m)}$ and $e^{(m)}\in\mathbb R^m$ satisfies
+        \(
+            \|e^{(m)}\|^2 / m
+            \xrightarrow{\mathbb P}0
+        \).
+        The conditional-law notation is as defined before Proposition~\ref{proposition:master-recursion}.
+        Then,
+        \[
+            W_2\left(
+                \nu(H^{(m)},x^{(m)}),
+                \mathscr L\bigl(
+                    \tilde H,\tilde H^\top\bar c+\bar v Z
+                \bigr)
+            \right)
+            \xrightarrow{\mathbb P}0,
+        \]
+        where $Z\sim\mathcal N(0,1)$ is independent of $\tilde H$.
+        \end{lemma}
+
+        \begin{proof}
+        Work on a probability space supporting the right-hand side of
+        the conditional representation \eqref{eq:conditional-representation}.
+        Write $(h_i^{(m)})^\top$ for the $i$-th row of $H^{(m)}$ and set
+        \[
+            y^{(m)}
+            :=
+            H^{(m)}c^{(m)}+v^{(m)}z^{(m)}.
+        \]
+        Let $Z\sim\mathcal N(0,1)$ be independent of $\tilde H$.
+        
+        \begin{enumerate}[wide]
+            \item \emph{Adjoining the Gaussian column.}
+            We first establish
+            \[
+                W_2\left(
+                    \nu(H^{(m)},z^{(m)}),
+                    \mathscr L(\tilde H,Z)
+                \right)
+                \xrightarrow{\mathbb P}0.
+            \]
+            Fix a bounded Lipschitz function
+            $f:\mathbb R^{k+1}\to\mathbb R$ and define
+            \[
+                A^{(m)}(f)
+                :=
+                \frac1m\sum_{i=1}^m
+                    f(h_i^{(m)},z_i^{(m)}),
+                \qquad
+                f_\gamma(h):=\mathbb E_Z[f(h,Z)].
+            \]
+            The function $f_\gamma$ is bounded and Lipschitz, since
+            \[
+                \|f_\gamma\|_\infty\leq\|f\|_\infty,
+                \qquad
+                |f_\gamma(h)-f_\gamma(h')|
+                \leq\operatorname{Lip}(f)\|h-h'\|.
+            \]
+            Conditionally on $\mathcal G^{(m)}$, the rows
+            $h_i^{(m)}$ are fixed and the coordinates $z_i^{(m)}$
+            are independent standard Gaussian variables. Therefore,
+            \[
+                \mathbb E[A^{(m)}(f)\mid\mathcal G^{(m)}]
+                =
+                \frac1m\sum_{i=1}^m f_\gamma(h_i^{(m)})
+                =
+                \int f_\gamma\,d\nu(H^{(m)}).
+            \]
+            The Lipschitz bound gives
+            \[
+            \begin{aligned}
+                \left|
+                    \mathbb E[A^{(m)}(f)\mid\mathcal G^{(m)}]
+                    -\tilde{\mathbb E}[f(\tilde H,Z)]
+                \right|
+                =
+                \left|
+                    \int f_\gamma\,d\nu(H^{(m)})
+                    -\tilde{\mathbb E}[f_\gamma(\tilde H)]
+                \right|
+                \leq
+                \operatorname{Lip}(f)\,
+                W_2\bigl(\nu(H^{(m)}),\mathscr L(\tilde H)\bigr)
+                \xrightarrow{\mathbb P}0.
+            \end{aligned}
+            \]
+            Here independence of $Z$ and $\tilde H$ identifies
+            $\tilde{\mathbb E}[f_\gamma(\tilde H)]$ with
+            $\tilde{\mathbb E}[f(\tilde H,Z)]$.
+            Conditional independence also yields
+            \[
+            \begin{aligned}
+                \operatorname{Var}
+                \bigl(A^{(m)}(f)\mid\mathcal G^{(m)}\bigr)
+                =
+                \frac1{m^2}\sum_{i=1}^m
+                \operatorname{Var}
+                \bigl(f(h_i^{(m)},z_i^{(m)})
+                      \mid\mathcal G^{(m)}\bigr)
+                \leq\frac{\|f\|_\infty^2}{m}.
+            \end{aligned}
+            \]
+            Consequently, for every $\varepsilon>0$,
+            \[
+                \mathbb P\left(
+                    \left|
+                        A^{(m)}(f)
+                        -\mathbb E[A^{(m)}(f)\mid\mathcal G^{(m)}]
+                    \right|>\varepsilon
+                \right)
+                \leq\frac{\|f\|_\infty^2}{m\varepsilon^2}.
+            \]
+            Combining the conditional mean and variance estimates gives
+            \[
+                A^{(m)}(f)
+                \xrightarrow{\mathbb P}
+                \tilde{\mathbb E}[f(\tilde H,Z)].
+            \]
+            The second moment of the joint empirical measure is
+            \[
+                \int\|(h,z)\|^2\,\nu(H^{(m)},z^{(m)})(dh,dz)
+                =
+                \frac{\|H^{(m)}\|_{\mathrm F}^2}{m}
+                +\frac{\|z^{(m)}\|^2}{m}.
+            \]
+            By part~1 of
+            Lemma~\ref{lemma:mf-proof-empirical-stability},
+            \[
+                \frac{\|H^{(m)}\|_{\mathrm F}^2}{m}
+                \xrightarrow{\mathbb P}
+                \tilde{\mathbb E}\|\tilde H\|^2.
+            \]
+            Moreover,
+            \[
+                \mathbb E\left[\frac{\|z^{(m)}\|^2}{m}\right]=1,
+                \qquad
+                \operatorname{Var}\left(
+                    \frac{\|z^{(m)}\|^2}{m}
+                \right)=\frac2m,
+            \]
+            so $\|z^{(m)}\|^2/m\xrightarrow{\mathbb P}1$.
+            Thus the joint empirical second moment converges in
+            probability to $\tilde{\mathbb E}\|\tilde H\|^2+1$.
+        
+            To conclude, the preceding estimates establish convergence
+            in probability of the empirical integrals against every
+            bounded Lipschitz test function, together with convergence
+            of the second moments.
+            Proposition~\ref{proposition:wasserstein-convergence-characterization}
+            therefore yields the claimed convergence in $W_2$.
+        
+            \item \emph{Applying the affine transformation.}
+            Apply part~2 of
+            Lemma~\ref{lemma:mf-proof-empirical-stability} to
+            \[
+                [\,H^{(m)}\mid z^{(m)}\,],
+                \qquad
+                \beta^{(m)}:=(c^{(m)},v^{(m)}),
+            \]
+            and the map
+            \(
+                F((c,v),(h,z)):=h^\top c+vz
+            \).
+            The coefficients converge in probability to
+            $\bar\beta:=(\bar c,\bar v)$.
+            The map $F$ is continuous and, whenever
+            $\|\beta-\bar\beta\|<1$,
+            \[
+                |F(\beta,(h,z))|
+                \leq\|\beta\|\,\|(h,z)\|
+                \leq(\|\bar\beta\|+1)\|(h,z)\|.
+            \]
+            Hence it satisfies the required uniform linear-growth
+            condition near $\bar\beta$.
+            The lemma gives
+            \[
+                W_2\left(
+                    \nu(H^{(m)},z^{(m)},y^{(m)}),
+                    \mathscr L\bigl(
+                        \tilde H,Z,\tilde H^\top\bar c+\bar v Z
+                    \bigr)
+                \right)
+                \xrightarrow{\mathbb P}0.
+            \]
+            By Lemma~\ref{lemma:wasserstein-lipschitz-pushforward},
+            the coordinate projection $(h,z,y)\mapsto(h,y)$ cannot
+            increase $W_2$.
+            It follows that
+            \[
+                W_2\left(
+                    \nu(H^{(m)},y^{(m)}),
+                    \mu_\infty
+                \right)
+                \xrightarrow{\mathbb P}0,
+                \qquad
+                \mu_\infty
+                :=
+                \mathscr L(\tilde H,\tilde H^\top\bar c+\bar v Z).
+            \]
+        
+            \item \emph{Including the negligible error.}
+            For each realization, couple rows with the same index:
+            \[
+                \Gamma^{(m)}
+                :=
+                \frac1m\sum_{i=1}^m
+                \delta_{\bigl(
+                    (h_i^{(m)}, \, y_i^{(m)}+e_i^{(m)}), \,
+                    (h_i^{(m)}, \, y_i^{(m)})
+                \bigr)}.
+            \]
+            The measure $\Gamma^{(m)}$ is a coupling of
+            $\nu(H^{(m)}, \,y^{(m)}+e^{(m)})$ and
+            $\nu(H^{(m)}, \,y^{(m)})$.
+            The history coordinates coincide in each coupled pair,
+            so its quadratic transportation cost is
+            \[
+                \frac1m\sum_{i=1}^m |e_i^{(m)}|^2
+                =
+                \frac{\|e^{(m)}\|^2}{m}.
+            \]
+            By the definition of $W_2$,
+            \[
+                W_2^2\left(
+                    \nu(H^{(m)},y^{(m)}+e^{(m)}),
+                    \nu(H^{(m)},y^{(m)})
+                \right)
+                \leq\frac{\|e^{(m)}\|^2}{m}
+                \xrightarrow{\mathbb P}0.
+            \]
+            The triangle inequality and the preceding step yield
+            \[
+                W_2\left(
+                    \nu(H^{(m)},y^{(m)}+e^{(m)}),
+                    \mu_\infty
+                \right)
+                \xrightarrow{\mathbb P}0.
+            \]
+            This argument is pointwise in the realized arrays and
+            requires no independence between $e^{(m)}$ and
+            $z^{(m)}$.
+        
+            \item \emph{Transferring the conclusion to $x^{(m)}$.}
+            Since $H^{(m)}$ is $\mathcal G^{(m)}$-measurable,
+            equality of the conditional laws of $x^{(m)}$ and
+            $y^{(m)}+e^{(m)}$ also identifies their joint laws
+            with $H^{(m)}$.
+            Indeed, for every bounded Borel function
+            $\varphi:\mathbb R^{m\times k}\times\mathbb R^m
+            \to\mathbb R$,
+            \[
+            \begin{aligned}
+                \mathbb E[\varphi(H^{(m)},x^{(m)})]
+                &=
+                \mathbb E\left[
+                    \mathbb E[
+                        \varphi(H^{(m)},x^{(m)})
+                        \mid\mathcal G^{(m)}
+                    ]
+                \right]
+                =
+                \mathbb E\left[
+                    \mathbb E[
+                        \varphi(H^{(m)},y^{(m)}+e^{(m)})
+                        \mid\mathcal G^{(m)}
+                    ]
+                \right]\\
+                &=
+                \mathbb E[
+                    \varphi(H^{(m)},y^{(m)}+e^{(m)})
+                ].
+            \end{aligned}
+            \]
+            Therefore
+            \[
+                (H^{(m)},x^{(m)})
+                \stackrel d=
+                (H^{(m)},y^{(m)}+e^{(m)}).
+            \]
+            Since $\mu_\infty$ is deterministic, their empirical
+            Wasserstein distances to $\mu_\infty$ have the same
+            distribution. In particular, for every $\varepsilon>0$,
+            \[
+            \begin{aligned}
+                &\mathbb P\left(
+                    W_2\bigl(\nu(H^{(m)},x^{(m)}),\mu_\infty\bigr)
+                    >\varepsilon
+                \right)
+                =
+                \mathbb P\left(
+                    W_2\bigl(
+                        \nu(H^{(m)},y^{(m)}+e^{(m)}),\mu_\infty
+                    \bigr)>\varepsilon
+                \right)
+                \longrightarrow0.
+            \end{aligned}
+            \]
+            This is the desired conclusion.
+        \end{enumerate}
+        \end{proof}
+
+    \subsubsection{Gaussian conditioning}
+
+    We use the Gaussian conditioning approach employed in
+    \cite{bolthausen2014} and
+    \cite[Section~III-H, Lemmas~10--11]{bayati2011dynamics}.
+    Our linear-conditioning lemma also permits rank-deficient histories.
+    The key idea is to separate the design matrix into its
+    conditional mean, determined by the observations revealed so far,
+    and a Gaussian fluctuation in the remaining unconstrained directions.
+    We first state
+    Lemma~\ref{lemma:mf-proof-linear-conditioning}
+    in a finite-dimensional Euclidean space.
+    We then apply it recursively to $\mathbb R^{n\times d}$
+    with its Frobenius inner product, obtaining the conditional
+    laws in Proposition~\ref{proposition:mf-proof-conditional-matrix}.
+
+        \begin{lemma}[Gaussian conditioning on a linear observation]
+        \label{lemma:mf-proof-linear-conditioning}
+        Let $E,E'$ be finite-dimensional Euclidean spaces,
+        let $F\subseteq E$ be a linear subspace, and let
+        \[
+            X=m+\pi_F (Z),
+            \qquad
+            Z\sim\mathcal N(0,I_E),
+        \]
+        where $m\in E$ is deterministic and $\pi_F$ is the
+        orthogonal projection onto $F$.
+        Let $T:E\to E'$ be a deterministic linear map and set
+        \[
+            K:=F\cap\ker T.
+        \]
+        For $\mathscr L(T(X)) $-almost every $y$, the conditional
+        law of $X$ given $T(X)=y$ is
+        \[
+            \mathcal N(m_y,\pi_K),
+        \]
+        where $\pi_K$ is the orthogonal projection onto $K$
+        and $m_y$ is uniquely determined by
+        \[
+            m_y\in m+F,
+            \qquad
+            T(m_y)=y,
+            \qquad
+            m_y-m\perp K.
+        \]
+        If $m\perp F$, then $m_y\perp K$.
+        \end{lemma}
+
+        \begin{proof}
+        Set
+        \(
+            L:=F\cap K^\perp
+        \).
+        We proceed in three steps.
+        
+        \begin{enumerate}[wide]
+            \item \emph{Orthogonal Gaussian decomposition.}
+            We have the decomposition:
+            \[
+                F=K\oplus L,
+                \qquad
+                \pi_F=\pi_K+\pi_L.
+            \]
+            Define $\xi:=\pi_K Z$, and $\eta:=\pi_L Z$.
+            Then
+            \[
+                X=m+\xi+\eta.
+            \]
+            The vectors $\xi$ and $\eta$ are jointly Gaussian as the projections are linear and $Z$ is Gaussian.
+            They are centered, and their covariance operators satisfy
+            \[
+                \operatorname{Var}(\xi)=\pi_K,
+                \qquad
+                \operatorname{Var}(\eta)=\pi_L,
+                \qquad
+                \operatorname{Cov}(\xi,\eta)
+                =\pi_K\pi_L=0.
+            \]
+            Consequently,
+            \[
+                \xi\sim\mathcal N(0,\pi_K),
+                \qquad
+                \eta\sim\mathcal N(0,\pi_L),
+                \qquad
+                \xi\independent\eta,
+            \]
+            by the characterization of Gaussian laws by their means
+            and covariances and the independence criterion for
+            jointly Gaussian vectors
+            \cite[Lemma~14.1]{kallenberg2021foundations}.
+        
+            \item \emph{The observed component and the conditional mean.}
+            Consider the linear map $A :=T|_L$, where
+            \[
+                T|_L:L\longrightarrow T(F).
+            \]
+            This map is injective, because
+            \[
+                \ker A=L\cap\ker T=L\cap K=\{0\}.
+            \]
+            It is also surjective: if $f=k+l$ with $k\in K$
+            and $l\in L$, then
+            \[
+                Tf=Tl=Al.
+            \]
+            Hence $A$ is a linear bijection between finite-dimensional
+            vector spaces, and its inverse is continuous.
+            Write $Y:=T(X)$. Since $\xi\in K\subseteq\ker T$,
+            \[
+                Y=Tm+A\eta.
+            \]
+            In particular,
+            \[
+                Y\in Tm+T(F),
+                \qquad
+                \eta=A^{-1}(Y-Tm).
+            \]
+            For every $y\in Tm+T(F)$, define
+            \[
+                m_y:=m+A^{-1}(y-Tm).
+            \]
+            By construction,
+            \[
+                m_y\in m+F,
+                \qquad
+                Tm_y=y,
+                \qquad
+                m_y-m\in L\subseteq K^\perp.
+            \]
+            These conditions determine $m_y$ uniquely.
+            Indeed, if $x\in m+F$ also satisfies $Tx=y$ and
+            $x-m\perp K$, then
+            \[
+                x-m_y\in F\cap\ker T=K.
+            \]
+            Moreover, both $x-m$ and $m_y-m$ belong to $K^\perp$,
+            so $x-m_y\in K^\perp$. Therefore $x-m_y=0$.
+        
+            \item \emph{Identification of the conditional law.}
+            The preceding identities give
+            \[
+                X=m_Y+\xi.
+            \]
+            Since $Y=Tm+A\eta$ is a measurable function of $\eta$
+            and $\xi\independent\eta$, we have
+            \(
+                \xi\independent Y
+            \).
+            Thus, for every bounded Borel function
+            $f:E\to\mathbb R$, conditioning a measurable function
+            of independent random elements gives
+            \[
+                \mathbb E[f(X)\mid Y]
+                =
+                \left.
+                \int_E f(m_y+u)\,
+                    \mathcal N(0,\pi_K)(du)
+                \right|_{y=Y}
+                \qquad\text{almost surely};
+            \]
+            see \cite[Lemma~8.7(i)]{kallenberg2021foundations}.
+            The map $y\mapsto m_y$ is continuous on the closed affine
+            subspace $Tm+T(F)$. Hence
+            \[
+                y\longmapsto\mathcal N(m_y,\pi_K)
+            \]
+            defines a Borel probability kernel on this subspace,
+            which we extend by an arbitrary fixed probability measure outside
+            this affine subspace.
+            The displayed conditional-expectation identity identifies
+            this kernel as a version of the conditional distribution
+            of $X$ given $Y$. By the almost-everywhere uniqueness of
+            conditional distributions
+            \cite[Theorem~8.5]{kallenberg2021foundations},
+            \[
+                \mathscr L(X\mid T(X)=y)
+                =
+                \mathcal N(m_y,\pi_K)
+            \]
+            for $\mathscr L(T(X))$-almost every $y$.
+        
+            Finally, if $m\perp F$, then $m\perp K$ because
+            $K\subseteq F$. Together with $m_y-m\perp K$, this gives
+            $m_y\perp K$.
+        \end{enumerate}
+        \end{proof}
+
+        The following proposition gives the conditional law of $U$
+        at each algorithmic half-step. Its conditional mean is
+        determined by the observations revealed so far, while the
+        remaining Gaussian fluctuation is projected onto the
+        unobserved directions.
+
+        \begin{proposition}[Conditional Gaussian matrix laws]
+        \label{proposition:mf-proof-conditional-matrix}
+        For every $0\leq t\leq T$, the conditional laws of $U$ satisfy
+        \begin{align}
+            U&\stackrel d=_{\mathcal F_t}
+            M_t+\Pi_{G_{t-1}}^\perp\check U\Pi_{W_{t-1}}^\perp,
+            \label{eq:mf-proof-matrix-forward}\\
+            U&\stackrel d=_{\mathcal F_t^+}
+            M_t^++\Pi_{G_{t-1}}^\perp\check U\Pi_{W_t}^\perp,
+            \label{eq:mf-proof-matrix-backward}
+        \end{align}
+        where $\check U$ is a standard Gaussian matrix independent of the
+        conditioning history, and
+        \begin{align}
+            M_t&:= \mathbb{E}[U \mid \mathcal{F}_t] \hspace{3pt} = U\Pi_{W_{t-1}}+\Pi_{G_{t-1}}U
+                -\Pi_{G_{t-1}}U\Pi_{W_{t-1}} ,
+            \label{eq:mf-proof-mean-forward}\\
+            M_t^+&:= \mathbb{E}[U \mid \mathcal{F}_t^+] =U\Pi_{W_t}+\Pi_{G_{t-1}}U
+                -\Pi_{G_{t-1}}U\Pi_{W_t}  .
+            \label{eq:mf-proof-mean-backward}
+        \end{align}
+        \end{proposition}
+
+        \begin{proof}
+        Equip $E:=\mathbb R^{n\times d}$ with the Frobenius inner
+        product
+        \(
+            \langle A,B\rangle_{\mathrm F}
+            :=\operatorname{tr}(A^\top B)
+        \).
+        We first record the geometry of the linear observations,
+        then apply Lemma~\ref{lemma:mf-proof-linear-conditioning}
+        successively along the algorithmic history.
+        
+        For matrices $W$ and $G$ with $d$ and $n$ rows, respectively,
+        define
+        \[
+            \mathcal S(W,G)
+            :=
+            \{A\in E:AW=0,\ A^\top G=0\}.
+        \]
+        Its orthogonal projector is
+        \[
+            \pi_{\mathcal{S}(W,G)}(A)
+            :=
+            \Pi_G^\perp A\Pi_W^\perp.
+        \]
+        Indeed, $\pi_{\mathcal{S}(W,G)}$ is self-adjoint and idempotent
+        for the Frobenius inner product. Its range is
+        $\mathcal S(W,G)$: its image satisfies the two vanishing
+        constraints, and every $A\in\mathcal S(W,G)$ satisfies
+        \[
+            A=\Pi_G^\perp A\Pi_W^\perp.
+        \]
+        For each realization of $U$, the affine space of matrices
+        satisfying the corresponding observations is
+        \[
+            \mathcal A(W,G)
+            :=
+            \{A\in E:AW=UW,\ A^\top G=U^\top G\}
+            =
+            U+\mathcal S(W,G).
+        \]
+        Its unique element orthogonal to $\mathcal S(W,G)$ is
+        \[
+        \begin{aligned}
+            M(W,G)
+            :=
+            U-\pi_{\mathcal{S}(W,G)}(U)
+            =
+            U\Pi_W+\Pi_GU-\Pi_GU\Pi_W.
+        \end{aligned}
+        \]
+        To see uniqueness, any two elements of $\mathcal A(W,G)$
+        differ by an element of $\mathcal S(W,G)$; if both are
+        orthogonal to this subspace, their difference is zero.
+        Moreover,
+        \[
+            M(W,G)
+            =
+            (UW)W^\dagger
+            +(G^\top)^\dagger(U^\top G)^\top
+            -\Pi_G(UW)W^\dagger.
+        \]
+        Thus $M(W,G)$ is a measurable function of
+        $W,G,UW,U^\top G$, including when $W$ or $G$ is rank deficient.
+        
+        By the trajectory definitions \eqref{eq:finite-dim-macro},
+        \[
+            UW_s=\sqrt d\,Q_s,
+            \qquad
+            U^\top G_s=\sqrt n\,P_s.
+        \]
+        Lemma~\ref{lemma:equivalent-algorithmic-filtrations}
+        therefore shows that
+        \[
+            M(W_{t-1},G_{t-1})
+            \quad\text{and}\quad
+            M(W_t,G_{t-1})
+        \]
+        are measurable with respect to $\mathcal F_t$ and
+        $\mathcal F_t^+$, respectively. The same lemma gives
+        \[
+            \mathcal F_t^+
+            =
+            \mathcal F_t\vee\sigma(Uw^t),
+            \qquad
+            \mathcal F_{t+1}
+            =
+            \mathcal F_t^+\vee\sigma(U^\top g^t),
+        \]
+        where the second identity is used only for $t<T$.
+        
+        We use the following conditional version of
+        Lemma~\ref{lemma:mf-proof-linear-conditioning}.
+        Let $\mathcal G$ denote the current history, and suppose that,
+        conditionally on $\mathcal G$, a random element $X$ in a
+        finite-dimensional Euclidean space has law $\mathcal N(m,P)$,
+        where $P$ is an orthogonal projector.
+        Let $T$ be the next linear observation map.
+        Assume that $m,P,T$ are $\mathcal G$-measurable, and set
+        $A:=TP$.
+        Then
+        \[
+            \mathscr L(X\mid\mathcal G\vee\sigma(TX))
+            =
+            \mathcal N\!\left(
+                m+A^\dagger(TX-Tm),\,
+                P-A^\dagger A
+            \right)
+            \qquad\text{almost surely}.
+        \]
+        Indeed, for fixed $m,P,T$, this is the Gaussian conditioning
+        formula of Lemma~\ref{lemma:mf-proof-linear-conditioning}:
+        $P-A^\dagger A$ is the orthogonal projector onto
+        $\operatorname{ran}(P)\cap\ker T$.
+        The Moore--Penrose inverse is Borel measurable as a function
+        of a matrix, so
+        \[
+            (m,P,T,y)\longmapsto
+            \mathcal N\!\left(
+                m+(TP)^\dagger(y-Tm),\,
+                P-(TP)^\dagger TP
+            \right)
+        \]
+        is a measurable probability kernel.
+        Integrating the deterministic conditioning identity against
+        the law of the history proves the conditional-expectation
+        identity for products of bounded measurable test functions.
+        A monotone-class argument then identifies the conditional
+        law given $\mathcal G\vee\sigma(TX)$.
+        This also handles the exceptional observation sets, which
+        are null under the corresponding conditional observation law. 
+        The results invoked above can be found in 
+        \cite[Chapter~8]{kallenberg2021foundations}.
+
+        We now prove the conditional-law identities by induction,
+        applying this formula at each half-step with the current
+        history and its measurable observation map.
+        
+        \begin{enumerate}[wide]
+            \item \emph{Initialization.}
+            Since the initialization is deterministic,
+            $\mathcal F_0$ is trivial.
+            The matrices $W_{-1}$ and $G_{-1}$ are empty, so
+            \[
+                \mathcal S(W_{-1},G_{-1})=E,
+                \qquad
+                M(W_{-1},G_{-1})=0_E.
+            \]
+            Hence the forward identity at $t=0$ is precisely
+            the unconditional standard Gaussian law of $U$.
+        
+            \item \emph{Forward conditioning.}
+            Suppose the forward identity holds at time $t$.
+            Given $\mathcal F_t$, the matrix $U$ is Gaussian
+            with mean
+            \[
+                M_t=M(W_{t-1},G_{t-1})
+            \]
+            and covariance operator $\pi_{\mathcal S({W_{t-1},G_{t-1}})}$.
+            Its conditional affine support is therefore
+            \[
+                M_t+\mathcal S(W_{t-1},G_{t-1})
+                =
+                \mathcal A(W_{t-1},G_{t-1}).
+            \]
+            Since $w^t$ is $\mathcal F_t$-measurable, adjoining
+            $Uw^t$ amounts, conditionally on $\mathcal F_t$,
+            to observing the deterministic linear map
+            \[
+                A\longmapsto Aw^t.
+            \]
+            The remaining fluctuation subspace is
+            \[
+            \begin{aligned}
+                \mathcal S(W_{t-1},G_{t-1})
+                \cap\{A:Aw^t=0\}
+                =
+                \mathcal S(W_t,G_{t-1}),
+            \end{aligned}
+            \]
+            and the refined affine constraint set is
+            \(
+                \mathcal A(W_t,G_{t-1})
+            \).
+            Furthermore,
+            \[
+                M_t\perp\mathcal S(W_{t-1},G_{t-1}).
+            \]
+            The final assertion of
+            Lemma~\ref{lemma:mf-proof-linear-conditioning}
+            therefore shows that the new conditional mean
+            is orthogonal to $\mathcal S(W_t,G_{t-1})$.
+            By the uniqueness established above, this mean is
+            \[
+                M_t^+
+                =
+                M(W_t,G_{t-1}).
+            \]
+            The conditional covariance is the orthogonal
+            projector $\pi_{\mathcal S(W_t,G_{t-1})}$.
+            Since
+            $\mathcal F_t^+=\mathcal F_t\vee\sigma(Uw^t)$,
+            we obtain
+            \[
+                U\stackrel d=_{\mathcal F_t^+}
+                M_t^+
+                +\Pi_{G_{t-1}}^\perp
+                    \check U\Pi_{W_t}^\perp.
+            \]
+            This proves the backward conditional-law identity
+            at time $t$, including $t=T$.
+        
+            \item \emph{Backward conditioning.}
+            Let $t<T$.
+            Given $\mathcal F_t^+$, the preceding step gives
+            a Gaussian law with mean $M_t^+$, fluctuation
+            subspace $\mathcal S(W_t,G_{t-1})$, and affine support
+            $\mathcal A(W_t,G_{t-1})$.
+        
+            Since $g^t$ is $\mathcal F_t^+$-measurable,
+            adjoining $U^\top g^t$ amounts to observing
+            the deterministic linear map
+            \[
+                A\longmapsto A^\top g^t.
+            \]
+            Its kernel intersects the current fluctuation
+            subspace in
+            \[
+            \begin{aligned}
+                \mathcal S(W_t,G_{t-1})
+                \cap\{A:A^\top g^t=0\}
+                =
+                \mathcal S(W_t,G_t).
+            \end{aligned}
+            \]
+            The refined affine constraint set is
+            $\mathcal A(W_t,G_t)$.
+            Applying
+            Lemma~\ref{lemma:mf-proof-linear-conditioning}
+            again, and using
+            \[
+                M_t^+\perp\mathcal S(W_t,G_{t-1}),
+            \]
+            shows that the new conditional mean is the unique
+            element of $\mathcal A(W_t,G_t)$ orthogonal to
+            $\mathcal S(W_t,G_t)$. It is therefore
+            \[
+                M_{t+1}
+                =
+                M(W_t,G_t).
+            \]
+            The new conditional covariance is
+            $\pi_{\mathcal S(W_t,G_t)}$.
+            Since
+            $\mathcal F_{t+1}
+                =\mathcal F_t^+\vee\sigma(U^\top g^t)$,
+            this gives
+            \[
+                U\stackrel d=_{\mathcal F_{t+1}}
+                M_{t+1}
+                +\Pi_{G_t}^\perp\check U\Pi_{W_t}^\perp,
+            \]
+            which is the forward identity at time $t+1$
+            and closes the induction.
+        \end{enumerate}
+        
+        For each conditional law, the projected standard Gaussian
+        matrix has the required covariance because
+        $\pi_{\mathcal{S}(W,G)}$ is an orthogonal projector.
+        The auxiliary matrix $\check U$ may be chosen independently
+        of the conditioning history on a probability-space extension,
+        separately for each representation.
+        
+        Finally, $\mathbb E\|U\|_{\mathrm F}^2=nd<\infty$.
+        The means of the conditional Gaussian laws are consequently
+        the conditional expectations of $U$, giving
+        \[
+            M_t=\mathbb E[U\mid\mathcal F_t],
+            \qquad
+            M_t^+=\mathbb E[U\mid\mathcal F_t^+].
+        \]
+        Expanding $M(W_{t-1},G_{t-1})$ and
+        $M(W_t,G_{t-1})$ yields the stated formulas.
+        \end{proof}
+
+
+\subsection{Proof of the master recursion}
+\label{subsec:proof-master-rec}
+
+\begin{proof}[Proof of Proposition~\ref{proposition:master-recursion}]
+Fix $T\in\mathbb N$. All limits below are taken as $d\to\infty$,
+with the iteration index fixed.
+Lemma~\ref{lemma:mf-proof-nondegeneracy} establishes
+well-definedness, finite second moments, and absolute continuity
+of the effective scores. It also gives
+\[
+    \bar C_t^{[w]}\succ0,
+    \qquad
+    \bar C_t^{[g]}\succ0,
+    \qquad
+    \bar v_t^{[w]}>0,
+    \qquad
+    \bar v_t^{[g]}>0
+\]
+at every finite time.
+The measurability assertions in $(\mathsf F_t)$ and $(\mathsf B_t)$
+follow from
+Lemma~\ref{lemma:equivalent-algorithmic-filtrations}.
+Their conditional matrix laws follow from
+Proposition~\ref{proposition:mf-proof-conditional-matrix},
+proved by successive applications of
+Lemma~\ref{lemma:mf-proof-linear-conditioning}.
+Thus, item~(i) of $(\mathsf F_t)$ and $(\mathsf B_t)$
+already hold at every applicable time.
+
+It remains to prove items~(ii)--(iv) of $(\mathsf F_t)$ and $(\mathsf B_t)$. We establish these assertions by alternating induction over
+the forward and backward half-steps.
+We freely reorder or discard columns of empirical arrays:
+coordinate permutations are isometries and coordinate projections
+are $1$-Lipschitz, so
+Lemma~\ref{lemma:wasserstein-lipschitz-pushforward}
+preserves the required Wasserstein convergence.
+
+\begin{enumerate}[wide]
+    \item \emph{Induction scheme and initialization.}
+    We prove the forward and backward assertions by induction on $t$.
+    Fix $0\leq t\leq T$ and assume that
+    \[
+        (\mathsf F_s)\ \text{and}\ (\mathsf B_s)
+        \quad\text{hold for every }0\leq s<t.
+    \]
+    Under this induction hypothesis, we prove
+    $(\mathsf F_t)$ and then, when $t<T$, $(\mathsf B_t)$.
+    At $t=T$, only the forward assertion remains to be proved.
+    For $t\geq1$, assertion $(\mathsf B_{t-1})$(iv) gives
+    \begin{equation}
+        W_2\left(
+            \nu(\mu,W_t,P_{t-1}),
+            \mathscr L(\tilde\mu,\tilde W_t,\tilde P_{t-1})
+        \right)
+        \xrightarrow{\mathbb P}0,
+        \label{eq:master-proof-parameter-input}
+    \end{equation}
+    while $(\mathsf F_{t-1})$(iv) gives
+    \begin{equation}
+        W_2\left(
+            \nu(Y,\Delta,Q_{t-1},G_{t-1},R_{t-1}),
+            \mathscr L(
+                \tilde Y,\tilde\Delta,
+                \tilde Q_{t-1},\tilde G_{t-1},\tilde R_{t-1}
+            )
+        \right)
+        \xrightarrow{\mathbb P}0
+        \label{eq:master-proof-sample-input}
+    \end{equation}
+    and
+    \begin{equation}
+        b^t\xrightarrow{\mathbb P}\bar b^t.
+        \label{eq:master-proof-intercept-input}
+    \end{equation}
+    At $t=0$, the induction hypothesis is empty.
+    Since trajectory matrices with terminal index $-1$ are empty,
+    \eqref{eq:master-proof-parameter-input} and
+    \eqref{eq:master-proof-sample-input} reduce to the assumed
+    limits of $\nu(\mu,w^0)$ and $\nu(Y,\Delta)$, respectively.
+    Equation~\eqref{eq:master-proof-intercept-input} follows
+    from the initialization assumption.
+    Thus these three inputs are available at every induction
+    step, including $t=0$.
+    
+    \item \emph{Forward half-step $(\mathsf F_t)$.} Let $0\leq t\leq T$.
+    Under the induction hypothesis above, we establish
+    items~(ii)--(iv) of $(\mathsf F_t)$ using
+    \eqref{eq:master-proof-parameter-input}--%
+    \eqref{eq:master-proof-intercept-input}.
+    
+    \begin{enumerate}[label=(\alph*),wide]
+        \item \emph{Projection coefficients and nondegeneracy $(\mathsf F_t)$\textup{(ii)}.}
+        Part~1 of
+        Lemma~\ref{lemma:mf-proof-empirical-stability}
+        applied to the parameter-side input gives
+        \[
+            C_t^{[w]}
+            \xrightarrow{\mathbb P}\bar C_t^{[w]},
+            \qquad
+            m^t
+            =
+            \frac{\mu^\top w^t}{d}
+            \xrightarrow{\mathbb P}
+            \tilde{\mathbb E}[\tilde\mu\tilde w^t]
+            =
+            \bar m^t.
+        \]
+        For $t\geq1$, it also gives
+        \[
+            \frac{W_{t-1}^\top w^t}{d}
+            \xrightarrow{\mathbb P}
+            \left(
+                \tilde{\mathbb E}[\tilde w^s\tilde w^t]
+            \right)_{0\leq s<t}.
+        \]
+        Since $\bar C_{t-1}^{[w]}\succ0$, the
+        pseudoinverse assertion of the same lemma yields
+        \(
+            \alpha_t^{[w]}
+            \xrightarrow{\mathbb P}\bar\alpha_t^{[w]}
+        \).
+        The limiting vector solves the weight projection
+        equations in
+        Definition~\ref{def:mean-field-recursion}.
+        Apply part~2 of
+        Lemma~\ref{lemma:mf-proof-empirical-stability}
+        to the parameter-side array
+        \[
+            H^{(d)}
+            :=
+            [\,\mu\mid W_t\mid P_{t-1}\,]
+            \in\mathbb R^{d\times(2t+2)},
+        \]
+        whose empirical convergence is
+        \eqref{eq:master-proof-parameter-input},
+        and the coefficient vector $\alpha_t^{[w]}$.
+        The rowwise map
+        \[
+            F\bigl(\alpha,(u,w_0,\ldots,w_t,p_0,\ldots,p_{t-1})\bigr)
+            :=
+            w_t-\sum_{s=0}^{t-1}\alpha_s w_s
+        \]
+        is continuous and has linear growth uniformly for $\alpha$
+        near $\bar\alpha_t^{[w]}$.
+        Its application to $H^{(d)}$ gives
+        \(
+            w_\perp^t=w^t-W_{t-1}\alpha_t^{[w]}
+        \).
+        Hence Lemma~\ref{lemma:mf-proof-empirical-stability} yields
+        \[
+            W_2\left(
+                \nu(\mu,W_t,P_{t-1},w_\perp^t),
+                \mathscr L(
+                    \tilde\mu,\tilde W_t,\tilde P_{t-1},
+                    \tilde w_\perp^t
+                )
+            \right)
+            \xrightarrow{\mathbb P}0.
+        \]
+        Taking second moments and cross moments then gives
+        \[
+        \begin{aligned}
+            \frac{\|w_\perp^t\|^2}{d}
+            \xrightarrow{\mathbb P}
+            \tilde{\mathbb E}[(\tilde w_\perp^t)^2]
+            , \qquad
+            \frac{P_{t-1}^\top w_\perp^t}{d}
+            \xrightarrow{\mathbb P}
+            \left(
+                \tilde{\mathbb E}[\tilde p^s\tilde w_\perp^t]
+            \right)_{0\leq s<t}.
+        \end{aligned}
+        \]
+        The sample-side input similarly implies
+        \[
+            C_{t-1}^{[g]}
+            \xrightarrow{\mathbb P}\bar C_{t-1}^{[g]}.
+        \]
+        Its limit is positive definite when $t\geq1$.
+        Consequently,
+        \[
+            \phi_t^{[w]}
+            \xrightarrow{\mathbb P}\bar\phi_t^{[w]},
+            \qquad
+            v_t^{[w]}
+            \xrightarrow{\mathbb P}\bar v_t^{[w]}>0.
+        \]
+        The first limit satisfies the defining forward
+        memory equations, and the second follows by taking
+        nonnegative square roots.
+        At $t=0$, both coefficient vectors are empty and
+        \[
+            (v_0^{[w]})^2
+            =
+            \frac{\|w^0\|^2}{d}
+            \longrightarrow
+            \tilde{\mathbb E}[(\tilde w^0)^2]
+            =
+            (\bar v_0^{[w]})^2>0.
+        \]
+        Thus these conclusions also hold at initialization.
+        This proves $(\mathsf F_t)$(ii), as well as the convergence of $m^t$.
+
+        \item \emph{Conditional forward decomposition and error $(\mathsf F_t)$\textup{(iii)}.}
+        The projection definitions give
+        \[
+            \Pi_{W_{t-1}}w^t
+            =
+            W_{t-1}\alpha_t^{[w]},
+            \qquad
+            w_\perp^t
+            =
+            \Pi_{W_{t-1}}^\perp w^t.
+        \]
+        Since $w^t$ is $\mathcal F_t$-measurable,
+        multiplying the conditional matrix-law identity
+        by $w^t/\sqrt d$ yields
+        \[
+            q^t
+            \stackrel d=_{\mathcal F_t}
+            \frac{M_tw^t}{\sqrt d}
+            +
+            \Pi_{G_{t-1}}^\perp
+            \frac{\check Uw_\perp^t}{\sqrt d}.
+        \]
+        The conditional mean decomposes as
+        \[
+            \frac{M_tw^t}{\sqrt d}
+            =
+            \frac{U\Pi_{W_{t-1}}w^t}{\sqrt d}
+            +
+            \frac{\Pi_{G_{t-1}}Uw_\perp^t}{\sqrt d}.
+        \]
+        The first term equals
+        $Q_{t-1}\alpha_t^{[w]}$.
+        For the second, the identities
+        \[
+            \Pi_A=A(A^\top A)^\dagger A^\top,
+            \qquad
+            G_{t-1}^\top U=\sqrt n\,P_{t-1}^\top
+        \]
+        give
+        \[
+        \begin{aligned}
+            \frac{\Pi_{G_{t-1}}Uw_\perp^t}{\sqrt d}
+            =
+            \frac{\sqrt n}{\sqrt d}\,
+            G_{t-1}(G_{t-1}^\top G_{t-1})^\dagger
+            P_{t-1}^\top w_\perp^t
+            =
+            \frac1{\sqrt\delta}\,
+            G_{t-1}(C_{t-1}^{[g]})^\dagger
+            \frac{P_{t-1}^\top w_\perp^t}{d}
+            =
+            \frac1{\sqrt\delta}\,
+            G_{t-1}\phi_t^{[w]}.
+        \end{aligned}
+        \]
+        Conditionally on $\mathcal F_t$,
+        $\check Uw_\perp^t/\sqrt d$ is centered Gaussian
+        with covariance $(v_t^{[w]})^2I_n$.
+        Identifying Gaussian laws by their means and
+        covariances
+        \cite[Lemma~14.1(i)]{kallenberg2021foundations},
+        the fluctuation therefore has the same conditional
+        law as
+        \[
+            v_t^{[w]}\Pi_{G_{t-1}}^\perp z_t^{[g]}
+            =
+            v_t^{[w]}z_t^{[g]}+\varepsilon_t^{[g]},
+        \]
+        where $z_t^{[g]}\sim\mathcal N(0,I_n)$ is independent
+        of $\mathcal F_t$ and
+        \[
+            \varepsilon_t^{[g]}
+            =
+            -v_t^{[w]}\Pi_{G_{t-1}}z_t^{[g]}.
+        \]
+        This proves
+        \eqref{eq:conditional-q-decomposition-lemmas},
+        including when $v_t^{[w]}=0$.
+        Since the projector and innovation amplitude are
+        $\mathcal F_t$-measurable,
+        \[
+        \begin{aligned}
+            \mathbb E\left[
+                \frac{\|\varepsilon_t^{[g]}\|^2}{n}
+                \Bigm|\mathcal F_t
+            \right]
+            =
+            \frac{(v_t^{[w]})^2}{n}
+            \operatorname{tr}(\Pi_{G_{t-1}})
+            =
+            \frac{(v_t^{[w]})^2}{n}
+            \operatorname{rank}(G_{t-1})
+            \leq
+            (v_t^{[w]})^2\frac tn.
+        \end{aligned}
+        \]
+        To obtain convergence of the error, the conditional
+        Markov inequality
+        gives, for $K,\epsilon>0$,
+        \[
+            \mathbb P\left(
+                \frac{\|\varepsilon_t^{[g]}\|^2}{n}
+                >\epsilon
+            \right)
+            \leq
+            \mathbb P\bigl((v_t^{[w]})^2>K\bigr)
+            +
+            \frac{Kt}{n\epsilon}.
+        \]
+        Choosing $K>(\bar v_t^{[w]})^2$, both terms tend
+        to zero. This proves $(\mathsf F_t)$(iii).
+
+        \item \emph{Sample-side empirical extension $(\mathsf F_t)$\textup{(iv)}.}
+        Apply
+        Lemma~\ref{lemma:mf-proof-gaussian-extension}
+        to the conditional decomposition just established,
+        using the history array
+        \[
+            [\,Y\mid\Delta\mid Q_{t-1}
+                \mid G_{t-1}\mid R_{t-1}\,].
+        \]
+        This array and all the coefficients are
+        $\mathcal F_t$-measurable.
+        Its empirical law converges by
+        \eqref{eq:master-proof-sample-input},
+        the coefficients converge by part~(a) and
+        $\delta\to\bar\delta$, and the normalized squared
+        error tends to zero by part~(b).
+
+        The limiting new coordinate is
+        \[
+            \sum_{s=0}^{t-1}
+                \bar\alpha^{[w]}(t,s)\tilde q^s
+            +
+            \frac1{\sqrt{\bar\delta}}
+            \sum_{s=0}^{t-1}
+                \bar\phi^{[w]}(t,s)\tilde g^s
+            +
+            \bar v_t^{[w]}z_t^{[g]}
+            =
+            \tilde q^t.
+        \]
+        Here the fresh scalar Gaussian is independent of
+        the limiting history by construction.
+        The equality with $\tilde q^t$ is
+        \eqref{eq:mf-proof-forward-one-step}, established in the
+        proof of Lemma~\ref{lemma:mf-proof-nondegeneracy}.
+        Thus
+        \begin{equation}
+            W_2\left(
+                \nu(Y,\Delta,Q_t,G_{t-1},R_{t-1}),
+                \mathscr L(
+                    \tilde Y,\tilde\Delta,
+                    \tilde Q_t,\tilde G_{t-1},\tilde R_{t-1}
+                )
+            \right)
+            \xrightarrow{\mathbb P}0.
+            \label{eq:master-proof-forward-q-limit}
+        \end{equation}
+        The score relation is
+        \[
+            r_i^t=b^t+m^tY_i+\sigma q_i^t.
+        \]
+        As before, its rowwise map is continuous and has linear
+        growth uniformly for $(b^t,m^t)$ near
+        $(\bar b^t,\bar m^t)$.
+        Applying part~2 of
+        Lemma~\ref{lemma:mf-proof-empirical-stability}
+        therefore appends
+        \[
+            \tilde r^t
+            =
+            \bar b^t+\bar m^t\tilde Y+\sigma\tilde q^t
+        \]
+        to the joint limit.
+        After reordering columns, this is precisely
+        \eqref{eq:master-forward-empirical-law}.
+        If $t=T$, this completes $(\mathsf F_T)$.
+        Suppose henceforth that $t<T$.
+        Define, for $u\in(0,1)$, $y\in\{-1,+1\}$,
+        $a\in\{0,1\}$, and $r\in\mathbb R$,
+        \[
+            \mathcal R(u,y,a,r)
+            :=\frac a u\,\ell'(y,r)
+            +\frac{\pi(1-a)}{1-u}
+                S_\kappa(r)\ell'(\operatorname{sign}(r),r).
+        \]
+        Then \eqref{eq:residual-map} gives
+        $g_i^t=\mathcal R(\rho,Y_i,\Delta_i,r_i^t)$.
+        On the finite label and supervision state space,
+        this map is jointly continuous at every point
+        with $\rho\in(0,1)$ and
+        $r\notin\{\kappa_-,\kappa_+\}$.
+        The inactive interval contains zero, so the
+        pseudo-label convention at zero introduces no
+        additional discontinuity in the residual.
+
+        The Lipschitz loss derivatives and bounded
+        selection indicators give, for some $C<\infty$,
+        \[
+            |\mathcal R(\varrho,y,a,r)|
+            \leq C(1+|r|)
+        \]
+        uniformly over $\varrho$ in a neighborhood of
+        $\bar\rho$, $y\in\{-1,+1\}$,
+        $a\in\{0,1\}$, and $r\in\mathbb R$.        
+        We apply the stability Lemma~\ref{lemma:mf-proof-empirical-stability} on the closed domain
+        \[
+            \mathcal X_t
+            :=
+            \{-1,+1\}\times\{0,1\}
+            \times\mathbb R^{t+1}
+            \times\mathbb R^t
+            \times\mathbb R^{t+1},
+        \]
+        corresponding to the columns of
+        \[
+            [\,Y\mid\Delta\mid Q_t\mid G_{t-1}\mid R_t\,].
+        \]
+        The empirical rows and the limiting history take values
+        in $\mathcal X_t$.
+        In its relative topology, the residual map is continuous
+        at every point with $\varrho\in(0,1)$ and current score
+        outside $\{\kappa_-,\kappa_+\}$.
+        By Lemma~\ref{lemma:mf-proof-nondegeneracy},
+        \[
+            \tilde{\mathbb P}
+            (\tilde r^t\in\{\kappa_-,\kappa_+\})=0.
+        \]
+        Together with $\rho\to\bar\rho\in(0,1)$ and the uniform
+        linear-growth bound, this verifies the hypotheses of
+        part~2 of Lemma~\ref{lemma:mf-proof-empirical-stability}.
+        Applying that lemma appends $g^t$ and proves
+        \eqref{eq:master-forward-residual-extension}.
+        Part~1 of the same lemma now gives
+        \[
+            \zeta^t
+            =
+            \frac1n1_n^\top g^t
+            \xrightarrow{\mathbb P}
+            \tilde{\mathbb E}[\tilde g^t]
+            =
+            \bar\zeta^t,
+            \qquad
+            \chi^t
+            =
+            \frac1nY^\top g^t
+            \xrightarrow{\mathbb P}
+            \tilde{\mathbb E}[\tilde Y\tilde g^t]
+            =
+            \bar\chi^t.
+        \]
+        Together with the intercept input, the update
+        \(
+            b^{t+1}=b^t-\eta\zeta^t
+        \)
+        yields
+        $b^{t+1}\xrightarrow{\mathbb P}\bar b^{t+1}$.
+        This proves $(\mathsf F_t)$(iv), and hence
+        $(\mathsf F_t)$ which concludes the forward half-step.
+    \end{enumerate}
+
+    \item \emph{Backward half-step $(\mathsf B_t)$.}
+    Let $0\leq t<T$, and suppose $(\mathsf F_t)$ has been
+    established. We retain the parameter-side induction input
+    \eqref{eq:master-proof-parameter-input}.
+    \begin{enumerate}[label=(\alph*),wide]
+        \item \emph{Projection coefficients and nondegeneracy
+        $(\mathsf B_t)$\textup{(ii)}.}
+        The residual extension
+        \eqref{eq:master-forward-residual-extension}
+        and part~1 of
+        Lemma~\ref{lemma:mf-proof-empirical-stability}
+        give
+        \[
+            C_t^{[g]}
+            \xrightarrow{\mathbb P}\bar C_t^{[g]}\succ0.
+        \]
+        For $t\geq1$, they also give
+        \[
+            \frac{G_{t-1}^\top g^t}{n}
+            \xrightarrow{\mathbb P}
+            \left(
+                \tilde{\mathbb E}[\tilde g^s\tilde g^t]
+            \right)_{0\leq s<t}.
+        \]
+        The leading principal block $C_{t-1}^{[g]}$
+        converges to $\bar C_{t-1}^{[g]}\succ0$.
+        The pseudoinverse assertion of the same lemma
+        therefore yields
+        \(
+            \alpha_t^{[g]}
+            \xrightarrow{\mathbb P}\bar\alpha_t^{[g]}
+        \).
+        The limiting vector solves the residual projection
+        equations in
+        Definition~\ref{def:mean-field-recursion}.
+        At $t=0$, this coefficient vector is empty.
+        Apply part~2 of
+        Lemma~\ref{lemma:mf-proof-empirical-stability}
+        to the sample-side array
+        \[
+            H^{(n)}
+            :=
+            [\,Y\mid\Delta\mid Q_t\mid G_t\mid R_t\,]
+            \in\mathbb R^{n\times(3t+5)},
+        \]
+        whose empirical convergence is
+        \eqref{eq:master-forward-residual-extension},
+        and the coefficient vector $\alpha_t^{[g]}$.
+        The rowwise map
+        \[
+        \begin{aligned}
+            F\bigl(
+                \alpha,
+                (y,a,q_0,\ldots,q_t,
+                    g_0,\ldots,g_t,r_0,\ldots,r_t)
+            \bigr)
+            :=
+            g_t-\sum_{s=0}^{t-1}\alpha_s g_s
+        \end{aligned}
+        \]
+        is continuous and has linear growth uniformly for
+        $\alpha$ near $\bar\alpha_t^{[g]}$.
+        Its application to $H^{(n)}$ gives
+        \[
+            g_\perp^t=g^t-G_{t-1}\alpha_t^{[g]}.
+        \]
+        Hence the stability lemma yields
+        \[
+            W_2\left(
+                \nu(Y,\Delta,Q_t,G_t,R_t,g_\perp^t),
+                \mathscr L(
+                    \tilde Y,\tilde\Delta,\tilde Q_t,
+                    \tilde G_t,\tilde R_t,\tilde g_\perp^t
+                )
+            \right)
+            \xrightarrow{\mathbb P}0.
+        \]
+        Taking second moments and cross moments then gives
+        \[
+        \begin{aligned}
+            \frac{\|g_\perp^t\|^2}{n}
+            \xrightarrow{\mathbb P}
+            \tilde{\mathbb E}[(\tilde g_\perp^t)^2],\qquad
+            \frac{Q_t^\top g_\perp^t}{n}
+            \xrightarrow{\mathbb P}
+            \left(
+                \tilde{\mathbb E}[\tilde q^s\tilde g_\perp^t]
+            \right)_{0\leq s\leq t}.
+        \end{aligned}
+        \]
+        By \eqref{eq:master-forward-nondegeneracy},
+        \(
+            C_t^{[w]}
+            \xrightarrow{\mathbb P}\bar C_t^{[w]}\succ0
+        \).
+        Consequently,
+        \[
+            \phi_t^{[g]}
+            \xrightarrow{\mathbb P}\bar\phi_t^{[g]},
+            \qquad
+            v_t^{[g]}
+            \xrightarrow{\mathbb P}\bar v_t^{[g]}>0.
+        \]
+        The first limit satisfies the defining backward
+        memory equations, and the second follows by taking
+        nonnegative square roots.
+        At $t=0$, the same argument applies with $g_\perp^0=g^0$
+        and the empty coefficient vector $\alpha_0^{[g]}$;
+        the memory coefficient vector $\phi_0^{[g]}$ need not be empty.
+        This proves $(\mathsf B_t)$(ii).
+    
+        \item \emph{Conditional backward decomposition and error
+        $(\mathsf B_t)$\textup{(iii)}.}
+        The projection definitions give
+        \[
+            \Pi_{G_{t-1}}g^t
+            =
+            G_{t-1}\alpha_t^{[g]},
+            \qquad
+            g_\perp^t
+            =
+            \Pi_{G_{t-1}}^\perp g^t.
+        \]
+        Since $g^t$ is $\mathcal F_t^+$-measurable,
+        transposing \eqref{eq:mf-proof-matrix-backward}
+        and multiplying by $g^t/\sqrt n$ yields
+        \[
+            p^t
+            \stackrel d=_{\mathcal F_t^+}
+            \frac{(M_t^+)^\top g^t}{\sqrt n}
+            +
+            \Pi_{W_t}^\perp
+            \frac{\check U^\top g_\perp^t}{\sqrt n}.
+        \]
+        Using \eqref{eq:mf-proof-mean-backward},
+        the conditional mean decomposes as
+        \[
+            \frac{(M_t^+)^\top g^t}{\sqrt n}
+            =
+            \frac{U^\top\Pi_{G_{t-1}}g^t}{\sqrt n}
+            +
+            \frac{\Pi_{W_t}U^\top g_\perp^t}{\sqrt n}.
+        \]
+        Since
+        $U^\top G_{t-1}=\sqrt n\,P_{t-1}$,
+        the first term equals
+        $P_{t-1}\alpha_t^{[g]}$.
+        For the second, the identities
+        \[
+            \Pi_A=A(A^\top A)^\dagger A^\top,
+            \qquad
+            W_t^\top U^\top=\sqrt d\,Q_t^\top
+        \]
+        give
+        \[
+        \begin{aligned}
+            \frac{\Pi_{W_t}U^\top g_\perp^t}{\sqrt n}
+            =
+            \frac{\sqrt d}{\sqrt n}\,
+            W_t(W_t^\top W_t)^\dagger
+            Q_t^\top g_\perp^t
+            =
+            \sqrt\delta\,
+            W_t(C_t^{[w]})^\dagger
+            \frac{Q_t^\top g_\perp^t}{n}
+            =
+            \sqrt\delta\,W_t\phi_t^{[g]}.
+        \end{aligned}
+        \]
+        Conditionally on $\mathcal F_t^+$,
+        $\check U^\top g_\perp^t/\sqrt n$ is centered
+        Gaussian with covariance
+        \[
+            \frac{\|g_\perp^t\|^2}{n}I_d
+            =
+            (v_t^{[g]})^2I_d.
+        \]
+        Identifying Gaussian laws by their means and
+        covariances
+        \cite[Lemma~14.1(i)]{kallenberg2021foundations},
+        its projected version has the same conditional law as
+        \[
+            v_t^{[g]}\Pi_{W_t}^\perp z_t^{[w]}
+            =
+            v_t^{[g]}z_t^{[w]}+\varepsilon_t^{[w]},
+        \]
+        where $z_t^{[w]}\sim\mathcal N(0,I_d)$ is independent
+        of $\mathcal F_t^+$ and
+        \[
+            \varepsilon_t^{[w]}
+            =
+            -v_t^{[g]}\Pi_{W_t}z_t^{[w]}.
+        \]
+        This proves
+        \eqref{eq:conditional-p-decomposition-lemmas},
+        including when $v_t^{[g]}=0$.
+        Since the projector and innovation amplitude are
+        $\mathcal F_t^+$-measurable,
+        \[
+        \begin{aligned}
+            \mathbb E\left[
+                \frac{\|\varepsilon_t^{[w]}\|^2}{d}
+                \Bigm|\mathcal F_t^+
+            \right]
+            =
+            \frac{(v_t^{[g]})^2}{d}
+            \operatorname{tr}(\Pi_{W_t})
+            =
+            \frac{(v_t^{[g]})^2}{d}
+            \operatorname{rank}(W_t)
+            \leq
+            (v_t^{[g]})^2\frac{t+1}{d}.
+        \end{aligned}
+        \]
+        Thus \eqref{eq:backward-projection-error-lemmas} holds. The
+        conditional Markov inequality gives, for
+        $K,\epsilon>0$,
+        \[
+            \mathbb P\left(
+                \frac{\|\varepsilon_t^{[w]}\|^2}{d}
+                >\epsilon
+            \right)
+            \leq
+            \mathbb P\bigl((v_t^{[g]})^2>K\bigr)
+            +
+            \frac{K(t+1)}{d\epsilon}.
+        \]
+        Choosing $K>(\bar v_t^{[g]})^2$, both terms tend
+        to zero. This proves $(\mathsf B_t)$(iii).
+    
+        \item \emph{Parameter-side empirical extension
+        $(\mathsf B_t)$\textup{(iv)}.}
+        Apply
+        Lemma~\ref{lemma:mf-proof-gaussian-extension}
+        to the conditional decomposition just established,
+        using the parameter-side history array
+        \[
+            H^{(d)}
+            :=
+            [\,\mu\mid W_t\mid P_{t-1}\,]
+            \in\mathbb R^{d\times(2t+2)}.
+        \]
+        This array and all the coefficients are
+        $\mathcal F_t^+$-measurable.
+        Its empirical law converges by
+        \eqref{eq:master-proof-parameter-input},
+        the coefficients converge by part~(a) and
+        $\delta\to\bar\delta$, and the normalized squared
+        error tends to zero by part~(b).
+        The limiting new coordinate is
+        \[
+            \sum_{s=0}^{t-1}
+                \bar\alpha^{[g]}(t,s)\tilde p^s
+            +
+            \sqrt{\bar\delta}
+            \sum_{s=0}^{t}
+                \bar\phi^{[g]}(t,s)\tilde w^s
+            +
+            \bar v_t^{[g]}z_t^{[w]}
+            =
+            \tilde p^t.
+        \]
+        Here the fresh scalar Gaussian is independent of
+        the limiting history by construction.
+        The equality with $\tilde p^t$ is
+        \eqref{eq:mf-proof-backward-one-step}, established in the
+        proof of Lemma~\ref{lemma:mf-proof-nondegeneracy}.
+        Hence
+        \begin{equation}
+            W_2\left(
+                \nu(\mu,W_t,P_t),
+                \mathscr L(\tilde\mu,\tilde W_t,\tilde P_t)
+            \right)
+            \xrightarrow{\mathbb P}0.
+            \label{eq:master-proof-backward-p-limit}
+        \end{equation}
+        We next append the weight update.
+        Apply part~2 of
+        Lemma~\ref{lemma:mf-proof-empirical-stability}
+        to the augmented parameter-side array
+        \[
+            H^{(d)}_+
+            :=
+            [\,\mu\mid W_t\mid P_t\,]
+            \in\mathbb R^{d\times(2t+3)}
+        \]
+        and the coefficient vector
+        \[
+            \beta^{(d)}
+            :=
+            \left(\chi^t,\frac{\sigma}{\sqrt\delta}\right)
+            \xrightarrow{\mathbb P}
+            \left(\bar\chi^t,\frac{\sigma}{\sqrt{\bar\delta}}\right).
+        \]
+        This coefficient convergence follows from
+        \eqref{eq:master-backward-macroscopic-convergence}
+        and $\delta\to\bar\delta>0$.
+        The rowwise map
+        \[
+        \begin{aligned}
+            F\bigl(
+                (a,c),
+                (u,w_0,\ldots,w_t,p_0,\ldots,p_t)
+            \bigr)
+            :=
+            w_t-\eta\left[
+                \lambda j'(w_t)+au+cp_t
+            \right]
+        \end{aligned}
+        \]
+        is continuous and has linear growth uniformly for
+        $(a,c)$ near
+        $(\bar\chi^t,\sigma/\sqrt{\bar\delta})$,
+        because $j'$ is Lipschitz.
+        Its application to $H^{(d)}_+$ gives
+        \[
+            w_k^{t+1}
+            =
+            w_k^t-\eta\left[
+                \lambda j'(w_k^t)
+                +\chi^t\mu_k
+                +\frac{\sigma}{\sqrt\delta}p_k^t
+            \right].
+        \]
+        Thus the stability Lemma~\ref{lemma:mf-proof-empirical-stability} appends the effective coordinate
+        \[
+            \tilde w^{t+1}
+            =
+            \tilde w^t-\eta\left[
+                \lambda j'(\tilde w^t)
+                +\bar\chi^t\tilde\mu
+                +\frac{\sigma}{\sqrt{\bar\delta}}\tilde p^t
+            \right]
+        \]
+        to the joint limit
+        \eqref{eq:master-proof-backward-p-limit}.
+        After reordering columns, this proves
+        \eqref{eq:master-backward-empirical-law}.
+        This establishes $(\mathsf B_t)$(iv), and hence
+        $(\mathsf B_t)$.
+    \end{enumerate}
+\end{enumerate}
+
+We have shown that the assertions at times $s<t$ imply
+$(\mathsf F_t)$ and, when $t<T$, $(\mathsf B_t)$.
+The same arguments apply at $t=0$ using the initialization
+limits established above.
+Strong induction therefore proves $(\mathsf F_t)$ for
+$0\leq t\leq T$ and $(\mathsf B_t)$ for $0\leq t<T$.
+
+\end{proof}
+
+\subsection{Proof of Theorem~\ref{theorem:trajectory}
+and Corollary~\ref{cor:mean-field-observables}}
+\label{subsec:proof-trajectory}
+
+\begin{proof}[Proof of Theorem~\ref{theorem:trajectory}]
+Well-definedness, uniqueness, finite second moments, and
+atomlessness of the effective scores follow from
+Lemma~\ref{lemma:mf-proof-nondegeneracy}.
+Fix a finite horizon $T\in\mathbb N$.
+The remaining assertions follow by projecting the joint
+empirical limits in
+Proposition~\ref{proposition:master-recursion}.
+
+By Lemma~\ref{lemma:wasserstein-lipschitz-pushforward},
+coordinate projections preserve $W_2$ convergence in probability.
+\begin{enumerate}[label=(\roman*),wide]
+    \item \emph{Parameter-side trajectories.}
+    For $T\geq1$, apply
+    \eqref{eq:master-backward-empirical-law}
+    at $t=T-1$ and project onto the coordinates
+    $(\mu,W_T)$. This gives
+    \[
+        W_2\left(
+            \nu(\mu,W_T),
+            \mathscr L(\tilde\mu,\tilde W_T)
+        \right)
+        \xrightarrow{\mathbb P}0,
+    \]
+    which is \eqref{eq:parameter-trajectory-limit}.
+    For $T=0$, the same conclusion follows directly
+    from Assumption~\ref{assumption:quenched-initialization}.
+
+    \item \emph{Sample-side trajectories.}
+    Apply \eqref{eq:master-forward-empirical-law}
+    at $t=T$ and project onto $(Y,\Delta,R_T)$.
+    This yields
+    \[
+        W_2\left(
+            \nu(Y,\Delta,R_T),
+            \mathscr L(\tilde Y,\tilde\Delta,\tilde R_T)
+        \right)
+        \xrightarrow{\mathbb P}0,
+    \]
+    proving \eqref{eq:sample-trajectory-limit}.
+
+    \item \emph{Intercepts.}
+    The initialization assumption gives
+    $b^0\to\bar b^0$.
+    For every $1\leq t\leq T$,
+    \eqref{eq:master-backward-macroscopic-convergence}
+    applied at time $t-1$ gives
+    $b^t\xrightarrow{\mathbb P}\bar b^t$.
+    Hence, for every $\epsilon>0$,
+    \[
+        \mathbb P\left(
+            \max_{0\leq t\leq T}|b^t-\bar b^t|>\epsilon
+        \right)
+        \leq
+        \sum_{t=0}^T
+        \mathbb P(|b^t-\bar b^t|>\epsilon)
+        \longrightarrow0.
+    \]
+    This proves \eqref{eq:mean-field-bias-convergence}.
+\end{enumerate}
+\end{proof}
+
+\begin{proof}[Proof of Corollary~\ref{cor:mean-field-observables}]
+Fix nonnegative integers $s,t$ and choose a finite horizon
+$T\geq\max\{s,t\}$.
+
+\begin{enumerate}[wide]
+    \item \emph{Weight-side observables.}
+    Apply part~1 of
+    Lemma~\ref{lemma:mf-proof-empirical-stability}
+    to the parameter-side trajectory convergence
+    \eqref{eq:parameter-trajectory-limit}.
+    It gives
+    \[
+    \begin{aligned}
+        m^t
+        &=
+        \frac{\mu^\top w^t}{d}
+        \xrightarrow{\mathbb P}
+        \tilde{\mathbb E}[\tilde\mu\tilde w^t]
+        =
+        \bar m^t,\\
+        (\tau^t)^2
+        &=
+        \frac{\|w^t\|^2}{d}
+        \xrightarrow{\mathbb P}
+        \tilde{\mathbb E}[(\tilde w^t)^2]
+        =
+        (\bar\tau^t)^2,\\
+        C^{[w]}(s,t)
+        &=
+        \frac{(w^s)^\top w^t}{d}
+        \xrightarrow{\mathbb P}
+        \tilde{\mathbb E}[\tilde w^s\tilde w^t]
+        =
+        \bar C^{[w]}(s,t).
+    \end{aligned}
+    \]
+    Taking nonnegative square roots yields
+    $\tau^t\xrightarrow{\mathbb P}\bar\tau^t$.
+    Moreover,
+    \[
+        (\bar\tau^t)^2=\bar C^{[w]}(t,t)>0
+    \]
+    by Lemma~\ref{lemma:mf-proof-nondegeneracy}.
+
+    \item \emph{Selected fraction.}
+    Projecting \eqref{eq:sample-trajectory-limit}
+    onto the supervision indicator and the score at
+    time $t$ gives
+    \[
+        W_2\left(
+            \nu(\Delta,r^t),
+            \mathscr L(\tilde\Delta,\tilde r^t)
+        \right)
+        \xrightarrow{\mathbb P}0.
+    \]
+    Consider the empirical array
+    \[
+        H^{(n)}:=[\,\Delta\mid r^t\,]
+        \in\mathbb R^{n\times2},
+    \]
+    whose rows and limiting law take values in the
+    closed set $\mathcal X:=\{0,1\}\times\mathbb R$.
+    Since $M=n(1-\rho)$,
+    \[
+        \omega^t
+        =
+        \frac1n\sum_{i=1}^n
+        \frac{1-\Delta_i}{1-\rho}S_\kappa(r_i^t).
+    \]
+    Apply part~2 of
+    Lemma~\ref{lemma:mf-proof-empirical-stability}
+    with coefficient and rowwise map
+    \[
+        \frac1{1-\rho}
+        \longrightarrow
+        \frac1{1-\bar\rho} , \quad \text{and} \quad  F(c,(a,r)):=c(1-a)S_\kappa(r),
+    \]
+    respectively.
+    This map is bounded uniformly for $c$ near
+    $(1-\bar\rho)^{-1}$, and its only possible
+    discontinuities on $\mathcal X$ occur at
+    $r=\kappa_-$ and $r=\kappa_+$.
+    The limiting score law is atomless by
+    Lemma~\ref{lemma:mf-proof-nondegeneracy}, so
+    \[
+        \tilde{\mathbb P}
+        (\tilde r^t\in\{\kappa_-,\kappa_+\})=0.
+    \]
+    Thus the stability Lemma~\ref{lemma:mf-proof-empirical-stability} applies.
+    Taking the empirical first moment of the appended
+    coordinate using part~1 of that lemma yields
+    \[
+        \omega^t
+        \xrightarrow{\mathbb P}
+        \frac{
+            \tilde{\mathbb E}
+            [(1-\tilde\Delta)S_\kappa(\tilde r^t)]
+        }{1-\bar\rho}
+        =
+        \bar\omega^t.
+    \]
+    Together with part~1, this proves
+    \eqref{eq:mean-field-observable-convergence}..
+
+    \item \emph{Selected-error fraction}
+    Apply the same argument
+    to the array $(Y,\Delta,r^t)$ and the rowwise map
+    \[
+        F(c,(y,a,r))
+        :=
+        c(1-a)
+        \mathbf1_{\{
+            \mathbf1_{\{r\geq\kappa_+\}}
+            -\mathbf1_{\{r\leq\kappa_-\}}
+            =-y
+        \}}.
+    \]
+    On the discrete label and supervision state space, its only
+    possible discontinuities occur at the selection thresholds.
+    Lemma~\ref{lemma:mf-proof-nondegeneracy} and part~2 of
+    Lemma~\ref{lemma:mf-proof-empirical-stability}
+    therefore give $e^t\xrightarrow{\mathbb P}\bar e^t$.
+
+    \item \emph{Classification error.}
+    Let $\mathcal F_{\mathrm{train}}$ denote the
+    sigma-algebra generated by the training data.
+    Draw an independent test observation
+    \[
+        X_{\mathrm{test}}
+        =
+        \frac{Y_{\mathrm{test}}\mu}{\sqrt d}
+        +\sigma Z_{\mathrm{test}},
+    \]
+    where
+    \[
+        \mathbb P(Y_{\mathrm{test}}=+1)=p,
+        \qquad
+        Z_{\mathrm{test}}\sim\mathcal N(0,I_d),
+    \]
+    and the label and Gaussian noise are independent
+    of each other and of $\mathcal F_{\mathrm{train}}$.
+    The test score satisfies
+    \[
+    \begin{aligned}
+        r_{\mathrm{test}}^t
+        :=
+        b^t+\frac{(w^t)^\top X_{\mathrm{test}}}{\sqrt d}
+        =
+        b^t+m^tY_{\mathrm{test}}
+        +\frac{\sigma}{\sqrt d}
+            (w^t)^\top Z_{\mathrm{test}}.
+    \end{aligned}
+    \]
+    Since $b^t$ and $w^t$ are
+    $\mathcal F_{\mathrm{train}}$-measurable,
+    \[
+        \mathscr L\left(
+            r_{\mathrm{test}}^t
+            \mid\mathcal F_{\mathrm{train}},
+                Y_{\mathrm{test}}=y
+        \right)
+        =
+        \mathcal N\left(
+            b^t+ym^t,\,
+            \sigma^2(\tau^t)^2
+        \right).
+    \]
+    On $\{\tau^t>0\}$, this distribution assigns zero
+    probability to a zero score.
+    The Gaussian tail formula and symmetry of $\Phi$
+    therefore give
+    \[
+        \mathcal E^t
+        =
+        p\,\Phi\left(
+            \frac{-b^t-m^t}{\sigma\tau^t}
+        \right)
+        +
+        (1-p)\,\Phi\left(
+            \frac{b^t-m^t}{\sigma\tau^t}
+        \right).
+    \]
+    Assumption~\ref{assumption:asymptotic-regime},
+    Theorem~\ref{theorem:trajectory}, and part~1 give
+    \[
+        (p,b^t,m^t,\tau^t)
+        \xrightarrow{\mathbb P}
+        (\bar p,\bar b^t,\bar m^t,\bar\tau^t),
+        \qquad
+        \bar\tau^t>0.
+    \]
+    Define $\widehat{\mathcal E}^t$ by the displayed
+    Gaussian expression when $\tau^t>0$, and set it
+    equal to zero when $\tau^t=0$.
+    This defines a measurable function of
+    $(p,b^t,m^t,\tau^t)$ that is continuous at the
+    limiting values.
+    The continuous mapping theorem
+    \cite[Lemmas~5.3--5.4]{kallenberg2021foundations}
+    consequently yields
+    \[
+        \widehat{\mathcal E}^t
+        \xrightarrow{\mathbb P}
+        \bar p\,\Phi\left(
+            \frac{-\bar b^t-\bar m^t}{\sigma\bar\tau^t}
+        \right)
+        +
+        (1-\bar p)\,\Phi\left(
+            \frac{\bar b^t-\bar m^t}{\sigma\bar\tau^t}
+        \right)
+        =
+        \bar{\mathcal E}^t.
+    \]
+    Finally,
+    \[
+        \mathbb P(\tau^t=0)
+        \leq
+        \mathbb P\left(
+            |\tau^t-\bar\tau^t|>\frac{\bar\tau^t}{2}
+        \right)
+        \longrightarrow0.
+    \]
+    Since $\mathcal E^t=\widehat{\mathcal E}^t$
+    on $\{\tau^t>0\}$, for every $\epsilon>0$,
+    \[
+        \mathbb P\left(
+            |\mathcal E^t-\bar{\mathcal E}^t|>\epsilon
+        \right)
+        \leq
+        \mathbb P(\tau^t=0)
+        +
+        \mathbb P\left(
+            |\widehat{\mathcal E}^t-\bar{\mathcal E}^t|
+            >\epsilon
+        \right)
+        \longrightarrow0.
+    \]
+    This proves \eqref{eq:mean-field-classification-error}.
+\end{enumerate}
+\end{proof}

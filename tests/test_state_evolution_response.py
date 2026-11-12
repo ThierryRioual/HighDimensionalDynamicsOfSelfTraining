@@ -661,7 +661,7 @@ def test_active_pi0_defaults_to_score_signs_without_a_sample_sampler():
     for scores, residual in zip(process.preactivation, process.residual):
         labels = torch.where(scores >= 0, 1., -1.)
         selection = config.selection_mask(scores)
-        expected = -config.step_size * (
+        expected = (
             process.indicator / process.rho * config.loss_function.gradient(scores, process.label)
             + (1 - process.indicator) * config.pseudo_label_param / (1 - process.rho)
             * selection * config.loss_function.gradient(scores, labels)
@@ -736,15 +736,15 @@ def test_sigma_scales_both_preactivation_and_weight_update():
     expected_w1 = (
         se.weight[0]
         + se.decay[0]
-        + se.label_residual_alignments[0] * se.signal
-        + (sigma / math.sqrt(delta)) * se.backward_noise[0]
+        - se.eta * se.label_residual_alignments[0] * se.signal
+        - se.eta * (sigma / math.sqrt(delta)) * se.backward_noise[0]
     )
     torch.testing.assert_close(se.weight[1], expected_w1)
     unscaled_w1 = (
         se.weight[0]
         + se.decay[0]
-        + se.label_residual_alignments[0] * se.signal
-        + se.backward_noise[0] / math.sqrt(delta)
+        - se.eta * se.label_residual_alignments[0] * se.signal
+        - se.eta * se.backward_noise[0] / math.sqrt(delta)
     )
     assert not torch.allclose(se.weight[1], unscaled_w1)
 
@@ -844,7 +844,7 @@ def test_state_evolution_with_bias_uses_effective_bias_recursion():
     assert se.algo_cfg.train_bias is True
     assert not se.bias[0].requires_grad
     torch.testing.assert_close(se.bias[0], torch.tensor(0.7))
-    torch.testing.assert_close(se.bias[1], se.bias[0] + se.mean_residual[0])
+    torch.testing.assert_close(se.bias[1], se.bias[0] - se.algo_cfg.get_bias_step_size() * se.mean_residual[0])
     expected_initial_preactivation = (
         se.bias[0]
         + se.weight_signal_alignments[0] * se.label
@@ -917,7 +917,7 @@ def test_state_evolution_bias_weight_does_not_change_the_weight_update():
     torch.testing.assert_close(labeled_only.bias_residual[0], expected_labeled_bias_residual)
     torch.testing.assert_close(
         labeled_only.bias[1],
-        labeled_only.bias[0] + expected_labeled_bias_residual.mean(),
+        labeled_only.bias[0] - labeled_only.algo_cfg.get_bias_step_size() * expected_labeled_bias_residual.mean(),
     )
     assert not torch.equal(default.bias[1], labeled_only.bias[1])
 

@@ -1,0 +1,158 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Unlabeled data are often abundant, whereas obtaining labels may
+require costly manual annotation. Self-training addresses this issue
+by using a model's predictions as pseudo-labels for unlabeled
+observations, which then contribute to subsequent training
+\cite{lee2013pseudolabel}.
+
+We write $\mathbb N=\{0,1,2,\ldots\}$,
+$[\![a,b]\!]=\{a,a+1,\ldots,b\}$ for integers $a\leq b$,
+and $\mathscr L(X)$ for the law of a random element $X$.
+
+Given partially labeled observations
+$\mathcal D:=\{(X_i,\Delta_iY_i):i\in[\![1,n]\!]\}$, where
+$X_i\in\mathbb R^d$, $Y_i\in\{-1,+1\}$, and
+$\Delta_i\in\{0,1\}$ indicates whether the label is observed,
+we study a self-training algorithm that produces affine classifiers
+of the form
+\begin{equation}
+    f_\theta(x)
+    :=
+    \operatorname{sign}\left(
+        b+\frac{x^\top w}{\sqrt d}
+    \right),
+    \qquad
+    \theta=(b,w)\in\mathbb R\times\mathbb R^d,
+    \label{eq:def-classifier}
+\end{equation}
+with $\operatorname{sign}(0)=+1$.
+Let
+$I_{\mathcal U}:=\{i\in[\![1,n]\!]:\Delta_i=0\}$
+denote the indices of the unlabeled observations.
+At each iteration $t$, the current classifier assigns to each
+$j\in I_{\mathcal U}$ a training score and a pseudo-label
+\[
+    r_j^t
+    :=
+    b^t+\frac{X_j^\top w^t}{\sqrt d},
+    \qquad
+    \widehat Y_j^t
+    :=
+    \operatorname{sign}(r_j^t).
+\]
+Given confidence thresholds $\kappa_-<0<\kappa_+$,
+only observations with sufficiently confident scores are retained,
+forming the pseudo-labeled dataset
+\begin{align}
+    \mathcal P_t
+    :=
+    \bigl\{(X_j,\widehat Y_j^t):j\in I_t\bigr\},
+    \qquad
+    I_t
+    :=
+    \left\{
+        j\in I_{\mathcal U}:
+        r_j^t\le\kappa_-
+        \ \text{or}\
+        r_j^t\ge\kappa_+
+    \right\}.
+    \label{eq:pl-dataset}
+\end{align}
+The model is then updated by taking one gradient step,
+\begin{align}
+    \theta^{t+1}
+    :=
+    \theta^t
+    -
+    \eta P_d
+    \nabla_\theta L(\theta^t;\mathcal D_L,\mathcal P_t), 
+    \label{eq:pl-gd-step}
+\end{align}
+where
+$\mathcal D_L:=\{(X_i,Y_i):\Delta_i=1\}$
+is the labeled dataset, $L$ is the surrogate objective
+specified in \eqref{eq:ST-objective}, and $P_d$ is a
+preconditioning matrix. Its pseudo-labeled contribution is
+weighted by $\pi$ and normalized by the full unlabeled count $M$.
+This procedure is repeated, with the same labeled and unlabeled
+observations reused throughout training.
+
+Unlike ordinary empirical risk minimization, the training objective
+changes at each iteration, as the pseudo-labels and selected
+observations depend on the current classifier. These adaptive
+changes introduce discontinuities into the update rule and
+nonconvexity into the underlying optimization problem.
+The statistical analysis presents additional difficulties.
+Because the same random observations are reused throughout
+training, successive parameter updates are coupled through
+their dependence on the data and previous iterates.
+Furthermore, we are interested in understanding these dynamics
+in the high-dimensional regime, where many tools from classical
+asymptotic statistics are no longer applicable.
+
+These considerations raise two natural questions:
+\begin{itemize}
+    \item Does the self-training algorithm converge, and what
+    can be said about its limiting point?
+    \item Can the dynamics of the parameter iterates and their
+    statistical performance be characterized precisely in
+    high dimensions?
+\end{itemize}
+
+\subsection{Contributions}
+
+We address these questions by establishing convergence of the
+self-training algorithm and deriving an asymptotically exact
+characterization of its finite-time dynamics under a Gaussian-mixture
+model in the high-dimensional regime.
+The precise setting and assumptions are presented in
+Section~\ref{sec:setting}. Our main contributions are threefold:
+
+\begin{enumerate}
+    \item \emph{Finite-dimensional convergence.}
+    Under suitable assumptions, we prove that the self-training
+    parameters converge for a fixed dataset, with an eventual
+    geometric rate of convergence. We further characterize the
+    limiting point in terms of the final pseudo-labeling and
+    selection configuration.
+
+    \item \emph{Asymptotically exact dynamics.}
+    In the proportional asymptotic regime, we
+    characterize the limiting empirical laws of
+    parameter-coordinate trajectories and sample-score
+    trajectories over every fixed time horizon through
+    two effective stochastic processes.
+
+    \item \emph{Long-time convergence.}
+    Under additional assumptions, we establish convergence of
+    the effective parameter and score processes as the number
+    of iterations tends to infinity, with the high-dimensional
+    limit taken first. For a representative unlabeled observation,
+    the selection state and the assigned label when selected
+    eventually stabilize almost surely.
+\end{enumerate}
+
+Our results provide foundations for further analysis of
+self-training algorithms.
+Section~\ref{sec:numerical} takes initial steps toward
+understanding improvements in generalization and the effects
+of class imbalance.
+A comprehensive quantitative analysis of these mechanisms,
+and of the trade-off between pseudo-label reliability and
+the fraction of selected observations, remains open.
+
+Section~\ref{sec:related-work} reviews self-training,
+self-distillation, adaptive training procedures, and
+high-dimensional dynamics.
+Section~\ref{sec:setting} specifies the model and algorithm.
+Section~\ref{sec:main-result} presents the finite-dimensional,
+mean-field, and long-time results, proved respectively in
+Appendices~\ref{sec:proof-finite-dim},
+\ref{sec:proof-mean-field}, and \ref{sec:proof-long-time}.
+Section~\ref{sec:numerical} presents numerical validation and
+statistical interpretation, with proofs in
+Appendix~\ref{sec:proof-numerical}.
+Appendix~\ref{sec:math-prelim} collects mathematical preliminaries 
+that might be useful to the reader.

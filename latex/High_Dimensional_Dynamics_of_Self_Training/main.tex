@@ -1,0 +1,151 @@
+\documentclass{article}
+\usepackage[a4paper,margin=1in]{geometry}
+
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{mathrsfs}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{float}
+\usepackage{graphicx}
+
+\usepackage{tikz}
+\usetikzlibrary{decorations.markings, decorations.pathreplacing, arrows.meta, positioning, shapes.geometric, trees, backgrounds, fit, calc}
+
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage[numbers]{natbib} 
+
+\hypersetup{
+    colorlinks=true,
+    citecolor=blue,
+    linkcolor=blue,
+    urlcolor=blue
+}
+
+\usepackage{accents}
+
+% Allow modest interword flexibility before TeX resorts to overfull lines.
+\setlength{\emergencystretch}{3em}
+
+%% ── Theorem environments ──
+%% plain style: bold label, italic body — for main results
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{algorithm}[theorem]{Algorithm}
+
+
+%% definition style: bold label, roman body 
+\theoremstyle{definition}
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{notation}[theorem]{Notation}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+%% ── Number systems ──
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Nbb}{\mathbb{N}}
+\newcommand{\Pbb}{\mathbb{P}}
+\newcommand{\Ebb}{\mathbb{E}}
+
+%% ── Linear algebra ──
+\newcommand{\Id}{\mathrm{Id}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\tr}{tr}
+
+%% ── Miscellaneous ──
+\newcommand{\1}{\mathbf{1}}   % indicator: \1\{event\}
+\newcommand{\independent}{\perp \!\!\! \perp} 
+
+%% cleveref names
+%\crefname{assumption}{Assumption}{Assumptions}
+%\Crefname{assumption}{Assumption}{Assumptions}
+
+
+
+
+\AtBeginEnvironment{pmatrix}{\everymath{\displaystyle}}
+
+
+\title{High-Dimensional Dynamics of Self-Training with Confidence Selection and Data Reuse}
+\author{
+    Matias Cattaneo\thanks{Department of Economics, Princeton University},
+    Jason Klusowski\thanks{Department of Operations Research and Financial Engineering, Princeton University},
+    Thierry Rioual\thanks{Department of Operations Research and Financial Engineering, Princeton University}
+}
+
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Self-training uses a predictor's own predictions as pseudo-labels
+for further training. When the same observations are reused,
+this feedback creates dependencies between the data, pseudo-labels,
+and successive parameter updates.
+We study confidence-thresholded self-training of affine classifiers
+on partially labeled binary Gaussian mixtures, with pseudo-labels
+refreshed after every gradient step.
+
+Under suitable assumptions on the loss, penalty, and algorithm,
+we establish three results.
+We first prove convergence of the algorithm for a fixed dimension
+and data realization.
+In the proportional asymptotic regime, we characterize the
+limiting empirical laws of parameter-coordinate trajectories
+and training-score trajectories over every fixed time horizon
+through two effective stochastic processes.
+At last, under additional assumptions, we show that these effective 
+parameter and score processes converge as the number of iterations 
+tends to infinity.
+
+Numerical experiments validate our theoretical findings, and we illustrate 
+the dynamics via a classification error decomposition and 
+a study of the effect of class imbalance.
+\end{abstract}
+
+\tableofcontents
+
+\input{introduction}
+\input{related_work}
+\input{setting}
+
+\section{Main Results}
+\label{sec:main-result}
+
+We distinguish three limiting regimes. First, we let the number of iterations tend to infinity with the dimension and training sample fixed, studying convergence of the self-training algorithm on a given dataset. Second, we let the dimension and sample size grow proportionally while keeping the iteration horizon fixed, obtaining an effective description of the training trajectory. Third, we study the long-time behavior of this limiting trajectory, establishing convergence and stabilization after the high-dimensional limit has been taken. 
+
+\input{finite-dim}
+\input{mean-field}
+\input{long-time-behavior}
+
+\input{numerical}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\appendix
+
+\input{proof-finite-dim}
+\input{proof-mean-field}
+\input{proof-long-time}
+
+\input{proof-numerical}
+
+\input{mathematical-preliminaries}
+
+
+
+
+
+\end{document}

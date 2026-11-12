@@ -1,0 +1,569 @@
+\section{Proofs from Section \ref{subsec:finite-dim}}
+\label{sec:proof-finite-dim}
+
+Throughout this section,
+Assumption~\ref{assumption:finite-dim-loss-penalty} holds.
+We first prove the intermediate propositions in
+Section~\ref{subsec:proof-intermediate-res-finite-dim},
+then establish global descent in
+Section~\ref{subsec:global-descent}, finite branch identification
+in Section~\ref{subsec:branch-identification}, and convergence
+in Section~\ref{subsec:convergence-within-branch}.
+
+\subsection{Proof of intermediate results}
+\label{subsec:proof-intermediate-res-finite-dim}
+
+\begin{proof}[Proof of Proposition~\ref{prop:ST-potential}]
+Direct integration gives
+\begin{equation}
+    \Psi_\kappa(r)
+    =
+    \begin{cases}
+        \ell(-1,r)-\ell(-1,\kappa_-),
+            & r\leq\kappa_-,\\
+        0,
+            & \kappa_-<r<\kappa_+,\\
+        \ell(+1,r)-\ell(+1,\kappa_+),
+            & r\geq\kappa_+.
+    \end{cases}
+    \label{eq:psi-kappa-formula}
+\end{equation}
+Nonnegativity and monotonicity of the loss give
+\begin{align}
+    -C_\kappa\leq\Psi_\kappa\leq0,
+    \qquad
+    C_\kappa:=
+    \max\{\ell(-1,\kappa_-),\ell(+1,\kappa_+)\}. \label{eq:c-kappa}
+\end{align}
+Thus $\Psi_\kappa$ is bounded and continuous, and is twice
+continuously differentiable away from the thresholds.
+Convexity and the derivative signs give
+\[
+    |\psi_\kappa(r)|
+    \leq
+    \max\{\ell'(-1,\kappa_-),-\ell'(+1,\kappa_+)\}
+    <\infty,
+\]
+so its integral $\Psi_\kappa$ is globally Lipschitz.
+
+Since the supervised loss and penalty are $C^2$, it follows that
+$V$ is continuous and $C^2$ outside $\mathcal S_\kappa$.
+There, the chain rule gives
+\[
+    \nabla V(\theta)
+    =
+    \nabla L_{\mathcal L}(\theta)
+    +
+    \frac{\pi}{M}\sum_{j\in I_{\mathcal U}}
+        \psi_\kappa(r_j(\theta))\breve X_j
+    +
+    \frac{\lambda}{d}
+        \begin{bmatrix}0\\\nabla J(w)\end{bmatrix}
+    =
+    G(\theta).
+\]
+Each threshold equation defines a proper affine hyperplane,
+since the coefficient of $b$ in $r_j(\theta)$ is one, and
+their finite union has Lebesgue measure zero.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:configuration-branch-formulation}]
+By the selection convention, $\theta\in\Theta_{\mathfrak c}$
+if and only if, for every $j\in I_{\mathcal U}$,
+\[
+    \begin{cases}
+        r_j(\theta)\leq\kappa_-,
+            & \mathfrak c_j=-1,\\
+        \kappa_-<r_j(\theta)<\kappa_+,
+            & \mathfrak c_j=0,\\
+        r_j(\theta)\geq\kappa_+,
+            & \mathfrak c_j=+1.
+    \end{cases}
+\]
+Hence each branch is convex.
+For a nonempty branch, its closure is obtained by replacing
+the strict inequalities by non-strict ones.
+Indeed, fix a point in the branch and interpolate it with
+any point satisfying these weak inequalities.
+Every interpolant with positive weight on the branch point
+satisfies the strict inequalities and remains in the branch.
+The weak-inequality set is closed, proving the claimed
+closure characterization. It is therefore polyhedral.
+The partition property follows from the definition of
+$\mathfrak C$, whose range contains at most $3^M$ configurations.
+
+The explicit formula \eqref{eq:psi-kappa-formula} gives
+$V=L_{\mathfrak c}+K_{\mathfrak c}$ on $\Theta_{\mathfrak c}$,
+where
+\[
+    K_{\mathfrak c}
+    :=
+    -\frac{\pi}{M}
+    \left[
+        \#\{j\in I_{\mathcal U}:\mathfrak c_j=-1\}
+            \ell(-1,\kappa_-)
+        +
+        \#\{j\in I_{\mathcal U}:\mathfrak c_j=+1\}
+            \ell(+1,\kappa_+)
+    \right].
+\]
+Continuity extends the identity to
+$\overline{\Theta_{\mathfrak c}}$.
+Finally, for every $\vartheta\in\Theta_{\mathfrak c}$,
+\[
+    L_{\mathrm{ST}}(\theta;\vartheta)
+    =
+    L_{\mathfrak c}(\theta)
+    \qquad\text{for every }\theta.
+\]
+Differentiating with respect to $\theta$ and then setting
+$\vartheta=\theta\in\Theta_{\mathfrak c}$ gives
+$G(\theta)=\nabla L_{\mathfrak c}(\theta)$, including at thresholds
+assigned to that branch.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:branch-convexity-coercivity}]
+By Assumption~\ref{assumption:finite-dim-loss-penalty},
+$\ell''(y,r)>0$ and $j''(u)>0$.
+Since $\pi\geq0$, for every nonzero direction
+$(a,u)\in\mathbb R\times\mathbb R^d$,
+\[
+    \begin{bmatrix}a\\u\end{bmatrix}^{\!\top}
+    \nabla^2L_{\mathfrak c}(\theta)
+    \begin{bmatrix}a\\u\end{bmatrix}
+    \geq
+    \frac1N\sum_{i\in I_{\mathcal L}}
+        \ell''(Y_i,r_i(\theta))
+        \left(a+\frac{X_i^\top u}{\sqrt d}\right)^2
+    +
+    \frac{\lambda}{d}\sum_{k=1}^d j''(w_k)u_k^2
+    >0.
+\]
+Indeed, the penalty term is positive when $u\neq0$, while the
+labeled term is positive when $u=0$ and $a\neq0$.
+Thus every branch Hessian is positive definite, and every
+$L_{\mathfrak c}$ is strictly convex.
+Moreover, $\ell''\leq L_\ell$, $j''\leq L_j$, and $\pi\geq0$
+imply
+\[
+    \nabla^2L_{\mathfrak c}(\theta)\preceq H_d.
+\]
+Indeed, the unlabeled Hessian contribution is bounded by
+enlarging its sum to all unlabeled observations.
+
+The sublevel sets of the supervised objective
+$L_{\mathcal L}(\theta)+(\lambda/d)J(w)$ bound $w$
+through the nonnegative, coercive penalty.
+Convexity and the strict derivative signs imply
+\[
+    \ell(-1,r)\longrightarrow+\infty
+        \quad\text{as }r\longrightarrow+\infty,
+    \qquad
+    \ell(+1,r)\longrightarrow+\infty
+        \quad\text{as }r\longrightarrow-\infty.
+\]
+With $w$ bounded, a negative labeled observation therefore prevents
+$b\to+\infty$, and a positive labeled observation prevents
+$b\to-\infty$.
+The supervised objective is consequently coercive.
+Every $L_{\mathfrak c}$ is bounded below by this objective,
+while $V$ differs from it by a bounded term.
+Consequently, both are coercive.
+Continuity gives existence of each branch minimizer, and
+strict convexity gives uniqueness.
+\end{proof}
+
+\subsection{Proof of Theorem~\ref{thm:st-convergence}}
+
+\subsubsection{Global descent}
+\label{subsec:global-descent}
+
+\begin{lemma}[Global descent and boundedness]
+\label{lem:st-global-descent-boundedness}
+For $\pi,\lambda\geq0$, the potential satisfies
+\begin{equation}
+    V(\theta+h)-V(\theta)
+    \leq
+    G(\theta)^\top h+\frac12h^\top H_dh,
+    \qquad \theta,h\in\mathbb R^{d+1}.
+    \label{eq:st-global-quadratic-upper-bound}
+\end{equation}
+Under \eqref{eq:st-descent-step-size}, set
+$c_d:=\eta(1-\eta\Lambda_d/2)>0$.
+Then the iterates satisfy
+\begin{equation}
+    V(\theta^{t+1})-V(\theta^t)
+    \leq
+    -c_d\|P_d^{1/2}G(\theta^t)\|^2,
+    \qquad t\geq1,
+    \label{eq:st-global-descent}
+\end{equation}
+and $G(\theta^t)\to0$.
+If, in addition, $\lambda>0$ and both classes occur in the
+labeled sample, then the trajectory is bounded.
+\end{lemma}
+\begin{proof}
+Since $\ell''(y,r)\leq L_\ell$, for every $r,\delta\in\mathbb R$,
+\[
+    \ell(y,r+\delta)
+    \leq
+    \ell(y,r)+\ell'(y,r)\delta+\frac{L_\ell}{2}\delta^2.
+\]
+On each smooth interval,
+$0\leq\psi_\kappa'(u)\leq L_\ell$.
+The signs
+$\ell'(-1,\kappa_-)>0$ and $\ell'(+1,\kappa_+)<0$
+give a downward jump at each threshold.
+With the prescribed values at the thresholds,
+$u\mapsto\psi_\kappa(u)-L_\ell u$ is nonincreasing.
+Therefore
+\[
+    (\psi_\kappa(v)-\psi_\kappa(u))(v-u)
+    \leq L_\ell(v-u)^2,
+    \qquad u,v\in\mathbb R.
+\]
+The definition of $\Psi_\kappa$ gives
+\begin{align*}
+    \Psi_\kappa(r+\delta)-\Psi_\kappa(r)
+        -\psi_\kappa(r)\delta
+    =
+    \int_0^1[\psi_\kappa(r+s\delta)-\psi_\kappa(r)]
+        \delta\,ds
+    \leq
+    \int_0^1L_\ell s\delta^2\,ds
+    =
+    \frac{L_\ell}{2}\delta^2.
+\end{align*}
+For $s>0$, the integrand bound follows by applying the preceding
+inequality with $u=r$ and $v=r+s\delta$, then dividing by $s$.
+The argument holds for either sign of $\delta$ and across thresholds.
+
+Apply these scalar bounds with $\delta=\breve X_i^\top h$.
+Writing $h=(h_b,h_w)\in\mathbb R\times\mathbb R^d$, also use
+\[
+    J(w+h_w)-J(w)
+    \leq
+    \nabla J(w)^\top h_w+\frac{L_j}{2}\|h_w\|^2.
+\]
+Summing, with $\pi,\lambda\geq0$, proves
+\eqref{eq:st-global-quadratic-upper-bound}.
+Substituting $h=-\eta P_dG(\theta^t)$ and using the definition of
+$\Lambda_d$ yields \eqref{eq:st-global-descent}.
+In particular, the potential decreases strictly at every
+nonstationary iteration, including iterations that cross
+branch boundaries.
+
+The potential is bounded below because $\Psi_\kappa$ is bounded
+and the loss and penalty are nonnegative.
+Summing the descent inequality therefore gives
+\[
+    c_d\sum_{t=1}^T\|P_d^{1/2}G(\theta^t)\|^2
+    \leq V(\theta^1)-V(\theta^{T+1})
+    \leq V(\theta^1)-\inf_\theta V(\theta)<\infty.
+\]
+Consequently, writing
+$\Delta\theta^t:=\theta^{t+1}-\theta^t$,
+\begin{equation}
+    \sum_{t=1}^\infty\|P_d^{1/2}G(\theta^t)\|^2<\infty,
+    \qquad
+    \sum_{t=1}^\infty\|\Delta\theta^t\|_{P_d^{-1}}^2<\infty,
+    \label{eq:st-square-summable-updates}
+\end{equation}
+where the second sum is $\eta^2$ times the first.
+For fixed $d$, invertibility of $P_d$ and the update identity imply
+\begin{equation}
+    G(\theta^t)\xrightarrow[t\to\infty]{}0,
+    \qquad
+    \Delta\theta^t=-\eta P_dG(\theta^t)
+        \xrightarrow[t\to\infty]{}0.
+    \label{eq:parameter-difference-converges-to-zero}
+\end{equation}
+If $\lambda>0$ and both classes occur in the labeled sample,
+Proposition~\ref{prop:branch-convexity-coercivity} gives coercivity
+of $V$. By descent, the iterates from $t=1$ onward remain in
+the compact sublevel set
+\[
+    \{\theta\in\mathbb R^{d+1}:V(\theta)\leq V(\theta^1)\}.
+\]
+Thus the trajectory is bounded.
+\end{proof}
+
+\subsubsection{Branch identification}
+\label{subsec:branch-identification}
+
+\begin{lemma}[Finite branch identification]
+\label{lem:st-finite-identification}
+Suppose $\pi>0$.
+If a trajectory of \eqref{eq:ST-recursion-G} is bounded and satisfies
+$G(\theta^t)\to0$, then there are a finite time
+$T_{\mathrm{id}}\geq1$ and a nonempty branch
+$\Theta_{\mathfrak c}$ such that
+\begin{equation}
+    \mathfrak C(\theta^t)=\mathfrak c,
+    \qquad t\geq T_{\mathrm{id}}.
+    \label{eq:st-finite-branch-identification}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+We first show that gradients of distinct branches cannot coincide
+at a point belonging to both branch closures.
+Let $\Theta_{\mathfrak c}$ and $\Theta_{\mathfrak d}$ be nonempty,
+distinct branches, and let
+\[
+    \theta^\star\in
+        \overline{\Theta_{\mathfrak c}}
+        \cap\overline{\Theta_{\mathfrak d}},
+    \qquad
+    D_{\mathfrak c,\mathfrak d}
+    :=
+    \{j\in I_{\mathcal U}:\mathfrak c_j\neq\mathfrak d_j\}.
+\]
+Since $\kappa_-<\kappa_+$, the closures of the negative and positive
+selection regions are disjoint.
+Thus, for each $j\in D_{\mathfrak c,\mathfrak d}$, exactly one of
+$\mathfrak c_j,\mathfrak d_j$ is zero, and $r_j(\theta^\star)$
+equals the threshold corresponding to the nonzero state.
+
+Set
+\[
+    \alpha_j
+    :=
+    \left|
+        \ell'\bigl(
+            \operatorname{sign}(r_j(\theta^\star)),
+            r_j(\theta^\star)
+        \bigr)
+    \right|
+    >0,
+    \qquad j\in D_{\mathfrak c,\mathfrak d}.
+\]
+The supervised and penalty gradients, and the unlabeled terms
+with equal states, cancel. Since the nonzero state has the same
+sign as $r_j(\theta^\star)$, the derivative signs give
+\[
+    \nabla L_{\mathfrak c}(\theta^\star)
+    -
+    \nabla L_{\mathfrak d}(\theta^\star)
+    =
+    -\frac{\pi}{M}
+    \sum_{j\in D_{\mathfrak c,\mathfrak d}}
+        (\mathfrak c_j-\mathfrak d_j)\alpha_j\breve X_j.
+\]
+Choose $\theta_{\mathfrak c}\in\Theta_{\mathfrak c}$ and
+$\theta_{\mathfrak d}\in\Theta_{\mathfrak d}$.
+The branch inequalities imply
+\[
+    (\mathfrak c_j-\mathfrak d_j)
+    \bigl(
+        r_j(\theta_{\mathfrak c})
+        -
+        r_j(\theta_{\mathfrak d})
+    \bigr)
+    =
+    |r_j(\theta_{\mathfrak c})-r_j(\theta_{\mathfrak d})|
+    >0,
+    \qquad j\in D_{\mathfrak c,\mathfrak d},
+\]
+because the selected score lies at or beyond its threshold,
+whereas the unselected score lies strictly inside the threshold
+interval.
+Taking the inner product with
+$\theta_{\mathfrak c}-\theta_{\mathfrak d}$ therefore gives
+\begin{equation}
+\begin{aligned}
+    \bigl(
+        \nabla L_{\mathfrak c}(\theta^\star)
+        -
+        \nabla L_{\mathfrak d}(\theta^\star)
+    \bigr)^\top
+    (\theta_{\mathfrak c}-\theta_{\mathfrak d})
+    =
+    -\frac{\pi}{M}
+    \sum_{j\in D_{\mathfrak c,\mathfrak d}}
+        \alpha_j
+        |r_j(\theta_{\mathfrak c})-r_j(\theta_{\mathfrak d})|
+    <0.
+\end{aligned}
+    \label{eq:st-branch-gradient-separation}
+\end{equation}
+Strictness follows from $\pi>0$,
+$D_{\mathfrak c,\mathfrak d}\neq\varnothing$, and $\alpha_j>0$.
+
+If configurations changed infinitely often, finiteness of the
+configuration set would give distinct configurations
+$\mathfrak c,\mathfrak d$ and times $t_k\to\infty$ such that
+\[
+    \theta^{t_k}\in\Theta_{\mathfrak c},
+    \qquad
+    \theta^{t_k+1}\in\Theta_{\mathfrak d}.
+\]
+By boundedness, after passing to a subsequence,
+$\theta^{t_k}\to\theta^\star$.
+The update identity and $G(\theta^t)\to0$ imply
+$\theta^{t+1}-\theta^t\to0$, so
+$\theta^{t_k+1}\to\theta^\star$ as well.
+Hence $\theta^\star$ belongs to both branch closures.
+By Proposition~\ref{prop:configuration-branch-formulation}
+and continuity of the branch gradients,
+\[
+    \nabla L_{\mathfrak c}(\theta^\star)
+    =
+    \lim_{k\to\infty}G(\theta^{t_k})=0,
+    \qquad
+    \nabla L_{\mathfrak d}(\theta^\star)
+    =
+    \lim_{k\to\infty}G(\theta^{t_k+1})=0.
+\]
+This contradicts \eqref{eq:st-branch-gradient-separation}.
+There are therefore only finitely many configuration changes,
+proving \eqref{eq:st-finite-branch-identification}.
+\end{proof}
+
+\subsubsection{Convergence within the identified branch}
+\label{subsec:convergence-within-branch}
+
+\begin{proof}[Proof of Theorem~\ref{thm:st-convergence}]
+Lemma~\ref{lem:st-global-descent-boundedness} gives boundedness and
+$G(\theta^t)\to0$.
+Lemma~\ref{lem:st-finite-identification} then gives
+$T_{\mathrm{id}}<\infty$.
+For the identified branch $\Theta_{\mathfrak c}$,
+Proposition~\ref{prop:configuration-branch-formulation} yields
+\[
+    \theta^{t+1}
+    =
+    \theta^t-\eta P_d\nabla L_{\mathfrak c}(\theta^t),
+    \qquad t\geq T_{\mathrm{id}}.
+\]
+Boundedness guarantees at least one accumulation point.
+Every such point belongs to $\overline{\Theta_{\mathfrak c}}$
+and is a zero of $\nabla L_{\mathfrak c}$, by continuity of the
+branch gradient and $G(\theta^t)\to0$.
+By Proposition~\ref{prop:branch-convexity-coercivity},
+every accumulation point therefore equals the unique global
+minimizer $\theta_{\mathfrak c}^\star$.
+Consequently,
+\begin{equation}
+    \theta^t\longrightarrow\theta_{\mathfrak c}^\star,
+    \qquad
+    \nabla L_{\mathfrak c}(\theta_{\mathfrak c}^\star)=0,
+    \qquad
+    \theta_{\mathfrak c}^\star
+        \in\overline{\Theta_{\mathfrak c}}.
+    \label{eq:st-branch-limit}
+\end{equation}
+For the geometric rate, work in the coordinates
+$x^t=P_d^{-1/2}\theta^t$ and define
+\[
+    T_{\mathfrak c}(x)
+    :=
+    x-\eta P_d^{1/2}
+        \nabla L_{\mathfrak c}(P_d^{1/2}x),
+    \qquad
+    x_{\mathfrak c}^\star
+    :=
+    P_d^{-1/2}\theta_{\mathfrak c}^\star.
+\]
+Then $x^{t+1}=T_{\mathfrak c}(x^t)$ for
+$t\geq T_{\mathrm{id}}$, and
+$T_{\mathfrak c}(x_{\mathfrak c}^\star)
+=x_{\mathfrak c}^\star$.
+Let
+\[
+    K
+    :=
+    \overline{\operatorname{conv}}
+    \left(
+        \{x^t:t\geq T_{\mathrm{id}}\}
+        \cup\{x_{\mathfrak c}^\star\}
+    \right).
+\]
+Boundedness of the trajectory implies that $K$ is compact.
+For $x\in K$, write
+\[
+    A(x)
+    :=
+    P_d^{1/2}
+        \nabla^2L_{\mathfrak c}(P_d^{1/2}x)
+    P_d^{1/2}.
+\]
+The branch Hessian is continuous and positive definite
+everywhere. Compactness therefore gives
+\[
+    m_K
+    :=
+    \min_{x\in K}\lambda_{\min}(A(x))
+    >0.
+\]
+Moreover, the upper Hessian bound and the definition of
+$\Lambda_d$ give
+\[
+    m_K I_{d+1}
+    \preceq A(x)
+    \preceq \Lambda_d I_{d+1},
+    \qquad x\in K.
+\]
+Since
+\(
+    DT_{\mathfrak c}(x)
+    =
+    I_{d+1}-\eta A(x)
+\),
+the step-size condition \eqref{eq:st-descent-step-size}
+implies
+\[
+    \sup_{x\in K}
+        \|DT_{\mathfrak c}(x)\|_{\mathrm{op}}
+    \leq
+    \max\{|1-\eta m_K|,\ |1-\eta\Lambda_d|\}
+    <1.
+\]
+Choose $q\in(0,1)$ bounding the left-hand side.
+Convexity of $K$ and the integral form of the mean-value
+formula yield
+\[
+    T_{\mathfrak c}(x)-T_{\mathfrak c}(y)
+    =
+    \int_0^1
+        DT_{\mathfrak c}(y+s(x-y))(x-y)\,ds,
+    \qquad x,y\in K,
+\]
+and hence
+\begin{equation}
+    \|T_{\mathfrak c}(x)-T_{\mathfrak c}(y)\|
+    \leq q\|x-y\|,
+    \qquad x,y\in K.
+    \label{eq:st-branch-contraction}
+\end{equation}
+The set $K$ need not lie inside the identified branch:
+the smooth map $T_{\mathfrak c}$ is defined everywhere,
+and the actual iterates already remain in that branch.
+Applying \eqref{eq:st-branch-contraction} with
+$x=x^t$ and $y=x_{\mathfrak c}^\star$ gives
+\[
+    \|x^{t+1}-x_{\mathfrak c}^\star\|
+    \leq q\|x^t-x_{\mathfrak c}^\star\|,
+    \qquad t\geq T_{\mathrm{id}}.
+\]
+Iteration and the identity
+$\|P_d^{-1/2}v\|=\|v\|_{P_d^{-1}}$ now give
+\[
+    \|\theta^t-\theta_{\mathfrak c}^\star\|_{P_d^{-1}}
+    \leq
+    q^{\,t-T_{\mathrm{id}}}
+    \|\theta^{T_{\mathrm{id}}}
+        -\theta_{\mathfrak c}^\star\|_{P_d^{-1}},
+    \qquad t\geq T_{\mathrm{id}}.
+\]
+Finally,
+\[
+    \|\theta^{t+1}-\theta^t\|_{P_d^{-1}}
+    \leq
+    (1+q)q^{\,t-T_{\mathrm{id}}}
+    \|\theta^{T_{\mathrm{id}}}
+        -\theta_{\mathfrak c}^\star\|_{P_d^{-1}}.
+\]
+The geometric series and the finite initial segment show
+that the trajectory has finite length.
+\end{proof}

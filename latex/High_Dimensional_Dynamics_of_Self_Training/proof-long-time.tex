@@ -1,0 +1,1284 @@
+\section{Proofs from Section \ref{subsec:long-time}}
+\label{sec:proof-long-time}
+
+Throughout this section, the hypotheses of
+Theorem~\ref{theorem:trajectory} are in force.
+We first record fixed-time consequences of that theorem and prove
+the divergence of exact identification times.
+Recall
+$\tilde{\mathbb P}_{\mathcal U}
+=\tilde{\mathbb P}(\,\cdot\mid\tilde\Delta=0)$.
+For $\mathcal A\in\{\mathcal L,\mathcal U\}$, let 
+$n_{\mathcal L}:=N$ and $n_{\mathcal U}:=M$, and write
+$X_{\mathcal A}$ and $\breve X_{\mathcal A}$ for the matrices
+with rows $X_i^\top$ and $\breve X_i^\top$, respectively,
+$i\in I_{\mathcal A}$. We also
+write $Y_{\mathcal A}:=(Y_i)_{i\in I_{\mathcal A}}$ and let
+$U_{\mathcal A}$ denote the corresponding row restriction
+of the Gaussian design-noise matrix. Then
+\[
+    \breve X_{\mathcal A}P_d^{1/2}
+    =[\,\mathbf1_{n_{\mathcal A}}\;\;X_{\mathcal A}\,].
+\]
+We also use the norm
+$\|u\|_{P_d}:=\|P_d^{1/2}u\|$.
+For every $v\in\mathbb R^{n_{\mathcal A}}$,
+\(
+    \|\breve X_{\mathcal A}^{\top}v\|_{P_d}
+    =
+    \|(\breve X_{\mathcal A}P_d^{1/2})^\top v\|
+\).
+Write the scalar configuration rule as
+\[
+    \mathfrak c_\kappa(r)
+    :=
+    \mathbf1_{\{r\geq\kappa_+\}}
+    -
+    \mathbf1_{\{r\leq\kappa_-\}},
+\]
+and, for integers $s,t\geq1$, set
+\[
+    \mathfrak c^t:=\mathfrak C(\theta^t),
+    \qquad
+    D^t:=\|\theta^{t+1}-\theta^t\|_{P_d^{-1}}^2,
+    \qquad
+    h(s,t):=\frac1M\sum_{j\in I_{\mathcal U}}
+        \mathbf1_{\{\mathfrak c_j^s\neq\mathfrak c_j^t\}}.
+\]
+For every fixed $s,t\geq1$,
+Theorem~\ref{theorem:trajectory} gives
+\begin{align}
+    \|\theta^t-\theta^s\|_{P_d^{-1}}^2
+    &\xrightarrow{\mathbb P}
+    \|\tilde\theta^t-\tilde\theta^s\|_{\mathcal H}^2,
+    \label{eq:long-time-parameter-distance-limit}\\
+    \frac1n\|r^t-r^s\|^2
+    &\xrightarrow{\mathbb P}
+    \tilde{\mathbb E}
+        [|\tilde r^t-\tilde r^s|^2],
+    \label{eq:long-time-score-distance-limit}\\
+    h(s,t)&\xrightarrow{\mathbb P}\bar h(s,t).
+    \label{eq:long-time-configuration-limit}
+\end{align}
+The first two limits follow from the joint empirical
+$W_2$ convergence, intercept convergence, and
+Corollary~\ref{corollary:wasserstein-empirical-observables}.
+For the last limit, apply part~2 of
+Lemma~\ref{lemma:mf-proof-empirical-stability}
+to the joint array $(\Delta,r^s,r^t)$, with coefficient
+$(1-\rho)^{-1}\to(1-\bar\rho)^{-1}$.
+The configuration-discrepancy indicator is bounded and
+is discontinuous only when either score equals a selection
+threshold. These events have limiting probability zero by
+Lemma~\ref{lemma:mf-proof-nondegeneracy}.
+
+\subsection{Proof of intermediate results}
+
+
+\begin{proof}[Proof of Proposition~\ref{prop:identification-time-divergence}]
+For $t\geq1$, recall the sample-side history
+$\mathcal H_{t+1}^{[g]}$ from the proof of
+Lemma~\ref{lemma:mf-proof-nondegeneracy}.
+The fresh-noise representation
+\eqref{eq:mf-proof-score-fresh-noise}, established in the
+proof of Lemma~\ref{lemma:mf-proof-nondegeneracy}, gives
+\begin{equation}
+    \tilde r^{t+1}
+    =
+    \tilde{\mathbb E}[ \tilde r^{t+1} \mid \mathcal{H}^{[g]}_{t+1} ]
+    +\sigma\bar v_{t+1}^{[w]}z_{t+1}^{[g]},
+    \qquad
+    \bar v_{t+1}^{[w]}>0,
+    \label{eq:long-time-score-innovation}
+\end{equation}
+where $z_{t+1}^{[g]}$ is independent of
+$\mathcal H_{t+1}^{[g]}$.
+The conditional score law therefore assigns positive probability
+to each of the three selection regions.
+Since $\tilde{\mathfrak c}^{\,t}$ is
+$\mathcal H_{t+1}^{[g]}$-measurable,
+\[
+    \tilde{\mathbb P}\left(
+        \tilde{\mathfrak c}^{\,t+1}
+        \neq\tilde{\mathfrak c}^{\,t}
+        \mid\mathcal H_{t+1}^{[g]}
+    \right)>0
+    \qquad\text{almost surely}.
+\]
+Conditioning on $\tilde\Delta=0$ gives
+$\bar h(t,t+1)>0$.
+For every fixed integer $T\geq1$,
+\[
+    \{T_{\mathrm{id}}\leq T\}
+    \subseteq\{h(T,T+1)=0\}.
+\]
+By \eqref{eq:long-time-configuration-limit},
+$h(T,T+1)$ converges in probability to the strictly positive
+constant $\bar h(T,T+1)$. Hence
+\[
+    \mathbb P(T_{\mathrm{id}}\leq T)
+    \leq\mathbb P(h(T,T+1)=0)
+    \longrightarrow0.
+\]
+\end{proof}
+
+\subsection{Proof of Theorem~\ref{thm:effective-process-convergence}}
+
+Throughout this subsection, assume the hypotheses of
+Theorem~\ref{thm:effective-process-convergence}.
+We first establish a uniform upper bound on branch Hessians
+in Lemma~\ref{lem:st-deterministic-curvature-bound}
+and transfer the finite-dimensional descent inequality to the
+mean-field limit in
+Section~\ref{subsubsec:mean-field-potential-descent}.
+We then control configuration switching in
+Section~\ref{subsubsec:mean-field-configuration-switching}
+and derive a two-time stability estimate.
+Together with square summability of the increments, these
+estimates prove parameter and score convergence in
+Section~\ref{subsubsec:convergence-effective-process}.
+
+By \eqref{eq:mean-field-long-time-step-size}, we may fix
+a deterministic constant $\Lambda_*$ satisfying
+\[
+    \Lambda_{\mathrm{bd}}<\Lambda_*<\frac2\eta.
+\]
+The following lemma justifies this deterministic curvature bound.
+
+\begin{lemma}[Deterministic curvature bound]
+\label{lem:st-deterministic-curvature-bound}
+For every deterministic $\Lambda_*>\Lambda_{\mathrm{bd}}$,
+with $\Lambda_d$ defined in \eqref{eq:lambda-d}, we have,
+as $d\to\infty$,
+\begin{equation}
+    \mathbb P(\Lambda_d\leq\Lambda_*)\longrightarrow1.
+    \label{eq:st-deterministic-curvature-bound}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since
+$\breve X_{\mathcal A}P_d^{1/2}
+=[\,\mathbf1_{n_{\mathcal A}}\;\;X_{\mathcal A}\,]$,
+the definition of $H_d$ gives
+\begin{equation}
+    \Lambda_d
+    \leq\lambda L_j
+       +L_\ell\left(
+           1+\frac{\|X_{\mathcal L}\|_{\mathrm{op}}^2}{N}
+       \right)
+       +\pi L_\ell\left(
+           1+\frac{\|X_{\mathcal U}\|_{\mathrm{op}}^2}{M}
+       \right).
+    \label{eq:long-time-curvature-upper}
+\end{equation}
+The Gaussian-mixture representation and
+$\|Y_{\mathcal A}\|=\sqrt{n_{\mathcal A}}$ imply
+\[
+    \frac{\|X_{\mathcal A}\|_{\mathrm{op}}}
+         {\sqrt{n_{\mathcal A}}}
+    \leq
+    \frac{\|\mu\|}{\sqrt d}
+    +\sigma\frac{\|U_{\mathcal A}\|_{\mathrm{op}}}
+                      {\sqrt{n_{\mathcal A}}}.
+\]
+The Gaussian operator-norm bound
+\cite[Theorem~5.32 and Proposition~5.34]{vershynin2012introduction}
+gives
+\[
+    \mathbb P\left(
+        \|U_{\mathcal A}\|_{\mathrm{op}}
+        >\sqrt{n_{\mathcal A}}+\sqrt d+u
+    \right)
+    \leq e^{-u^2/2},
+    \qquad u\geq0.
+\]
+Together with the proportional limits and signal-norm convergence,
+this yields, for every $\epsilon>0$,
+\begin{equation}
+    \mathbb P\left(
+        \frac{\|X_{\mathcal A}\|_{\mathrm{op}}}
+             {\sqrt{n_{\mathcal A}}}
+        >\bar K_{\mathcal A}+\epsilon
+    \right)\longrightarrow0.
+    \label{eq:long-time-design-bound}
+\end{equation}
+Combining this estimate with
+\eqref{eq:long-time-curvature-upper} and
+$\Lambda_*>\Lambda_{\mathrm{bd}}$ proves the claim.
+\end{proof}
+
+\subsubsection{Mean-field potential descent}
+\label{subsubsec:mean-field-potential-descent}
+
+For $t\geq1$, define the mean-field potential by
+\begin{align}
+    \bar V^t
+    &:=
+    \frac1{\bar\rho}
+        \tilde{\mathbb E}
+        [\tilde\Delta\,\ell(\tilde Y,\tilde r^t)]
+    +
+    \frac{\pi}{1-\bar\rho}
+        \tilde{\mathbb E}
+        [(1-\tilde\Delta)\Psi_\kappa(\tilde r^t)]
+    +
+    \lambda\tilde{\mathbb E}[j(\tilde w^t)].
+    \label{eq:mean-field-potential}
+\end{align}
+
+\begin{proposition}[Mean-field potential descent]
+\label{prop:mean-field-potential-descent}
+Set $c_*:=\eta^{-1}-\Lambda_*/2>0$. For every $t\geq1$,
+\begin{equation}
+    \bar V^{t+1}-\bar V^t
+    \leq-c_*\|\tilde\theta^{t+1}-\tilde\theta^t\|_{\mathcal H}^2.
+    \label{eq:mean-field-potential-descent}
+\end{equation}
+Consequently, $(\bar V^t)_{t\geq1}$ decreases to a finite limit
+$\bar V^\infty$, and
+\begin{equation}
+    \sum_{t=1}^{\infty}
+        \|\tilde\theta^{t+1}-\tilde\theta^t\|_{\mathcal H}^2
+    \leq\frac{\bar V^1-\bar V^\infty}{c_*}<\infty.
+    \label{eq:mean-field-increment-summability}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The integrands defining the potential are continuous and have
+at most quadratic growth. Theorem~\ref{theorem:trajectory} and
+Corollary~\ref{corollary:wasserstein-empirical-observables}
+therefore give, for every fixed $t\geq1$,
+\[
+    V(\theta^t)\xrightarrow{\mathbb P}\bar V^t.
+\]
+Moreover, \eqref{eq:long-time-parameter-distance-limit} gives $D^t\xrightarrow{\mathbb P}
+    \|\tilde\theta^{t+1}-\tilde\theta^t\|_{\mathcal H}^2$. 
+On $\{\Lambda_d\leq\Lambda_*\}$, the finite-dimensional
+descent inequality yields
+\[
+    V(\theta^{t+1})-V(\theta^t)\leq-c_*D^t.
+\]
+This event has probability tending to one, so passing to the
+deterministic limits proves
+\eqref{eq:mean-field-potential-descent}.
+Recall that
+\[
+    -C_\kappa\leq\Psi_\kappa\leq0,
+    \qquad
+    C_\kappa:=
+    \max\{\ell(-1,\kappa_-),\ell(+1,\kappa_+)\}.
+\]
+Nonnegativity of the supervised loss and penalty gives
+$\bar V^t\geq-\pi C_\kappa$.
+Thus the decreasing potential has a finite limit.
+Summing \eqref{eq:mean-field-potential-descent} proves
+\eqref{eq:mean-field-increment-summability}.
+\end{proof}
+
+Square summability controls consecutive iterates but does not
+by itself imply that the trajectory is Cauchy. We next control
+changes of configuration and then compare arbitrary pairs of
+iterates. For these finite-dimensional estimates, fix
+\begin{align}
+    0<a<\min\{\bar p_{\mathcal L},1-\bar p_{\mathcal L}\},
+    \quad K_{\mathcal L}>\bar K_{\mathcal L}
+    , \quad K_{\mathcal U}>\bar K_{\mathcal U},
+    \quad K_{\mathrm{aug}}:=\sqrt{1+K_{\mathcal U}^2}, \label{eq:a-k-k-aug}
+\end{align}
+with $\bar K_{\mathcal{L}}$ and $\bar K_{\mathcal U}$ given in \eqref{eq:s-mu-k-bar},
+and define
+\begin{equation}
+\begin{split}
+    \mathcal E_d:=\Bigl\{
+        p_{\mathcal L}\in[a,1-a],\
+        \|X_{\mathcal L}\|_{\mathrm{op}}\leq K_{\mathcal L}\sqrt N, \
+        \|X_{\mathcal U}\|_{\mathrm{op}}\leq K_{\mathcal U}\sqrt M,\
+        \Lambda_d\leq\Lambda_*,\
+        V(\theta^1)\leq\bar V^1+1
+    \Bigr\}.
+\end{split}
+    \label{eq:long-time-good-event}
+\end{equation}
+The preceding bounds imply $\mathbb P(\mathcal E_d)\to1$.
+On this event,
+\begin{equation}
+    \|\breve X_{\mathcal U}P_d^{1/2}\|_{\mathrm{op}}
+    \leq K_{\mathrm{aug}}\sqrt M,
+    \qquad
+    0\preceq P_d^{1/2}\nabla^2L_{\mathfrak c}(\theta)P_d^{1/2}
+       \preceq\Lambda_*I_{d+1}
+    \label{eq:long-time-uniform-upper-bounds}
+\end{equation}
+for every $\theta$ and every configuration $\mathfrak c$.
+
+\subsubsection{Control of configuration switching}
+\label{subsubsec:mean-field-configuration-switching}
+
+A change of active pseudo-label produces a nonzero jump in the
+scalar residual. The next argument shows that the Gaussian design
+prevents the aggregate effect of these jumps from becoming too
+small relative to the fraction of observations that switch.
+Define the $L_\ell$-Lipschitz functions
+\begin{align}
+    f_{-1}(r):=\ell'(-1,r),\qquad f_0(r):=0,\qquad
+    f_{+1}(r):=\ell'(+1,r). \label{eq:def-f}
+\end{align}
+
+\begin{proposition}[Control of configuration switching]
+\label{prop:mean-field-configuration-switching}
+There exists a deterministic $C_{\mathrm{sw}}\in(0,\infty)$,
+independent of iteration time, such that
+\begin{equation}
+    \bar h(t,t+1)
+    \leq C_{\mathrm{sw}}\left(
+        \|\tilde\theta^{t+1}-\tilde\theta^t\|_{\mathcal H}^2
+        +\|\tilde\theta^{t+2}-\tilde\theta^{t+1}\|_{\mathcal H}^2
+    \right),\qquad t\geq1.
+    \label{eq:effective-switching-control}
+\end{equation}
+Consequently, the configuration switching probabilities are summable
+\begin{align}
+    \sum_{t=1}^{\infty}\bar h(t,t+1)
+    &\leq2C_{\mathrm{sw}}\sum_{t=1}^{\infty}
+        \|\tilde\theta^{t+1}-\tilde\theta^t\|_{\mathcal H}^2
+      <\infty,
+    \label{eq:effective-switching-summability}
+\end{align}
+and we get
+\begin{align}
+    \lim_{T\to\infty}\sup_{s,t\geq T}\bar h(s,t)&=0.
+    \label{eq:effective-configuration-cauchy}
+\end{align}
+\end{proposition}
+
+\begin{proof}
+Define the threshold jump magnitudes
+\[
+    \varsigma_-:=\ell'(-1,\kappa_-)>0,\qquad
+    \varsigma_+:=-\ell'(+1,\kappa_+)>0,\qquad
+    \varsigma_\kappa:=\min\{\varsigma_-,\varsigma_+\}>0,
+\]
+and the finite set
+$\mathcal A_\kappa:=\{0,\pm \varsigma_-,\pm \varsigma_+,\pm(\varsigma_-+\varsigma_+)\}$.
+We prove the result in three steps.
+
+\begin{itemize}[wide]
+    \item \emph{Step 1: A uniform Gaussian lower bound.}
+There exist a deterministic $\gamma>0$ and events
+$\mathcal R_d$ with $\mathbb P(\mathcal R_d)\to1$ such that,
+for all sufficiently large $d$, on $\mathcal R_d$,
+\begin{equation}
+    \|\breve X_{\mathcal U}^{\top}v\|_{P_d}
+    \geq\gamma\sqrt M\,\|v\|,
+    \qquad v\in\mathcal A_\kappa^M.
+    \label{eq:configuration-switching-gaussian-bound}
+\end{equation}
+To see this, for $d\geq2$ choose a deterministic
+$Q\in\mathbb R^{d\times(d-1)}$ with
+$Q^\top Q=I_{d-1}$ and $Q^\top\mu=0$. Then
+\[
+    Q^\top X_{\mathcal U}^{\top}
+    =\sigma Q^\top U_{\mathcal U}^{\top},
+\]
+and $Q^\top U_{\mathcal U}^{\top}$ has independent standard
+Gaussian entries. Thus, for each deterministic nonzero $v$,
+\[
+    \frac{Q^\top U_{\mathcal U}^{\top}v}{\|v\|}
+    \sim\mathcal N(0,I_{d-1}).
+\]
+For $Z\sim\mathcal N(0,I_{d-1})$, exponential Markov inequality
+gives, for every $\varepsilon>0$,
+\[
+    \mathbb P(\|Z\|^2\leq\varepsilon^2(d-1))
+    \leq e^{(d-1)/2}
+       \mathbb E[e^{-\|Z\|^2/(2\varepsilon^2)}]
+    =e^{(d-1)/2}(1+\varepsilon^{-2})^{-(d-1)/2}
+      \leq(\sqrt e\,\varepsilon)^{d-1}.
+\]
+A union bound over at most $7^M$ vectors therefore yields
+\[
+\begin{split}
+    \mathbb P\Bigl(
+        \exists v\in\mathcal A_\kappa^M\setminus\{0\}:\,
+        \|Q^\top U_{\mathcal U}^{\top}v\|
+        <\varepsilon\sqrt{d-1}\,\|v\|
+    \Bigr)
+    \leq7^M(\sqrt e\,\varepsilon)^{d-1}.
+\end{split}
+\]
+Since $M/(d-1)\to(1-\bar\rho)\bar\delta\in(0,\infty)$,
+we may fix $\varepsilon>0$ small enough that the right-hand
+side is at most $e^{-(d-1)}$ for all sufficiently large $d$.
+Define
+\[
+    \mathcal R_d
+    :=
+    \bigcap_{v\in\mathcal A_\kappa^M\setminus\{0\}}
+    \left\{
+        \|Q^\top U_{\mathcal U}^{\top}v\|
+        \geq\varepsilon\sqrt{d-1}\,\|v\|
+    \right\}.
+\]
+The preceding union bound gives, for all sufficiently large $d$,
+\[
+    \mathbb P(\mathcal R_d^c)
+    \leq 7^M(\sqrt e\,\varepsilon)^{d-1}
+    \leq e^{-(d-1)}.
+\]
+Hence $\mathbb P(\mathcal R_d)\to1$.
+Finally, we may also fix $\gamma>0$ such that
+$\sigma\varepsilon\sqrt{d-1}\geq\gamma\sqrt M$ for all
+sufficiently large $d$, thus on $\mathcal{R}_d$, we have
+
+\[
+    \|P_d^{1/2}\breve X_{\mathcal U}^{\top}v\|^2
+    =|\mathbf1_M^\top v|^2+\|X_{\mathcal U}^{\top}v\|^2
+    \geq\sigma^2\|Q^\top U_{\mathcal U}^{\top}v\|^2,
+\]
+which proves \eqref{eq:configuration-switching-gaussian-bound}.
+The bound holds simultaneously for every vector in the finite
+set, so it also applies to vectors chosen from that set using
+the observed data.
+
+\item \emph{Step 2: Bounding switches by consecutive updates.}
+Work on $\mathcal E_d\cap\mathcal R_d$ and fix $t\geq1$.
+At the common score $r_j^{t+1}$, let
+\[
+    e_j^t:=f_{\mathfrak c_j^{t+1}}(r_j^{t+1})
+             -f_{\mathfrak c_j^t}(r_j^{t+1}),
+    \qquad j\in I_{\mathcal U}.
+\]
+Approximate these residual changes by $v^t\in\mathcal A_\kappa^M$,
+where
+\[
+    v_j^t:=
+    \begin{cases}
+        0,&\mathfrak c_j^{t+1}=\mathfrak c_j^t,\\[2pt]
+        \varsigma_-(\mathfrak c_j^t-\mathfrak c_j^{t+1}),
+           &\{\mathfrak c_j^t,\mathfrak c_j^{t+1}\}=\{-1,0\},\\[2pt]
+        \varsigma_+(\mathfrak c_j^t-\mathfrak c_j^{t+1}),
+           &\{\mathfrak c_j^t,\mathfrak c_j^{t+1}\}=\{0,+1\},\\[2pt]
+        \frac{\varsigma_-+\varsigma_+}{2}(\mathfrak c_j^t-\mathfrak c_j^{t+1}),
+           &\{\mathfrak c_j^t,\mathfrak c_j^{t+1}\}=\{-1,+1\}.
+    \end{cases}
+\]
+Every changed coordinate has magnitude at least $\varsigma_\kappa$,
+so
+\begin{equation}
+    \|v^t\|^2\geq \varsigma_\kappa^2 M h(t,t+1).
+    \label{eq:configuration-switching-support}
+\end{equation}
+Moreover,
+\begin{equation}
+    |e_j^t-v_j^t|\leq 2L_\ell|r_j^{t+1}-r_j^t|.
+    \label{eq:configuration-switching-jump-error}
+\end{equation}
+For a transition involving $0$, the relevant threshold lies between
+the two scores, and the estimate follows from the Lipschitz
+continuity of the corresponding loss derivative.
+For a transition from $-1$ to $+1$, write $r'=r_j^{t+1}$.
+Then
+\[
+\begin{aligned}
+    e_j^t-v_j^t
+    &=
+    [\ell'(+1,r')-\ell'(+1,\kappa_+)]
+    -[\ell'(-1,r')-\ell'(-1,\kappa_-)].
+\end{aligned}
+\]
+Both thresholds lie between $r_j^t$ and $r'$; hence each bracket
+is bounded in absolute value by $L_\ell|r'-r_j^t|$.
+The reverse transition is treated identically, and the estimate
+also holds at threshold endpoints.
+
+By the design-operator bound,
+\begin{equation}
+    \frac{\|e^t-v^t\|}{\sqrt M}
+    \leq 2L_\ell
+        \frac{\|r_{\mathcal U}^{t+1}-r_{\mathcal U}^t\|}{\sqrt M}
+    \leq 2L_\ell K_{\mathrm{aug}}\sqrt{D^t},
+    \label{eq:configuration-switching-vector-error}
+\end{equation}
+where $r_{\mathcal U}^t:=(r_j^t)_{j\in I_{\mathcal U}}$.
+The same Hessian bound gives, for every configuration,
+\[
+    \|\nabla L_{\mathfrak c}(\theta)
+          -\nabla L_{\mathfrak c}(\vartheta)\|_{P_d} \leq \int_0^1  \| P_d^{1/2} \nabla^2 L_{\mathfrak c}(\vartheta + s(\theta - \vartheta)) P_d^{1/2} P_d^{-1/2} (\theta - \vartheta) \| \, ds
+    \leq\Lambda_*\|\theta-\vartheta\|_{P_d^{-1}}.
+\]
+The supervised and penalty gradients cancel when two branch
+objectives are compared at the same parameter. Hence
+\[
+    \frac\pi M\breve X_{\mathcal U}^{\top}e^t
+    =\nabla L_{\mathfrak c^{t+1}}(\theta^{t+1})
+       -\nabla L_{\mathfrak c^t}(\theta^{t+1}).
+\]
+Using
+$\|\nabla L_{\mathfrak c^t}(\theta^t)\|_{P_d}
+=\sqrt{D^t}/\eta$ and adding and subtracting
+$\nabla L_{\mathfrak c^t}(\theta^t)$ yields
+\begin{equation}
+    \left\|\frac\pi M\breve X_{\mathcal U}^{\top}e^t\right\|_{P_d}
+    \leq\left(\Lambda_*+\frac1\eta\right)\sqrt{D^t}
+         +\frac1\eta\sqrt{D^{t+1}}.
+    \label{eq:configuration-switching-gradient-upper}
+\end{equation}
+On the other hand,
+\eqref{eq:configuration-switching-gaussian-bound} and
+\eqref{eq:configuration-switching-support} imply
+\[
+    \left\|\frac\pi M\breve X_{\mathcal U}^{\top}v^t\right\|_{P_d}
+    \geq\pi\gamma \varsigma_\kappa\sqrt{h(t,t+1)},
+\]
+while \eqref{eq:configuration-switching-vector-error} gives
+\[
+    \left\|\frac\pi M\breve X_{\mathcal U}^{\top}(v^t-e^t)\right\|_{P_d}
+    \leq 2\pi L_\ell K_{\mathrm{aug}}^2\sqrt{D^t}.
+\]
+Combining the last three estimates and squaring gives
+\begin{equation}
+    h(t,t+1)\leq C_{\mathrm{sw}}(D^t+D^{t+1}),
+    \qquad
+    C_{\mathrm{sw}}
+    :=\frac{2}{\pi^2\gamma^2\varsigma_\kappa^2}
+       \left(\Lambda_*+\frac1\eta
+                         +2\pi L_\ell K_{\mathrm{aug}}^2\right)^2.
+    \label{eq:configuration-switching-bound}
+\end{equation}
+All constants are deterministic and independent of $d$ and $t$.
+The event $\mathcal E_d\cap\mathcal R_d$ does not depend on
+time, and the estimate holds there for every $t\geq1$.
+
+\item \emph{Step 3: Passage to the effective process.}
+For fixed $t$, apply Theorem~\ref{theorem:trajectory} on the
+horizon $t+2$. The convergence of $D^t$ and $D^{t+1}$, together
+with \eqref{eq:long-time-configuration-limit}, allows
+\eqref{eq:configuration-switching-bound} to pass to deterministic
+limits, since $\mathbb P(\mathcal E_d\cap\mathcal R_d)\to1$.
+This proves \eqref{eq:effective-switching-control}. Summing over
+$t$ and applying \eqref{eq:mean-field-increment-summability}
+gives \eqref{eq:effective-switching-summability}.
+For integers $t>s$,
+\[
+    \{\tilde{\mathfrak c}^{\,s}\neq\tilde{\mathfrak c}^{\,t}\}
+    \subseteq\bigcup_{k=s}^{t-1}
+        \{\tilde{\mathfrak c}^{\,k+1}\neq\tilde{\mathfrak c}^{\,k}\}.
+\]
+Therefore
+\[
+    \sup_{s,t\geq T}\bar h(s,t)
+    \leq\sum_{k=T}^{\infty}\bar h(k,k+1)\longrightarrow0,
+\]
+proving \eqref{eq:effective-configuration-cauchy}.
+
+\end{itemize}
+
+\end{proof}
+
+\subsubsection{Convergence of the effective process}
+\label{subsubsec:convergence-effective-process}
+
+To compare parameters at different times, we need a quantitative
+version of branch convexity. The strongly convex penalty controls weight
+directions. The labeled loss supplies the remaining curvature in
+the intercept direction once the trajectory is uniformly localized.
+
+\begin{lemma}[Uniform localization and branch curvature]
+\label{lem:uniform-branch-curvature}
+Set
+\[
+    C:=\bar V^1+\pi C_\kappa+1,
+    \qquad
+    \mathcal K_d:=\{\theta \in \mathbb{R}^{d+1}:L_{\mathrm{sup}}(\theta)\leq C\},
+    \qquad
+    L_{\mathrm{sup}}(\theta)
+    :=L_{\mathcal L}(\theta)+\frac{\lambda}{d}J(w).
+\]
+There exists a deterministic $m_*>0$, independent of $d$
+and the configuration, such that, on $\mathcal E_d$,
+the convex set $\mathcal K_d$ contains every $\theta^t$,
+$t\geq1$, and
+\begin{equation}
+    \nabla^2L_{\mathfrak c}(\theta)\succeq m_*P_d^{-1},
+    \qquad\theta\in\mathcal K_d,
+    \qquad\mathfrak c\in\{-1,0,+1\}^{I_{\mathcal U}}.
+    \label{eq:long-time-uniform-lower-curvature}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Work on $\mathcal E_d$. Since $\Psi_\kappa\geq-C_\kappa$ from \eqref{eq:c-kappa}, the
+finite-dimensional potential descent Lemma~\ref{lem:st-global-descent-boundedness} gives
+\[
+    L_{\mathrm{sup}}(\theta^t)
+    \leq V(\theta^t)+\pi C_\kappa
+    \leq V(\theta^1)+\pi C_\kappa\leq C,
+    \qquad t\geq1.
+\]
+The set $\mathcal K_d$ is convex because $L_{\mathrm{sup}}$
+is convex. Since $j\geq0$ and $j(0)=0$, differentiability gives
+$j'(0)=0$. The bound $j''\geq m_j$ therefore implies
+$j(u)\geq m_j u^2/2$.
+Thus, for $\theta=(b,w)\in\mathcal K_d$, nonnegativity of
+the loss $L_{\mathcal L}$ gives
+\[
+    \lambda \frac{m_j}{2} \frac{\| w \|^2}{d} \le \frac{\lambda}{d}J(w) \le L_{\mathrm{sup}}(\theta) \le C, 
+\]
+hence
+\[
+    \frac{\|w\|}{\sqrt d}
+    \le   W:=\sqrt{\frac{2C}{\lambda m_j}}.
+\]
+To bound the intercept, define
+\[
+\begin{aligned}
+    a_-&:=\ell'(-1,0)>0,\qquad
+    a_+:=-\ell'(+1,0)>0,\\
+    a_{\min}&:=\min\{a_-,a_+\},\qquad
+    a_{\max}:=\max\{a_-,a_+\}.
+\end{aligned}
+\]
+Convexity gives the tangent-line bounds
+\[
+\begin{aligned}
+    \ell(-1,r)
+    &\geq \ell(-1,0)+a_-r
+     \geq a_-r,&
+    \ell(+1,r)
+    &\geq \ell(+1,0)-a_+r
+     \geq -a_+r,
+\end{aligned}
+\]
+where the second inequalities use nonnegativity of the loss.
+Let
+\[
+    I_\pm:=\{i\in I_{\mathcal L}:Y_i=\pm1\},
+    \qquad
+    z_i:=\frac{X_i^\top w}{\sqrt d}.
+\]
+On $\mathcal E_d$, both labeled classes have proportion at least
+$a$: $\#I_- / N, \ \# I_+/ N \geq a$ where $a$ is fixed in \eqref{eq:a-k-k-aug}.
+Since every loss term is nonnegative, summing over either class
+alone gives a lower bound on $L_{\mathcal L}$.
+If $b\geq0$, use the negatively labeled observations to obtain
+\begin{align}
+    L_{\mathcal L}(\theta)
+    \geq \frac1N\sum_{i\in I_-}\ell(-1,b+z_i)
+    \geq a_-\frac{|I_-|}{N}b
+           -\frac{a_-}{N}\sum_{i\in I_-}|z_i|
+    \geq a\,a_{\min}|b|
+           -\frac{a_{\max}}{N}
+              \sum_{i\in I_{\mathcal L}}|z_i|.
+    \label{eq:labeled-loss}
+\end{align}
+If $b<0$, we get the same bound using $I_+$ instead of $I_-$.
+By Cauchy--Schwarz and the design bound on $\mathcal E_d$,
+\[
+    \frac1N\sum_{i\in I_{\mathcal L}}|z_i|
+    \leq \frac{\|X_{\mathcal L}w\|}{\sqrt{Nd}}
+    \leq
+    \frac{\|X_{\mathcal L}\|_{\mathrm{op}}}{\sqrt N}
+    \frac{\|w\|}{\sqrt d}
+    \leq K_{\mathcal L}\frac{\|w\|}{\sqrt d}.
+\]
+Thus, \eqref{eq:labeled-loss} becomes
+\[
+    L_{\mathcal L}(\theta)
+    \geq a\,a_{\min}|b|
+        -a_{\max}K_{\mathcal L}\frac{\|w\|}{\sqrt d}.
+\]
+For $\theta\in\mathcal K_d$, we have
+$L_{\mathcal L}(\theta)\leq L_{\mathrm{sup}}(\theta)\leq C$
+and $\|w\|/\sqrt d\leq W$. Consequently,
+\[
+    |b|
+    \leq B:=
+    \frac{C+a_{\max}K_{\mathcal L}W}{a\,a_{\min}}.
+\]
+Finally, using $r_i(\theta)=b+z_i$ and
+$(x+y)^2\leq2x^2+2y^2$, we obtain
+\[
+    \frac1N\sum_{i\in I_{\mathcal L}}r_i(\theta)^2
+    \leq 2b^2+\frac{2\|X_{\mathcal L}w\|^2}{Nd}
+    \leq 2B^2+2K_{\mathcal L}^2W^2
+    =:Q_*.
+\]
+Set $R:=\sqrt{2Q_*}$. The preceding score bound gives
+\[
+    \frac1N
+    \#\{i\in I_{\mathcal L}:|r_i(\theta)|>R\}
+    \leq
+    \frac1{NR^2}\sum_{i\in I_{\mathcal L}}r_i(\theta)^2
+    \leq\frac12.
+\]
+Thus at least half of the labeled scores belong to $[-R,R]$.
+By continuity and strict positivity of the loss curvature,
+\[
+    \alpha_R:=
+    \min_{\substack{y\in\{-1,+1\}\\|r|\leq R}}
+        \ell''(y,r)>0.
+\]
+Keeping the curvature contributions from these bounded scores
+and using nonnegativity of the remaining contributions yields
+\begin{equation}
+    \frac1N\sum_{i\in I_{\mathcal L}}
+        \ell''(Y_i,r_i(\theta))
+    \geq a_0:=\frac{\alpha_R}{2}>0.
+    \label{eq:long-time-intercept-curvature}
+\end{equation}
+For a direction $(h,u)\in\mathbb R\times\mathbb R^d$, define
+the directional curvature of the labeled loss by
+\[
+    Q_{\mathcal L}(\theta;h,u)
+    :=
+    \frac1N\sum_{i\in I_{\mathcal L}}
+        \ell''(Y_i,r_i(\theta))
+        \left(h+\frac{X_i^\top u}{\sqrt d}\right)^2.
+\]
+Although \eqref{eq:long-time-intercept-curvature} controls
+pure intercept directions, the two terms inside the square
+may cancel for a mixed direction. To control this cancellation,
+write
+$h=
+    \left(h+{X_i^\top u}/{\sqrt d}\right)
+    -{X_i^\top u}/{\sqrt d}$.
+Applying the inequality $(x-y)^2\leq2x^2+2y^2$, multiplying by
+$\ell''(Y_i,r_i(\theta))$, and averaging gives
+\begin{align*}
+    a_0h^2
+    &\leq
+    \frac1N\sum_{i\in I_{\mathcal L}}
+        \ell''(Y_i,r_i(\theta))h^2
+    \leq
+    2Q_{\mathcal L}(\theta;h,u)
+    +\frac2{Nd}\sum_{i\in I_{\mathcal L}}
+        \ell''(Y_i,r_i(\theta))(X_i^\top u)^2\\
+    &\leq
+    2Q_{\mathcal L}(\theta;h,u)
+    +\frac{2L_\ell}{Nd}\|X_{\mathcal L}u\|^2
+    \leq
+    2Q_{\mathcal L}(\theta;h,u)
+    +2L_\ell K_{\mathcal L}^2\frac{\|u\|^2}{d}.
+\end{align*}
+Dividing by $a_0$ and adding $\|u\|^2/d$ yields
+\[
+    h^2+\frac{\|u\|^2}{d}
+    \leq
+    \frac2{a_0}Q_{\mathcal L}(\theta;h,u)
+    +C_0\frac{\|u\|^2}{d},
+    \qquad
+    C_0:=1+\frac{2L_\ell K_{\mathcal L}^2}{a_0}.
+\]
+The unlabeled contribution to the branch Hessian is positive
+semidefinite, while $j''\geq m_j$ gives
+\[
+\begin{aligned}
+    \begin{pmatrix}h\\u\end{pmatrix}^{\!\top}
+    \nabla^2L_{\mathfrak c}(\theta)
+    \begin{pmatrix}h\\u\end{pmatrix}
+    \geq
+    Q_{\mathcal L}(\theta;h,u)
+    +\frac{\lambda}{d}\sum_{k=1}^d j''(w_k)u_k^2
+    \geq
+    Q_{\mathcal L}(\theta;h,u)
+    +\lambda m_j\frac{\|u\|^2}{d}.
+\end{aligned}
+\]
+Choose
+\[
+    m_*:=
+    \min\left\{
+        \frac{a_0}{2},
+        \frac{\lambda m_j}{C_0}
+    \right\}
+    =
+    \min\left\{
+        \frac{a_0}{2},
+        \frac{\lambda m_j}
+             {1+2L_\ell K_{\mathcal L}^2/a_0}
+    \right\}>0.
+\]
+Since $2m_*/a_0\leq1$ and $m_*C_0\leq\lambda m_j$,
+\[
+\begin{aligned}
+    m_*\left(h^2+\frac{\|u\|^2}{d}\right)
+    \leq
+    \frac{2m_*}{a_0}Q_{\mathcal L}(\theta;h,u)
+    +m_*C_0\frac{\|u\|^2}{d}
+    \leq
+    Q_{\mathcal L}(\theta;h,u)
+    +\lambda m_j\frac{\|u\|^2}{d}
+    \leq
+    \begin{pmatrix}h\\u\end{pmatrix}^{\!\top}
+    \nabla^2L_{\mathfrak c}(\theta)
+    \begin{pmatrix}h\\u\end{pmatrix}.
+\end{aligned}
+\]
+This proves
+\eqref{eq:long-time-uniform-lower-curvature}
+on $\mathcal E_d$, uniformly over
+$\theta\in\mathcal K_d$ and all configurations $\mathfrak c$.
+\end{proof}
+
+\begin{lemma}[Two-time stability]
+\label{lem:effective-two-time-stability}
+There exists a deterministic $A\in(0,\infty)$ such that,
+for every $s,t\geq1$,
+\begin{align}
+    \|\tilde\theta^t-\tilde\theta^s\|_{\mathcal H}
+    &\leq A\Bigl(
+        \|\tilde\theta^{s+1}-\tilde\theta^s\|_{\mathcal H}
+        +\|\tilde\theta^{t+1}-\tilde\theta^t\|_{\mathcal H}
+        +\sqrt{\bar h(s,t)}\Bigr),
+    \label{eq:effective-two-time-stability-main}\\
+    \|\tilde r^t-\tilde r^s\|_{L^2(\tilde{\mathbb P})}
+    &\leq A\|\tilde\theta^t-\tilde\theta^s\|_{\mathcal H}.
+    \label{eq:effective-score-stability-main}
+\end{align}
+\end{lemma}
+
+\begin{proof}
+We first establish finite-dimensional estimates on
+$\mathcal E_d$, with constants independent of the dimension
+and iteration times, and then pass to the trajectory limit.
+
+\begin{itemize}[wide]
+    \item \emph{Step 1: Comparing branch gradients at a common parameter.}
+Recall the functions $f_c$ from \eqref{eq:def-f}.
+Since $f_0=0$ and $|\ell'(y,r)|\leq B_\ell$ from Assumption~\ref{assumption:long-time-loss-penalty},
+\[
+    |f_c(r)-f_{c'}(r)|
+    \leq2B_\ell\mathbf1_{\{c\neq c'\}},
+    \qquad
+    c,c'\in\{-1,0,+1\},\quad r\in\mathbb R.
+\]
+For a common parameter $\theta$, define the residual-difference
+vector $e^{s,t}(\theta)\in\mathbb R^M$ by
+\[
+    e_j^{s,t}(\theta)
+    :=
+    f_{\mathfrak c_j^t}(r_j(\theta))
+    -
+    f_{\mathfrak c_j^s}(r_j(\theta)),
+    \qquad j\in I_{\mathcal U}.
+\]
+Only observations whose configurations differ can contribute.
+Consequently,
+\[
+\begin{aligned}
+    \|e^{s,t}(\theta)\|^2
+    \leq
+    4B_\ell^2
+    \sum_{j\in I_{\mathcal U}}
+        \mathbf1_{\{\mathfrak c_j^t\neq\mathfrak c_j^s\}}
+    =4B_\ell^2Mh(s,t).
+\end{aligned}
+\]
+The supervised and penalty terms are identical in all branch
+objectives. They therefore cancel when the branch gradients
+are evaluated at the same parameter:
+\[
+    \nabla L_{\mathfrak c^t}(\theta)
+    -
+    \nabla L_{\mathfrak c^s}(\theta)
+    =
+    \frac{\pi}{M}
+    \breve X_{\mathcal U}^{\top}e^{s,t}(\theta).
+\]
+Using the design bound on $\mathcal E_d$ gives
+\[
+\begin{aligned}
+    \|\nabla L_{\mathfrak c^t}(\theta)
+          -\nabla L_{\mathfrak c^s}(\theta)\|_{P_d}
+    =
+    \frac{\pi}{M}
+    \|P_d^{1/2}\breve X_{\mathcal U}^{\top}
+        e^{s,t}(\theta)\|
+    \leq
+    \frac{\pi}{M}
+    \|\breve X_{\mathcal U}P_d^{1/2}\|_{\mathrm{op}}
+    \|e^{s,t}(\theta)\|
+    \leq
+    2\pi B_\ell K_{\mathrm{aug}}\sqrt{h(s,t)}.
+\end{aligned}
+\]
+Thus, for every $\theta$,
+\begin{equation}
+    \|\nabla L_{\mathfrak c^t}(\theta)
+          -\nabla L_{\mathfrak c^s}(\theta)\|_{P_d}
+    \leq
+    2\pi B_\ell K_{\mathrm{aug}}\sqrt{h(s,t)}.
+    \label{eq:long-time-gradient-perturbation}
+\end{equation}
+
+\item \emph{Step 2: Controlling parameter differences.}
+Both $\theta^s$ and $\theta^t$ belong to the convex set
+$\mathcal K_d$. Their joining segment therefore also belongs
+to $\mathcal K_d$, where
+Lemma~\ref{lem:uniform-branch-curvature} gives
+\[
+    \nabla^2L_{\mathfrak c^t}(\theta)
+    \succeq m_*P_d^{-1}.
+\]
+Set $\Delta\theta:=\theta^t-\theta^s$.
+Integrating the Hessian along the segment yields
+\[
+\begin{aligned}
+    \left\langle
+        \nabla L_{\mathfrak c^t}(\theta^t)
+        -\nabla L_{\mathfrak c^t}(\theta^s),
+        \Delta\theta
+    \right\rangle
+    =
+    \int_0^1
+        \Delta\theta^\top
+        \nabla^2L_{\mathfrak c^t}
+            (\theta^s+\tau\Delta\theta)
+        \Delta\theta\,d\tau
+    \geq
+    m_*\|\Delta\theta\|_{P_d^{-1}}^2.
+\end{aligned}
+\]
+To bound the gradient difference, add and subtract
+$\nabla L_{\mathfrak c^s}(\theta^s)$:
+\[
+\begin{aligned}
+    \|\nabla L_{\mathfrak c^t}(\theta^t)
+          -\nabla L_{\mathfrak c^t}(\theta^s)\|_{P_d}
+    \leq
+    \|\nabla L_{\mathfrak c^t}(\theta^t)\|_{P_d}
+    +\|\nabla L_{\mathfrak c^s}(\theta^s)\|_{P_d}
+    +
+    \|\nabla L_{\mathfrak c^s}(\theta^s)
+          -\nabla L_{\mathfrak c^t}(\theta^s)\|_{P_d}.
+\end{aligned}
+\]
+The update identity gives, for every $k\geq1$,
+\[
+    \nabla L_{\mathfrak c^k}(\theta^k)
+    =
+    -\frac1\eta P_d^{-1}(\theta^{k+1}-\theta^k),
+\]
+and hence
+\[
+    \|\nabla L_{\mathfrak c^k}(\theta^k)\|_{P_d}
+    =
+    \frac1\eta
+    \|\theta^{k+1}-\theta^k\|_{P_d^{-1}}
+    =
+    \frac{\sqrt{D^k}}{\eta}.
+\]
+Combining these identities with
+\eqref{eq:long-time-gradient-perturbation} yields
+\[
+\begin{aligned}
+    \|\nabla L_{\mathfrak c^t}(\theta^t)
+          -\nabla L_{\mathfrak c^t}(\theta^s)\|_{P_d}
+    \leq
+    \frac{\sqrt{D^t}+\sqrt{D^s}}{\eta}
+    +2\pi B_\ell K_{\mathrm{aug}}\sqrt{h(s,t)}.
+\end{aligned}
+\]
+Cauchy--Schwarz in the dual norms gives
+\[
+    |\langle g,v\rangle|
+    =
+    |\langle P_d^{1/2}g,P_d^{-1/2}v\rangle|
+    \leq\|g\|_{P_d}\|v\|_{P_d^{-1}}.
+\]
+Applying this inequality to the integrated curvature estimate,
+we obtain
+\[
+\begin{aligned}
+    m_*\|\Delta\theta\|_{P_d^{-1}}^2
+    &\leq
+    \left(
+        \frac{\sqrt{D^t}+\sqrt{D^s}}{\eta}
+        +2\pi B_\ell K_{\mathrm{aug}}\sqrt{h(s,t)}
+    \right)
+    \|\Delta\theta\|_{P_d^{-1}}.
+\end{aligned}
+\]
+If $\Delta\theta=0$, the desired bound is immediate.
+Otherwise, division by
+$m_*\|\Delta\theta\|_{P_d^{-1}}$ gives
+\begin{equation}
+    \|\theta^t-\theta^s\|_{P_d^{-1}}
+    \leq
+    \frac{\sqrt{D^t}+\sqrt{D^s}}{\eta m_*}
+    +\frac{2\pi B_\ell K_{\mathrm{aug}}}{m_*}
+        \sqrt{h(s,t)}.
+    \label{eq:long-time-finite-two-time-stability}
+\end{equation}
+
+\item \emph{Step 3: Controlling score differences.}
+For either population
+$\mathcal A\in\{\mathcal L,\mathcal U\}$,
+\[
+    r_{\mathcal A}^t-r_{\mathcal A}^s
+    =
+    \breve X_{\mathcal A}(\theta^t-\theta^s)
+    =
+    \breve X_{\mathcal A}P_d^{1/2}
+    P_d^{-1/2}(\theta^t-\theta^s).
+\]
+The design bounds on $\mathcal E_d$ imply
+\[
+    \|\breve X_{\mathcal A}P_d^{1/2}\|_{\mathrm{op}}^2
+    \leq
+    n_{\mathcal A}+\|X_{\mathcal A}\|_{\mathrm{op}}^2
+    \leq n_{\mathcal A}(1+K_{\mathcal A}^2).
+\]
+Consequently,
+\[
+    \frac{\|r_{\mathcal A}^t-r_{\mathcal A}^s\|^2}
+         {n_{\mathcal A}}
+    \leq
+    (1+K_{\mathcal A}^2)
+    \|\theta^t-\theta^s\|_{P_d^{-1}}^2.
+\]
+Define
+\[
+    K_{\mathrm{sc}}
+    :=
+    \sqrt{1+\max\{K_{\mathcal L}^2,K_{\mathcal U}^2\}}.
+\]
+Combining the two populations gives
+\[
+\begin{aligned}
+    \frac1n\|r^t-r^s\|^2
+    =
+    \rho\,\frac{\|r_{\mathcal L}^t-r_{\mathcal L}^s\|^2}{N}
+    +(1-\rho)\,
+        \frac{\|r_{\mathcal U}^t-r_{\mathcal U}^s\|^2}{M}
+    \leq
+    K_{\mathrm{sc}}^2
+    \|\theta^t-\theta^s\|_{P_d^{-1}}^2.
+\end{aligned}
+\]
+Taking square roots yields
+\begin{equation}
+    \frac{\|r^t-r^s\|}{\sqrt n}
+    \leq
+    K_{\mathrm{sc}}
+    \|\theta^t-\theta^s\|_{P_d^{-1}}.
+    \label{eq:long-time-finite-score-stability}
+\end{equation}
+
+\item \emph{Step 4: Passage to the effective process.}
+Fix $s,t\geq1$.
+The limits \eqref{eq:long-time-parameter-distance-limit},
+\eqref{eq:long-time-score-distance-limit}, and
+\eqref{eq:long-time-configuration-limit}
+apply jointly at the finitely many time pairs needed below,
+including $(s,s+1)$ and $(t,t+1)$.
+By continuity of the square-root function, the corresponding
+unsquared distances also converge in probability.
+
+The finite-dimensional estimates
+\eqref{eq:long-time-finite-two-time-stability} and
+\eqref{eq:long-time-finite-score-stability}
+hold on $\mathcal E_d$, whose probability tends to one.
+Since all quantities in these estimates converge in probability
+to deterministic limits, the inequalities pass to those limits.
+Thus
+\[
+\begin{aligned}
+    \|\tilde\theta^t-\tilde\theta^s\|_{\mathcal H}
+    \leq
+    \frac{
+        \|\tilde\theta^{t+1}-\tilde\theta^t\|_{\mathcal H}
+        +\|\tilde\theta^{s+1}-\tilde\theta^s\|_{\mathcal H}
+    }{\eta m_*}
+    +
+    \frac{2\pi B_\ell K_{\mathrm{aug}}}{m_*}
+        \sqrt{\bar h(s,t)},
+\end{aligned}
+\]
+and
+\[
+    \|\tilde r^t-\tilde r^s\|_{L^2(\tilde{\mathbb P})}
+    \leq
+    K_{\mathrm{sc}}
+    \|\tilde\theta^t-\tilde\theta^s\|_{\mathcal H}.
+\]
+Both asserted estimates therefore hold with
+\[
+    A:=
+    \max\left\{
+        \frac1{\eta m_*},
+        \frac{2\pi B_\ell K_{\mathrm{aug}}}{m_*},
+        K_{\mathrm{sc}}
+    \right\}.
+\]
+All constants are deterministic and independent of $s$ and $t$.
+
+\end{itemize}
+
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:effective-process-convergence}]
+By \eqref{eq:mean-field-increment-summability},
+\[
+    \sup_{k\geq T}
+        \|\tilde\theta^{k+1}-\tilde\theta^k\|_{\mathcal H}
+    \longrightarrow0.
+\]
+Together with the configuration estimate
+\eqref{eq:effective-configuration-cauchy},
+the two-time stability bound
+\eqref{eq:effective-two-time-stability-main} gives
+\[
+\begin{aligned}
+    \sup_{s,t\geq T}
+        \|\tilde\theta^t-\tilde\theta^s\|_{\mathcal H}
+    \leq
+    A\left(
+        2\sup_{k\geq T}
+            \|\tilde\theta^{k+1}-\tilde\theta^k\|_{\mathcal H}
+        +\sqrt{\sup_{s,t\geq T}\bar h(s,t)}
+    \right)
+    \longrightarrow0.
+\end{aligned}
+\]
+Thus $(\tilde\theta^t)$ is Cauchy in $\mathcal H$.
+Since $\mathcal H$ is complete, there exists
+\[
+    \tilde\theta^\infty
+    =
+    (\bar b^\infty,\tilde w^\infty)\in\mathcal H
+\]
+such that
+$\|\tilde\theta^t-\tilde\theta^\infty\|_{\mathcal H}\to0$.
+Similarly, \eqref{eq:effective-score-stability-main} gives
+\[
+    \sup_{s,t\geq T}
+        \|\tilde r^t-\tilde r^s\|_
+            {L^2(\tilde{\mathbb P})}
+    \leq
+    A\sup_{s,t\geq T}
+        \|\tilde\theta^t-\tilde\theta^s\|_{\mathcal H}
+    \longrightarrow0.
+\]
+Completeness of $L^2(\tilde{\mathbb P})$ therefore
+gives a limit
+$\tilde r^\infty\in L^2(\tilde{\mathbb P})$.
+Finally, \eqref{eq:effective-switching-summability} gives
+\[
+\begin{aligned}
+    \sum_{t=1}^{\infty}
+    \tilde{\mathbb P}\left(
+        \tilde\Delta=0,\,
+        \tilde{\mathfrak c}^{\,t+1}
+        \neq\tilde{\mathfrak c}^{\,t}
+    \right)
+    =
+    (1-\bar\rho)\sum_{t=1}^{\infty}\bar h(t,t+1)
+    <\infty.
+\end{aligned}
+\]
+By the first Borel--Cantelli lemma, almost surely only finitely
+many configuration changes occur on $\{\tilde\Delta=0\}$.
+The configuration is therefore eventually constant on this event.
+
+Define
+\[
+    \tilde{\mathfrak c}^{\,\infty}
+    :=
+    \begin{cases}
+        \displaystyle
+        \limsup_{t\to\infty}\tilde{\mathfrak c}^{\,t},
+        &\tilde\Delta=0,\\[6pt]
+        \mathbf1_{\{\tilde r^\infty\geq\kappa_+\}}
+        -
+        \mathbf1_{\{\tilde r^\infty\leq\kappa_-\}},
+        &\tilde\Delta=1.
+    \end{cases}
+\]
+This is a measurable $\{-1,0,+1\}$-valued random variable.
+On $\{\tilde\Delta=0\}$, it agrees almost surely with
+$\tilde{\mathfrak c}^{\,t}$ for all sufficiently large $t$.
+Its value on $\{\tilde\Delta=1\}$ specifies an extension
+to the whole sample-side probability space.
+\end{proof}
+
+\begin{proof}[Proof of Corollary~\ref{cor:mean-field-selection-stabilization}]
+Since $\tilde{\mathbb P}(\tilde\Delta=0)=1-\bar\rho>0$, we have
+\[
+    \bar\omega^t
+    =
+    \frac{
+        \tilde{\mathbb E}\left[
+            (1-\tilde\Delta)
+            \mathbf1_{\{\tilde{\mathfrak c}^{\,t}\neq0\}}
+        \right]
+    }{1-\bar\rho},
+    \qquad
+    \bar e^t
+    =
+    \frac{
+        \tilde{\mathbb E}\left[
+            (1-\tilde\Delta)
+            \mathbf1_{\{\tilde{\mathfrak c}^{\,t}=-\tilde Y\}}
+        \right]
+    }{1-\bar\rho}.
+\]
+The masked indicators converge almost surely to their
+counterparts with $\tilde{\mathfrak c}^{\,t}$ replaced by
+$\tilde{\mathfrak c}^{\,\infty}$: on $\{\tilde\Delta=0\}$,
+this follows from eventual stabilization, while on
+$\{\tilde\Delta=1\}$ both indicators vanish.
+Bounded convergence therefore gives the asserted limits
+of $\bar\omega^t$ and $\bar e^t$.
+
+Each indicator can change only when the configuration changes.
+Consequently,
+\[
+\begin{aligned}
+    |\bar\omega^{t+1}-\bar\omega^t|
+      +|\bar e^{t+1}-\bar e^t|
+    \leq
+    \frac{2}{1-\bar\rho}
+    \tilde{\mathbb E}\left[
+        (1-\tilde\Delta)
+        \mathbf1_{\{
+            \tilde{\mathfrak c}^{\,t+1}
+            \neq\tilde{\mathfrak c}^{\,t}
+        \}}
+    \right]
+    =2\bar h(t,t+1).
+\end{aligned}
+\]
+Summing over $t$ and applying
+\eqref{eq:effective-switching-summability}
+proves finite total variation of both sequences.
+Suppose additionally that
+\[
+    \tilde{\mathbb P}
+        (\tilde r^\infty\in\{\kappa_-,\kappa_+\})=0.
+\]
+The $L^2(\tilde{\mathbb P})$ convergence of the scores
+admits a deterministic subsequence $t_k\to\infty$ such that
+$\tilde r^{t_k}\to\tilde r^\infty$ almost surely.
+The threshold map is continuous away from
+$\{\kappa_-,\kappa_+\}$, so
+\[
+    \tilde{\mathfrak c}^{\,t_k}
+    \longrightarrow
+    \mathbf1_{\{\tilde r^\infty\geq\kappa_+\}}
+    -
+    \mathbf1_{\{\tilde r^\infty\leq\kappa_-\}}
+    \qquad
+    \tilde{\mathbb P}\text{-almost surely}.
+\]
+On $\{\tilde\Delta=0\}$, eventual stabilization also gives
+$\tilde{\mathfrak c}^{\,t_k}
+\to\tilde{\mathfrak c}^{\,\infty}$ almost surely.
+Comparing these limits proves the desired identity on
+$\{\tilde\Delta=0\}$.
+On $\{\tilde\Delta=1\}$, the identity holds by the chosen
+extension of $\tilde{\mathfrak c}^{\,\infty}$.
+It therefore holds $\tilde{\mathbb P}$-almost surely.
+\end{proof}

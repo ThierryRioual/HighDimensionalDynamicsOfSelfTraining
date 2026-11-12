@@ -136,8 +136,8 @@ def run_monte_carlo_experiment(
     Results contain the configuration, iterations, seeds, and two method
     dictionaries (self_training and effective_process) keyed by metric name.
     Metric arrays have shape (len(seeds), config.algorithm.n_iterations + 1).
-    Preserve callback timing: unl_usage starts at zero and reports the previous
-    update; unl_selected_error uses current scores at every recorded state.
+    Both unl_usage and unl_selected_error use current scores at every
+    recorded state, including initialization and the terminal state.
     """
     seeds = list(seeds) if seeds is not None else [config.seed + i for i in range(config.runs)]
     if not seeds:
@@ -210,7 +210,7 @@ def run_monte_carlo_experiment(
             "bias_term": se.bias,
             "weight_signal_alignment": se.weight_signal_alignments,
             "weight_vector_norm": se.weight_norm,
-            "unl_usage": [0.0] + se.selection_rate[:T],
+            "unl_usage": se.selection_rate[:T + 1],
             "unl_selected_error": selected_errors,
             "oracle_bias": se.oracle_bias,
             "oracle_error": se.oracle_error,
@@ -305,7 +305,7 @@ def plot_monte_carlo_experiment(
     Select existing result keys or ``normalized_alignment`` (m / tau).
     ``weight_vector_norm`` already stores the normalized norm tau=||w||/sqrt(d).
     By default, plot all metrics shared by the methods, plus m / tau if available.
-    Preserve the recorded iteration convention, including the lag in unl_usage.
+    Selection metrics use the scores at each recorded iteration.
     Return (figure, axes); no simulation is run and results are not modified.
     With save_image=True, save a 600 dpi PNG to image_path or the repository's
     pdfs/approximation_accuracy.png by default.

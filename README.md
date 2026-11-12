@@ -19,13 +19,13 @@ using finite Monte Carlo particle populations.
 
 Tested with **CPython 3.9.6 on macOS arm64**, using CPU tensors and float64.
 The numerical, notebook, and test package versions are pinned in
-[requirements.txt](requirements.txt). Other Python/platform combinations have
-not been validated. The commands below use a macOS/Linux shell and a
-`python3` interpreter providing the tested Python version.
+[requirements.txt](requirements.txt). The Fable audit additionally reports full figure reproduction on Linux.
+The commands below use a macOS/Linux shell and a `python3` interpreter
+compatible with the pinned package versions.
 
 ```sh
-git clone https://github.com/ThierryRioual/FeedbackDynamicsOfSelfTraining.git
-cd FeedbackDynamicsOfSelfTraining
+git clone https://github.com/ThierryRioual/HighDimensionalDynamicsOfSelfTraining.git
+cd HighDimensionalDynamicsOfSelfTraining
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip==26.0.1
@@ -62,7 +62,7 @@ from `figures/experiments.py`. Neither notebook imports the other.
 
 | Notebook | Experiment and output | Current full configuration |
 | --- | --- | --- |
-| [statistical_behavior.ipynb](figures/statistical_behavior.ipynb) | Population-error decomposition into the optimal linear/Bayes error, alignment regret, and intercept regret; balanced and imbalanced panels in one side-by-side figure. | `d=5000`, `n=40000`, `n_iterations=500`, `seed=49`; `label_prior=0.5` then `0.2`. Edit `config_balanced`; `config_unbalanced` derives from it with `dataclasses.replace`. |
+| [statistical_behavior.ipynb](figures/statistical_behavior.ipynb) | Population-error decomposition into the optimal linear/Bayes error, alignment regret, and intercept regret; balanced and imbalanced panels in one side-by-side figure. | `d=5000`, `n=40000`, `n_iterations=400`, `seed=49`; `label_prior=0.5` then `0.2`. Edit `config_balanced`; `config_unbalanced` derives from it with `dataclasses.replace`. |
 | [approximation_accuracy.ipynb](figures/approximation_accuracy.ipynb) | One six-panel finite-GD/effective-process comparison: population error, selected fraction, selected-error fraction, bias, alignment, and weight norm. | `d=2000`, `n=16000`, `n_iterations=300`, `k=10000`, `runs=20`, `seed=42`. Edit `config`. |
 
 `effective_process.ipynb` has been retired; its finite/effective-process
@@ -131,7 +131,7 @@ held-out error estimate. The notebook runners generate no held-out test sample.
 | `bias_term` | Intercept $b^t$. |
 | `weight_vector_norm` | Dimension-normalized norm $\tau^t=\lVert w^t\rVert/\sqrt d$. |
 | `weight_signal_alignment` | Alignment $m^t=\mu^\top w^t/d$. |
-| `unl_usage` | Selected fraction of the **preceding update**: entry $t+1$ contains $\omega^t$; entry zero is zero. |
+| `unl_usage` | Selected fraction at the **current scores**: entry $t$ contains $\omega^t$, including initialization and the terminal state. Requires `X_unl`, but no labels. |
 | `unl_selected_error` | Current fraction of **all unlabeled observations** that are selected and have an incorrect score-sign label, $e^t$. It is not error conditional on selection. |
 
 The Monte Carlo result has keys `config`, `iterations`, `seeds`,
@@ -184,7 +184,10 @@ plotters use the recorded Monte Carlo data.
 Release preparation verified a clean installation of the pinned requirements,
 `pip check`, the full test suite, and both notebooks in fresh kernels with reduced
 settings (`d=32`, `n_iterations=5`, `k=160`, `runs=2` for the comparison).
-The full configurations listed above were not run during this validation.
+The Fable audit separately reports full reproduction of both paper figures on Linux.
+The corrected Figure 1 was subsequently regenerated using its full 20-run
+configuration; preserved originals and reproduction details are in
+`outputs/f02_comparison/`.
 
 A small standalone simulation-and-plot smoke test is:
 
@@ -226,6 +229,6 @@ and third-party materials must retain their own applicable terms.
 ## Citation
 
 When reporting results, include the
-[repository URL](https://github.com/ThierryRioual/FeedbackDynamicsOfSelfTraining)
+[repository URL](https://github.com/ThierryRioual/HighDimensionalDynamicsOfSelfTraining)
 and the release tag or commit used. A confirmed paper citation is not currently
 recorded here; no author list, publication venue, or DOI is inferred.

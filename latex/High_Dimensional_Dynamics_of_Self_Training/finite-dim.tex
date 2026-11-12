@@ -1,0 +1,300 @@
+\subsection{Convergence of the finite-dimensional dynamics}
+\label{subsec:finite-dim}
+
+Fix $d\geq1$ and a labeled and unlabeled sample with
+$N,M\geq1$, and assume that the labeled sample contains
+both classes. The feature vectors are arbitrary and fixed.
+Under the assumptions below and a suitable constant step size,
+we prove that the iterates identify a pseudo-labeling
+configuration in finitely many iterations and converge
+at an eventual geometric rate to the minimizer of the
+corresponding branch objective.
+
+\begin{assumption}[Shape and curvature of loss and penalty]
+\label{assumption:finite-dim-loss-penalty}
+We assume the following:
+\begin{enumerate}
+    \item For each $y\in\{-1,+1\}$, the function
+    $r\mapsto\ell(y,r)$ belongs to
+    $C^2(\mathbb R;[0,\infty))$. There exists
+    $L_\ell\in(0,\infty)$ such that
+    \[
+        y\ell'(y,r)<0,
+        \qquad
+        0<\ell''(y,r)\leq L_\ell,
+        \qquad
+        y\in\{-1,+1\},\quad r\in\mathbb R.
+    \]
+
+    \item The penalty $j$ belongs to
+    $C^2(\mathbb R;[0,\infty))$ and is coercive.
+    There exists $L_j\in(0,\infty)$ such that
+    \[
+        0<j''(u)\leq L_j,
+        \qquad u\in\mathbb R.
+    \]
+\end{enumerate}
+\end{assumption}
+
+\subsubsection{Potential formulation}
+
+Write
+\[
+    L_{\mathcal L}(\theta)
+    :=
+    \frac1N\sum_{i\in I_{\mathcal L}}
+        \ell(Y_i,r_i(\theta)),
+    \qquad
+    G(\theta)
+    :=
+    \nabla_1L_{\mathrm{ST}}(\theta;\theta).
+\]
+Here the derivative is taken with the teacher parameter held fixed.
+The recursion therefore becomes
+\begin{equation}
+    \theta^{t+1}
+    =
+    \theta^t-\eta P_dG(\theta^t),
+    \qquad t\geq0.
+    \label{eq:ST-recursion-G}
+\end{equation}
+Although $G$ is discontinuous at the selection thresholds,
+it agrees almost everywhere with the gradient of a continuous
+potential $V$. The selection convention specifies the update
+at points where this potential may fail to be differentiable.
+
+\begin{proposition}[Self-training potential]
+\label{prop:ST-potential}
+Under Assumption~\ref{assumption:finite-dim-loss-penalty}, define
+\[
+    \psi_\kappa(r)
+    :=
+    \mathbf1_{\{r\leq\kappa_-\}}\ell'(-1,r)
+    +\mathbf1_{\{r\geq\kappa_+\}}\ell'(+1,r),
+    \qquad
+    \Psi_\kappa(r)
+    :=
+    \int_0^r\psi_\kappa(u)\,du.
+\]
+Then $\Psi_\kappa$ is bounded and globally Lipschitz.
+The function $V:\mathbb R^{d+1}\to\mathbb R$ defined by
+\[
+    V(\theta)
+    :=
+    L_{\mathcal L}(\theta)
+    +\pi V_{\mathcal U}(\theta)
+    +\frac{\lambda}{d}J(w),
+    \qquad
+    V_{\mathcal U}(\theta)
+    :=
+    \frac1M\sum_{j\in I_{\mathcal U}}
+        \Psi_\kappa(r_j(\theta))
+\]
+is continuous and twice continuously differentiable outside
+the threshold set
+\[
+    \mathcal S_\kappa
+    :=
+    \bigcup_{j\in I_{\mathcal U}}
+    \left(
+        \{\theta:r_j(\theta)=\kappa_-\}
+        \cup
+        \{\theta:r_j(\theta)=\kappa_+\}
+    \right),
+\]
+which is a finite union of proper affine hyperplanes. For every
+$\theta\notin\mathcal S_\kappa$,
+\[
+    \nabla V(\theta)=G(\theta).
+\]
+\end{proposition}
+
+To describe the branch structure, we record the selected
+pseudo-labels.
+A configuration is an element of
+$\{-1,0,+1\}^{I_{\mathcal U}}$.
+Define the configuration map
+\[
+    \mathfrak C:\mathbb R^{d+1}\to\{-1,0,+1\}^{I_{\mathcal U}}, \qquad 
+    \mathfrak C(\theta)
+    :=
+    \bigl(S_j(\theta)\hat Y_j(\theta)\bigr)_{j\in I_{\mathcal U}}.
+\]
+For each configuration $\mathfrak c$, define its branch by
+\[
+    \Theta_{\mathfrak c}
+    :=
+    \{\theta\in\mathbb R^{d+1}:
+        \mathfrak C(\theta)=\mathfrak c\},
+\]
+and its smooth branch objective
+$L_{\mathfrak c}:\mathbb R^{d+1}\to\mathbb R$ by
+\[
+    L_{\mathfrak c}(\theta)
+    :=
+    L_{\mathcal L}(\theta)
+    +
+    \frac{\pi}{M}
+    \sum_{\substack{j\in I_{\mathcal U}\\\mathfrak c_j\neq0}}
+        \ell(\mathfrak c_j,r_j(\theta))
+    +
+    \frac{\lambda}{d}J(w).
+\]
+
+\begin{proposition}[Configuration and branch formulation]
+\label{prop:configuration-branch-formulation}
+For each configuration $\mathfrak c$, there exists a constant
+$K_{\mathfrak c}$ such that
+\[
+    V=L_{\mathfrak c}+K_{\mathfrak c}
+        \quad\text{on}\quad\overline{\Theta_{\mathfrak c}},
+    \qquad
+    G=\nabla L_{\mathfrak c}
+        \quad\text{on}\quad\Theta_{\mathfrak c}.
+\]
+Each branch is convex, possibly empty, and is described by finitely
+many strict or non-strict affine inequalities.
+Each nonempty branch has a polyhedral closure, and the nonempty
+branches partition $\mathbb R^{d+1}$ into at most $3^M$ regions.
+\end{proposition}
+Consequently, the self-training recursion satisfies
+\[
+    \theta^{t+1}
+    =
+    \theta^t-\eta P_d
+    \nabla L_{\mathfrak C(\theta^t)}(\theta^t),
+    \qquad t\geq0,
+\]
+including at selection thresholds.
+\begin{proposition}[Branch curvature and coercivity]
+\label{prop:branch-convexity-coercivity}
+Suppose Assumption~\ref{assumption:finite-dim-loss-penalty} holds.
+Assume that $\lambda>0$, $\pi\geq0$, $\kappa_-<0<\kappa_+$,
+and both classes occur among the labeled observations.
+
+Then every branch objective $L_{\mathfrak c}$ has a
+positive-definite Hessian on $\mathbb R^{d+1}$ and is therefore
+strictly convex. Moreover, $L_{\mathfrak c}$ and the potential
+$V$ are coercive:
+\[
+    L_{\mathfrak c}(\theta)\longrightarrow+\infty,
+    \qquad
+    V(\theta)\longrightarrow+\infty
+    \qquad\text{as }\|\theta\|\longrightarrow\infty.
+\]
+Consequently, each branch objective admits a unique global minimizer,
+denoted by
+\[
+    \theta_{\mathfrak c}^\star
+    :=
+    \operatorname*{argmin}_{\theta\in\mathbb R^{d+1}}
+        L_{\mathfrak c}(\theta).
+\]
+\end{proposition}
+
+
+\subsubsection{Algorithmic convergence}
+
+To state the step-size condition, define
+\begin{align}
+    H_d
+    &:=
+    \frac{L_\ell}{N}\sum_{i\in I_{\mathcal L}}
+        \breve X_i\breve X_i^\top
+    +
+    \frac{\pi L_\ell}{M}\sum_{j\in I_{\mathcal U}}
+        \breve X_j\breve X_j^\top
+    +
+    \frac{\lambda L_j}{d}
+    \begin{bmatrix}
+        0 & 0_d^\top\\
+        0_d & I_d
+    \end{bmatrix}, \label{eq:hessian} \\
+    \Lambda_d
+    &:=
+    \lambda_{\max}(P_d^{1/2}H_dP_d^{1/2})>0. \label{eq:lambda-d}
+\end{align}
+By Proposition~\ref{prop:branch-convexity-coercivity},
+for every configuration $\mathfrak c$ and
+$\theta\in\mathbb R^{d+1}$, the branch Hessians satisfy
+\[
+    0\prec\nabla^2L_{\mathfrak c}(\theta)\preceq H_d.
+\]
+We measure errors in the norm
+\[
+    \|\theta\|_{P_d^{-1}}
+    :=
+    \sqrt{\theta^\top P_d^{-1}\theta}, \quad \theta \in \mathbb{R}^{d+1}.
+\]
+Define
+\begin{align}
+    T_{\mathrm{id}}
+    :=
+    \inf\left\{
+        T\in\mathbb N_{\geq1}:
+        \mathfrak C(\theta^t)=\mathfrak C(\theta^T)
+        \text{ for every integer }t\geq T
+    \right\}, \label{eq:identification-time}
+\end{align}
+with $\inf\varnothing=+\infty$.
+
+\begin{theorem}[Convergence of self-training]
+\label{thm:st-convergence}
+Fix $d\geq1$ and a finite labeled and unlabeled sample with
+$N,M\geq1$. Suppose
+Assumption~\ref{assumption:finite-dim-loss-penalty} holds.
+Suppose also that $\lambda>0$, $\pi>0$, $\kappa_-<0<\kappa_+$,
+both classes occur among the labeled observations, and
+\begin{equation}
+    0<\eta<\frac{2}{\Lambda_d}.
+    \label{eq:st-descent-step-size}
+\end{equation}
+Then, for every initial state $\theta^0\in\mathbb R^{d+1}$,
+the identification time \eqref{eq:identification-time} is finite: $T_{\mathrm{id}} < \infty$, and there exists
+a configuration $\mathfrak c$ such that
+\[
+    \mathfrak C(\theta^t)=\mathfrak c
+    \quad\text{for all }t\geq T_{\mathrm{id}},
+    \qquad
+    \theta^t\xrightarrow[t\to\infty]{}
+    \theta_{\mathfrak c}^\star
+    \in\overline{\Theta_{\mathfrak c}}.
+\]
+Moreover, there exists $q\in(0,1)$ such that
+\[
+    \|\theta^t-\theta_{\mathfrak c}^\star\|_{P_d^{-1}}
+    \leq
+    q^{\,t-T_{\mathrm{id}}}
+    \|\theta^{T_{\mathrm{id}}}-\theta_{\mathfrak c}^\star\|_{P_d^{-1}},
+    \qquad t\geq T_{\mathrm{id}}.
+\]
+\end{theorem}
+
+\begin{remark}
+Let $\mathfrak c$ be the configuration identified in
+Theorem~\ref{thm:st-convergence}.
+Then $G(\theta_{\mathfrak c}^\star)=0$ if and only if
+$\theta_{\mathfrak c}^\star\in\Theta_{\mathfrak c}$.
+In particular, this holds whenever
+$\theta_{\mathfrak c}^\star\notin\mathcal S_\kappa$.
+\end{remark}
+
+The proof of Theorem~\ref{thm:st-convergence} proceeds in three steps
+and is detailed in Appendix~\ref{sec:proof-finite-dim}:
+\begin{enumerate}
+    \item A global descent inequality for $V$, valid across
+    selection thresholds, gives $G(\theta^t)\to0$, while
+    coercivity confines the trajectory to a bounded sublevel set.
+
+    \item If configurations changed infinitely often, finiteness
+    of the configuration set, boundedness, and vanishing increments
+    would yield a shared accumulation point at which two distinct
+    branch gradients vanish. Separation of these gradients on
+    shared boundaries rules this out.
+
+    \item Every accumulation point is then a stationary point of
+    the identified strictly convex branch objective. Uniqueness
+    gives convergence of the full sequence, and positive
+    definiteness and continuity of the branch Hessian at the
+    limit give the geometric rate.
+\end{enumerate}

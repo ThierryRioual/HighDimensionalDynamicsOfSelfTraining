@@ -1,0 +1,143 @@
+\section{Mathematical tools}
+\label{sec:math-prelim}
+
+\subsection{Wasserstein spaces}
+\label{subsec:wasserstein}
+
+Let $r\ge1$ be an integer, let $\mathscr P(\mathbb R^r)$ denote the Borel
+probability measures on $\mathbb R^r$, and write $\nu_n\Rightarrow\nu$
+for weak convergence (convergence against bounded continuous functions).
+
+\begin{definition}[Wasserstein distance]
+\label{definition:wasserstein-distance}
+Write $\mathscr P_2(\mathbb R^r)$ for the measures $\mu$ satisfying
+$\int\|x\|^2\,\mu(dx)<\infty$. For $\mu,\nu$ in this space, let
+$\Pi(\mu,\nu)$ denote their couplings and define
+\[
+  W_2(\mu,\nu)
+  :=\left(\inf_{\pi\in\Pi(\mu,\nu)}
+     \int\|x-y\|^2\,\pi(dx,dy)\right)^{1/2}.
+\]
+Equivalently, the infimum is over joint laws of random vectors
+$(X,Y)$ having marginals $\mu,\nu$, with objective
+$(\mathbb E\|X-Y\|^2)^{1/2}$; see
+\cite[Chapter~6]{villani2009optimal} and
+\cite[Section~7.1]{ambrosio2008gradientflows}.
+\end{definition}
+
+\begin{definition}[Pseudo-Lipschitz functions]
+\label{definition:pseudo-lipschitz}
+A function $\psi:\mathbb R^r\to\mathbb R$ is
+\emph{pseudo-Lipschitz of order $2$} if, for some $L<\infty$,
+\[
+  |\psi(x)-\psi(y)|
+  \le L\|x-y\|(1+\|x\|+\|y\|),\qquad x,y\in\mathbb R^r.
+\]
+We denote this class by $\mathrm{PL}_2(\mathbb R^r;\mathbb R)$.
+Its members are continuous and satisfy
+$|\psi(x)|\le C(1+\|x\|^2)$ for some $C<\infty$.
+\end{definition}
+
+\begin{proposition}[Characterizations of $W_2$-convergence]
+\label{proposition:wasserstein-convergence-characterization}
+For deterministic $\nu_n,\bar\nu\in\mathscr P_2(\mathbb R^r)$,
+the following are equivalent:
+\begin{enumerate}
+  \item $W_2(\nu_n,\bar\nu)\to0$.
+  \item $\nu_n\Rightarrow\bar\nu$ and
+  $\int\|x\|^2\,\nu_n(dx)\to\int\|x\|^2\,\bar\nu(dx)$.
+  \item $\int\varphi\,d\nu_n\to\int\varphi\,d\bar\nu$ for every
+  continuous $\varphi$ with $|\varphi(x)|\le C(1+\|x\|^2)$.
+  \item $\int\psi\,d\nu_n\to\int\psi\,d\bar\nu$ for every
+  $\psi\in\mathrm{PL}_2(\mathbb R^r;\mathbb R)$.
+\end{enumerate}
+If instead the $\nu_n$ are random and $\bar\nu$ is deterministic,
+then $W_2(\nu_n,\bar\nu)\xrightarrow{\mathbb P}0$ if and only if
+\[
+  \int f\,d\nu_n\xrightarrow{\mathbb P}\int f\,d\bar\nu
+  \quad
+  \text{for every bounded Lipschitz }f, \text{ and}
+  \quad
+  \int\|x\|^2\,\nu_n(dx)
+  \xrightarrow{\mathbb P}\int\|x\|^2\,\bar\nu(dx).
+\]
+\end{proposition}
+
+\begin{proof}
+The equivalence of the first three deterministic conditions follows from
+\cite[Definition~6.8 and Theorem~6.9]{villani2009optimal},
+\cite[Proposition~7.1.5]{ambrosio2008gradientflows}, and
+\cite[Theorem~5.11]{santambrogio2015optimal}.
+The third implies the fourth by the growth bound. Conversely,
+bounded Lipschitz functions and $x\mapsto\|x\|^2$ belong to
+$\mathrm{PL}_2$, so the fourth implies the second.
+
+For random measures, necessity follows from the deterministic
+characterization and the continuous mapping theorem
+\cite[Lemma~5.3]{kallenberg2021foundations}.
+For sufficiency, choose a countable convergence-determining family
+of bounded Lipschitz functions; see
+\cite[Proposition~2.2]{wormhille2009ergodic}.
+From every subsequence, extract a further subsequence along which
+all corresponding integrals and the second moments converge
+almost surely, simultaneously
+\cite[Lemmas~5.2 and~5.4]{kallenberg2021foundations}.
+The deterministic characterization gives almost-sure $W_2$ convergence
+along this further subsequence. The subsequence criterion
+\cite[Lemma~5.2]{kallenberg2021foundations} completes the proof.
+\end{proof}
+
+\begin{lemma}[Lipschitz pushforwards]
+\label{lemma:wasserstein-lipschitz-pushforward}
+Let $T:E\to F$ be an $L$-Lipschitz map between Euclidean spaces.
+For every $\mu,\nu\in\mathscr P_2(E)$,
+\[
+    W_2(T_\#\mu,T_\#\nu)\leq L W_2(\mu,\nu).
+\]
+In particular, coordinate projections cannot increase $W_2$.
+\end{lemma}
+
+\begin{proof}
+For any coupling $\gamma$ of $\mu,\nu$, the measure
+$(T,T)_\#\gamma$ couples $T_\#\mu,T_\#\nu$, and
+\[
+    \int\|T(x)-T(y)\|^2\,d\gamma
+    \leq L^2\int\|x-y\|^2\,d\gamma.
+\]
+Taking infima proves the assertion.
+\end{proof}
+
+\subsection{Empirical measures and modes of convergence}
+\label{subsec:empirical-measures}
+
+\begin{definition}[Empirical measures]
+\label{definition:empirical-measures}
+For $A\in\mathbb R^{m\times r}$ with rows $A(i)$, set
+\[
+  \nu(A):=\frac1m\sum_{i=1}^m\delta_{A(i)}.
+\]
+For column vectors $a^1,\ldots,a^r\in\mathbb R^m$, write
+$\nu(a^1,\ldots,a^r):=\nu([a^1\ \cdots\ a^r])$.
+\end{definition}
+
+\begin{corollary}[Convergence of empirical observables]
+\label{corollary:wasserstein-empirical-observables}
+If $A^{(m)}\in\mathbb R^{m\times r}$ are random and
+$W_2(\nu(A^{(m)}),\bar\nu)\xrightarrow{\mathbb P}0$ for some
+deterministic $\bar\nu\in\mathscr P_2(\mathbb R^r)$, then
+\[
+  \frac1m\sum_{i=1}^m\varphi(A^{(m)}(i))
+  \xrightarrow{\mathbb P}\int\varphi\,d\bar\nu
+\]
+for every continuous $\varphi$ of at most quadratic growth.
+The deterministic analogue holds with ordinary convergence.
+\end{corollary}
+
+\begin{proof}
+Fix such a function $\varphi$.
+Its integral is continuous for the $W_2$ topology by
+Proposition~\ref{proposition:wasserstein-convergence-characterization}.
+The deterministic assertion follows immediately, and the random
+assertion follows by the continuous mapping theorem
+\cite[Lemma~5.3]{kallenberg2021foundations}.
+\end{proof}

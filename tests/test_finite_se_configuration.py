@@ -37,9 +37,9 @@ def test_finite_and_se_share_a_fixed_pi_joint_law_configuration():
     torch.testing.assert_close(step.omega, step.selection[env.I_U].mean())
     se_mask = se.selection_mask(se.preactivation[0])
     torch.testing.assert_close(se.selection_rate[0], ((1 - se.indicator) * se_mask).mean() / (1 - se.rho))
-    for scores, Y, Delta, Yhat, selection, omega, rho, g, bias_g in [
-        (step.scores, env.Y, env.Delta, y_init, step.selection, step.omega, env.rho, step.g, step.bias_residual),
-        (se.preactivation[0], se.label, se.indicator, torch.where(se.preactivation[0] >= 0, 1., -1.),
+    for factor, scores, Y, Delta, Yhat, selection, omega, rho, g, bias_g in [
+        (-cfg.step_size, step.scores, env.Y, env.Delta, y_init, step.selection, step.omega, env.rho, step.g, step.bias_residual),
+        (1., se.preactivation[0], se.label, se.indicator, torch.where(se.preactivation[0] >= 0, 1., -1.),
          se_mask, se.selection_rate[0], se.rho, se.residual[0], se.bias_residual[0]),
     ]:
         assert 0 < omega < 1
@@ -47,4 +47,4 @@ def test_finite_and_se_share_a_fixed_pi_joint_law_configuration():
         for pi, actual in [(cfg.pseudo_label_param, g), (cfg.bias_pseudo_label_param, bias_g)]:
             unlabeled = (1 - Delta) * pi / (1 - rho) * selection * cfg.loss_function.gradient(scores, Yhat)
             assert torch.count_nonzero(unlabeled) > 0
-            torch.testing.assert_close(actual, -cfg.step_size * (labeled + unlabeled))
+            torch.testing.assert_close(actual, factor * (labeled + unlabeled))

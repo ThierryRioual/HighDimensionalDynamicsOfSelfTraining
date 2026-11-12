@@ -1,0 +1,290 @@
+\section{Setting}
+\label{sec:setting}
+
+Unless otherwise specified, finite-dimensional quantities depend
+on $d$, with this dependence suppressed when unambiguous.
+We write $\mathscr P_2(E)$ for the Borel probability measures on
+$E\subseteq\mathbb R^k$ with finite second moment, $W_2$ for the
+$2$-Wasserstein distance, and $\delta_x$ for the Dirac measure at $x$.
+See Appendix~\ref{subsec:wasserstein} for further details on Wasserstein spaces.
+
+\subsection{Model}
+
+\begin{definition}[Binary Gaussian Mixture Model]
+\label{def:gaussian-mixture-model}
+Let $d\ge1$ be the dimension, $n\ge1$ the sample size,
+$\mu\in\mathbb R^d$ the signal vector, and
+$Y\in\{-1,+1\}^n$, $\Delta\in\{0,1\}^n$
+the vectors of true labels and supervision indicators,
+respectively. These quantities are deterministic.
+Fix a noise scale $\sigma>0$. The feature vectors are
+generated according to
+\begin{equation}
+    X_i
+    =
+    \frac{Y_i\mu}{\sqrt d}+\sigma U_i,
+    \qquad
+    U_i\stackrel{\mathrm{i.i.d.}}{\sim}
+    \mathcal N(0_d,I_d),
+    \qquad i\in[\![1,n]\!].
+    \label{eq:gaussian-mixture-model}
+\end{equation}
+Thus, the observations are independent Gaussian vectors,
+with class memberships determined by the fixed labels.
+Only labels with $\Delta_i=1$ are observed, giving the
+partially labeled dataset
+\[
+    \mathcal D
+    :=
+    \{(X_i,\Delta_iY_i):i\in[\![1,n]\!]\}.
+\]
+\end{definition}
+For later use, define the labeled and unlabeled index sets
+\[
+    I_{\mathcal L}
+    :=
+    \{i\in[\![1,n]\!]:\Delta_i=1\},
+    \qquad
+    I_{\mathcal U}
+    :=
+    \{i\in[\![1,n]\!]:\Delta_i=0\},
+\]
+with cardinalities
+$N:=\#I_{\mathcal L}$ and $M:=\#I_{\mathcal U}$.
+Write $\delta := n / d$ for the sample-to-dimension ratio, $\rho := N/n$ for the labeled proportion,
+and $p=\#\{i: Y_i=+1\}/n$ for the positive-class proportion.
+We also define the empirical signal-coordinate and
+sample-type laws
+\begin{equation}
+    \nu_\mu
+    :=
+    \frac1d\sum_{k=1}^d\delta_{\mu_k},
+    \qquad
+    \nu_{(Y,\Delta)}
+    :=
+    \frac1n\sum_{i=1}^n\delta_{(Y_i,\Delta_i)}.
+    \label{eq:empirical-environment-laws}
+\end{equation}
+General empirical-measure notation is introduced in
+Section~\ref{subsec:empirical-measures}.
+Classical asymptotic statistics typically considers a fixed
+parameter dimension as the sample size grows.
+When the dimension is comparable to the sample size,
+classical approximations may fail~\cite{sur2019modern}.
+Nevertheless, aggregate quantities can exhibit predictable
+limiting behavior even when individual coordinates remain random.
+This motivates the \emph{proportional asymptotic regime}, in which
+\[
+    n,d\longrightarrow\infty,
+    \qquad
+    \frac nd\longrightarrow\bar\delta\in(0,\infty).
+\]
+More precisely, the proportional asymptotic regime considers
+a sequence of statistical models indexed by the dimension $d$,
+rather than a single fixed-dimensional model.
+The sample size $n=n(d)$, signal vector $\mu=\mu(d)$,
+labels $Y=Y(d)$, and supervision indicators
+$\Delta=\Delta(d)$ all depend on $d$.
+By imposing suitable conditions on their asymptotic behavior,
+we can obtain precise limiting descriptions as $d\to\infty$.
+We suppress this dependence on $d$ in the notation and
+formalize these conditions in the following assumption.
+\begin{assumption}[Asymptotic Regime]
+\label{assumption:asymptotic-regime}
+As $d\to\infty$, assume that
+\begin{equation}
+    \delta\longrightarrow\bar\delta,
+    \qquad
+    \nu_\mu\xrightarrow{W_2}\bar\nu_\mu,
+    \qquad
+    \nu_{(Y,\Delta)}
+    \xrightarrow{W_2}\bar\nu_{(Y,\Delta)},
+    \label{eq:finite-dim-limits}
+\end{equation}
+with $\bar \delta\in(0,\infty)$.
+In particular, the positive-class and labeled proportions
+converge:
+\begin{equation}
+    p\longrightarrow\bar p,
+    \qquad
+    \rho\longrightarrow\bar\rho.
+    \label{eq:finite-dim-limits-2}
+\end{equation}
+We assume $\bar p,\bar\rho\in(0,1)$.
+Consequently, $N,M\to\infty$, and both are positive
+for all sufficiently large $d$.
+\end{assumption}
+In what follows, we restrict attention to dimensions
+for which $N,M\ge1$.
+
+\subsection{Self-Training Algorithm}
+
+We now formalize the self-training algorithm introduced in
+Section~\ref{sec:introduction}.
+For $\theta=(b,w)\in\mathbb R^{d+1}$, define the
+augmented feature vector and score function
+\[
+    \breve X_i
+    :=
+    \begin{bmatrix}
+        1\\
+        X_i/\sqrt d
+    \end{bmatrix},
+    \qquad
+    r_i(\theta)
+    :=
+    \breve X_i^\top\theta
+    =
+    b+\frac{X_i^\top w}{\sqrt d},
+    \qquad
+    i \in [\![1,n]\!].
+\]
+Let $\ell:\{-1,+1\}\times\mathbb R\to\mathbb R$
+be a differentiable loss function,
+$j:\mathbb R\to\mathbb R$ a differentiable penalty function, and let $\kappa := (\kappa_-,\kappa_+)$ be selection thresholds, with $\kappa_- < 0 < \kappa_+$.
+We write
+\[
+    \ell'(y,r)
+    :=
+    \frac{\partial}{\partial r}\ell(y,r),
+    \qquad
+    J(w):=\sum_{k=1}^d j(w_k),
+    \qquad 
+    S_\kappa(r) := \mathbf1_{ \{ r \le \kappa_-\} } + \mathbf1_{ \{ r \ge \kappa_+\} }.
+\]
+For a teacher parameter $\vartheta \in \mathbb{R}^{d+1}$ and $j \in I_{\mathcal U}$, the associated pseudo-label is $\widehat Y_j(\vartheta):=\operatorname{sign}(r_j(\vartheta))$, and
+the confidence-selection step in \eqref{eq:pl-dataset}
+can be expressed through the selection indicator $S_j(\vartheta) := S_\kappa(r_j(\vartheta))$. 
+The indicator $S_j(\vartheta)$ ensures that unselected
+observations do not contribute to the training objective.
+We use the convention $\operatorname{sign}(0)=+1$.
+
+Fix dimension-independent coefficients $\lambda,\pi\ge0$.
+The self-training objective, with teacher parameter
+$\vartheta$ and student parameter $\theta$, is
+\begin{align}
+    L_{\mathrm{ST}}(\theta;\vartheta)
+    :=
+    &\frac1N\sum_{i\in I_{\mathcal L}}
+        \ell\bigl(Y_i,r_i(\theta)\bigr)
+    +
+    \frac{\pi}{M}\sum_{j\in I_{\mathcal U}}
+        S_j(\vartheta)
+        \ell\bigl(\widehat Y_j(\vartheta),r_j(\theta)\bigr)
+    +
+    \frac{\lambda}{d}J(w).
+    \label{eq:ST-objective}
+\end{align}
+At iteration $t$, this is the objective
+$L(\theta;\mathcal D_L,\mathcal P_t)$ introduced in
+\eqref{eq:pl-gd-step}, with
+$\vartheta=\theta^t$ held fixed.
+
+We study the procedure in which the teacher is refreshed
+after every gradient step. Starting from
+$\theta^0=(b^{\mathrm{init}},w^{\mathrm{init}})$,
+the iteration is
+\begin{equation}
+    \theta^{t+1}
+    :=
+    \theta^t-\eta P_d
+    \nabla_1L_{\mathrm{ST}}(\theta^t;\theta^t),
+    \qquad t\ge0,
+    \label{eq:ST-recursion}
+\end{equation}
+where $\nabla_1$ denotes differentiation with respect
+to the student parameter only, $\eta>0$ is the step size,
+and
+\[
+    P_d
+    :=
+    \begin{bmatrix}
+        1 & 0_d^\top\\
+        0_d & dI_d
+    \end{bmatrix}
+    \in\mathbb R^{(d+1)\times(d+1)}.
+\]
+This preconditioning gives a nontrivial scaling of the
+parameter updates in the proportional regime.
+The explicit updates are summarized below.
+
+\begin{algorithm}[Self-Training]
+\label{alg:self-training}
+Fix $d\ge1$ with $N,M\ge1$.
+\begin{itemize}[wide]
+    \item \textbf{Input:}
+    Dataset $\mathcal D$, initialization
+    $(b^{\mathrm{init}},w^{\mathrm{init}})$,
+    number of iterations $T\in\mathbb N$,
+    and hyperparameters
+    $\eta$, $\lambda,\pi\ge0$ and $\kappa_-<0<\kappa_+$.
+
+    \item \textbf{Initialization:}
+    Set
+    \[
+        b^0:=b^{\mathrm{init}},
+        \qquad
+        w^0:=w^{\mathrm{init}}.
+    \]
+
+    \item \textbf{Iterations:}
+    For $t=0,\ldots,T-1$:
+
+    Compute the scores, and the pseudo-labels and selection indicators:
+    \begin{align*}
+        &r_i^t
+        :=
+        b^t+\frac{X_i^\top w^t}{\sqrt d},
+         & &i\in[\![1,n]\!], \\
+        \widehat Y_j^t :=\operatorname{sign}(r_j^t), &
+        \qquad
+        S_j^t
+        :=
+        \mathbf 1_{\{r_j^t\le\kappa_-\}}
+        +
+        \mathbf 1_{\{r_j^t\ge\kappa_+\}}
+        , &&j\in I_{\mathcal U}
+        .
+    \end{align*}
+    
+    Update the intercept and weights:
+    \begin{align*}
+        b^{t+1}
+        &:=
+        b^t-\eta\Biggl[
+            \frac1N\sum_{i\in I_{\mathcal L}}
+                \ell'(Y_i,r_i^t)
+            +
+            \frac{\pi}{M}\sum_{j\in I_{\mathcal U}}
+                S_j^t\ell'(\widehat Y_j^t,r_j^t)
+        \Biggr],\\
+        w^{t+1}
+        &:=
+        w^t-\eta d\Biggl[
+            \frac1N\sum_{i\in I_{\mathcal L}}
+                \ell'(Y_i,r_i^t)\frac{X_i}{\sqrt d}
+            +
+            \frac{\pi}{M}\sum_{j\in I_{\mathcal U}}
+                S_j^t\ell'(\widehat Y_j^t,r_j^t)
+                \frac{X_j}{\sqrt d}
+            +
+            \frac{\lambda}{d}\nabla J(w^t)
+        \Biggr].
+    \end{align*}
+
+    \item \textbf{Output:}
+    The classifier $f_{\theta^T}$,
+    where $\theta^T=(b^T,w^T)$.
+\end{itemize}
+\end{algorithm}
+
+The assumptions required for our main results differ and
+are introduced alongside the corresponding theorems.
+Nevertheless, all conditions imposed on the loss and penalty
+are satisfied by the logistic loss and ridge penalty
+\begin{equation}
+    \ell(y,r):=\log(1+e^{-yr}),
+    \qquad
+    j(u):=\frac{u^2}{2}.
+    \label{eq:logistic-loss-ridge-penalty}
+\end{equation}

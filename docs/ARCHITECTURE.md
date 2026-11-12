@@ -110,13 +110,17 @@ the recorded weights and residuals, rather than inside the training loop.
 in each update.  Callback residual metrics read this record rather than
 reconstructing a different residual after the update.
 
-The shared weight-residual convention is `g = -eta_w` times the frozen score gradient;
-the finite and effective updates add this residual contribution. Callback
-score diagnostics (`population_error`, bias, norm, alignment, selected-error
-fraction) refer to the current state `t=0,...,T`. Residual histories and
-`unl_usage` refer to the preceding update, with zero entries at `t=0`. The
-approximation runner applies this same timing to the effective selection-rate
-history when assembling its comparison results.
+Finite GD records and callback residual diagnostics retain increment units:
+`u = -eta_w * g`, where `g` is the frozen score gradient. The existing
+`FiniteStep.g` field stores `u` for API compatibility. Effective histories
+use manuscript units `g`; the descent rates appear in the parameter updates.
+See [the convention audit](mean_field_convention_refactor.md).
+
+Callback score diagnostics (`population_error`, bias, norm, alignment,
+selected-error fraction, and `unl_usage`) refer to the current state
+`t=0,...,T`. Residual diagnostics refer to the preceding update, with zero
+entries at `t=0`. The comparison runner uses `se.selection_rate[:T+1]` for
+current-state selection fractions, including initialization.
 
 ## Effective dynamics
 

@@ -203,9 +203,10 @@ def test_approximation_runner_config_replay_and_selection(monkeypatch, train_bia
             expected = incorrect[process.indicator == 0].double().mean().item()
             assert result["effective_process"]["unl_selected_error"][i, t] == pytest.approx(expected)
         np.testing.assert_array_equal(result["effective_process"]["unl_usage"][i],
-                                      [0.] + [float(v) for v in process.selection_rate[:3]])
+                                      [float(v) for v in process.selection_rate[:4]])
         np.testing.assert_array_equal(result["self_training"]["unl_usage"][i],
-                                      [0.] + [float(step.omega) for step in learner.update_records_])
+                                      [float(step.omega) for step in learner.update_records_]
+                                      + [learner.selection_mask(learner.decision_function(learner.callback.X_unl)).double().mean().item()])
     replay = experiments.run_monte_carlo_experiment(config)
     for method in ("self_training", "effective_process"):
         for metric in result[method]:
