@@ -116,7 +116,7 @@ def test_finite_and_effective_process_complete_one_supervised_smoke_step():
         signal_vector=signal,
     )
     environment, X, _, _ = dgp.sample(stratified=True)
-    # Preserve the former split adapter's L-then-U order and inactive t=0
+    # Use labeled-then-unlabeled row order and inactive t=0
     # pseudo-label placeholders without drawing additional random numbers.
     order = torch.cat((environment.I_L, environment.I_U))
     environment = QuenchedEnvironment(

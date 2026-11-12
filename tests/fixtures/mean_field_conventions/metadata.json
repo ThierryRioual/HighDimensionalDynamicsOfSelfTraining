@@ -76,11 +76,12 @@
     "weight_rank_truncated",
     "residual_rank_truncated"
   ],
-  "source_sha256": "0c89f4ebec01964e6d03008d881891b486a5ca8a7f19197bce4095265d3777e3",
   "torch": "2.8.0",
   "seed": 123,
   "K_w": 53,
   "K_g": 71,
   "iterations": 5,
-  "driver": "gelsd"
+  "driver": "gelsd",
+  "units": "manuscript: g is the frozen score gradient; rates appear in parameter updates",
+  "dtype": "float64"
 }

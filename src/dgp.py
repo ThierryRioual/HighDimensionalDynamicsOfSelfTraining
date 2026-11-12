@@ -15,7 +15,7 @@ from src.environment import FourCellSampleTypeLaw, QuenchedEnvironment, SampleTy
 class IsotropicGaussian:
     """Generate ``X_i=Y_i mu/sqrt(d)+sigma U_i`` conditional on an environment.
 
-    ``DataConfig`` retains the legacy product-law convenience path.  Passing an
+    ``DataConfig`` provides a product-law sampling path.  Passing an
     explicit ``sample_type_law`` or ``environment`` exposes the general
     quenched model without changing the Gaussian conditional design.
     """
@@ -42,7 +42,7 @@ class IsotropicGaussian:
         elif self.environment is not None:
             mu = self.environment.mu.detach().clone()
         else:
-            # Legacy callable laws have no generator argument.  Sampling remains
+            # Scalar callable laws have no generator argument.  Sampling remains
             # isolated at the object boundary through an explicit DGP seed for
             # all Gaussian/noise draws; callers wanting complete stream control
             # can supply signal_vector or an explicit environment.
@@ -66,7 +66,7 @@ class IsotropicGaussian:
         if self.environment is not None:
             return self.environment
         if stratified:
-            # Stratification is defined only for the legacy product law; it is a
+            # Stratification is defined only for the product law; it is a
             # variance-reduction extension rather than an iid sample from a
             # general four-cell law.
             if self.sample_type_law is not None:

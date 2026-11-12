@@ -1,23 +1,20 @@
-# Pre-refactor numerical baseline
+# Effective-process numerical reference fixtures
 
-`baseline.pt` contains tensors and primitive scalar/list/dict values captured
-before editing `src/asymptotics.py`, on November 11, 2026, under Torch 2.8.0
-on CPU. `metadata.json` records its source SHA256, configurations, and histories.
-Repository HEAD was `38d873e2e8543b6008601b578d64baee9f43bc23`; unrelated
-pre-existing working-tree edits were retained. The old asymptotics source
-was identical to that commit's source.
+`reference.pt` contains fixed tensor trajectories in manuscript units:
+`g` is the frozen score gradient, and parameter updates apply the configured
+descent rates. The fixture covers four weight rates (`.03`, `.3`, `1`, `2`)
+and three configurations: supervised learning, active self-training, and
+self-training with rank truncation and separate intercept controls.
 
-The setup is reproduced in `make_process` in `test_mean_field_conventions.py`;
-its original implementation evaluated residuals in update units. Do not
-regenerate this fixture using the standardized implementation. Float values
-returned as NumPy scalars were serialized as Python scalars so the fixture
-can be read with `torch.load(..., weights_only=True)`.
+`metadata.json` specifies the configurations, recorded histories, particle
+counts, seed, dtype, and least-squares driver. Each trajectory uses five updates
+and a terminal evaluation with `K_w=53`, `K_g=71`, and seed 123. The setup is
+specified by `make_process` in `tests/test_mean_field_conventions.py`.
 
-`workflow_baseline.npz` records every returned finite/effective metric from
-the maintained runner using the original class, saved before comparisons
-with the new class. The three configurations are reproduced in the workflow
-regression test. Both classes used the same working-tree runner.
+`experiment_metrics.npz` contains the finite and effective metrics used by the
+experiment-runner reference test at weight rates `.1`, `.2`, and `.7`, with
+two seeds, eight updates, dimension 128, and 512 particles.
 
-`comparison.json` and `workflow_comparison.json` report absolute differences
-between the original and refactored implementation after converting units.
-See `docs/audits/mean_field_convention_refactor.md` for tolerances and scope.
+The pytest suite checks trajectories, rank and truncation decisions, response
+coefficients, Gaussian processes, gradient identities, and parameter updates.
+Reference data are fixed test inputs; running the tests does not rewrite them.

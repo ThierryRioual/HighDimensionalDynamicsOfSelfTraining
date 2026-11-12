@@ -2,7 +2,7 @@
 
 This note describes the implementation in
 [`MacroscopicStateEvolution`](../src/asymptotics.py) and
-[`src/orthogonal.py`](../src/orthogonal.py), checked on November 5, 2026.
+[`src/orthogonal.py`](../src/orthogonal.py).
 The accompanying manuscript supplies the mathematical interpretation in
 Definition 4.6 (the mean-field recursion) and Section 5.1. Statements about numerical operations
 refer to the current source. Exact coordinate identities, particle
@@ -12,8 +12,7 @@ The maintained comparison entry point is
 [`experiments/approximation_accuracy.ipynb`](../experiments/approximation_accuracy.ipynb),
 which calls `run_monte_carlo_experiment` in
 [`experiments/experiments.py`](../experiments/experiments.py).
-The former `effective_process.ipynb` and `effective_process_demo.ipynb` are
-retired. The other maintained notebook,
+The statistical notebook,
 [`experiments/statistical_behavior.ipynb`](../experiments/statistical_behavior.ipynb),
 computes a finite-model error decomposition and does not run the particle
 process.
@@ -362,7 +361,7 @@ $$
 s_a=(\texttt{mc\_seed}+1\,000\,003a)\bmod(2^{63}-1).
 $$
 
-The legacy scalar signal callback is sampled in an isolated global RNG
+The scalar signal callback is sampled in an isolated global RNG
 context with stream $83$. Custom-sampler calls also isolate and restore the
 global Torch, NumPy, and Python states, using fallback streams $71$ and
 $97$. Custom samplers should use their supplied generator. These mechanisms
@@ -1104,7 +1103,3 @@ streams, innovation dimensions, initialization, and terminal conventions.
 The Gram pseudoinverses used in reference tests are not part of production
 updates. Agreement on these fixtures verifies those identities and
 conventions, not a particle-limit theorem or a long-horizon accuracy bound.
-
-For conversion from the former effective increment convention, seeded
-regression evidence, and the orientation of parameter Gaussian innovations,
-see [the convention audit](audits/mean_field_convention_refactor.md).

@@ -55,8 +55,8 @@ class MacroscopicStateEvolution:
     ``manuscript/mean-field.tex``:
     g is the score gradient; -eta appears only in the parameter updates.
 
-    ``K`` is retained as a legacy alias for equal particle populations.  New
-    code may set ``K_w`` and ``K_g`` independently; they are Monte Carlo
+    ``K`` sets equal particle populations. Callers may set ``K_w`` and
+    ``K_g`` independently; they are Monte Carlo
     budgets and have no prescribed relation to the limiting aspect ratio
     ``delta``.
 
@@ -80,8 +80,8 @@ class MacroscopicStateEvolution:
     default intercept and ``train_bias`` controls whether it is updated.
     ``bias_step_size`` sets its learning rate (defaulting to the weight rate),
     and ``bias_pseudo_label_param`` controls only its pseudo-labeled increment.
-    The constructor's optional ``initial_bias`` remains a compatibility
-    override for an explicitly supplied initial condition.
+    The constructor's optional ``initial_bias`` overrides the configured
+    intercept for an explicitly supplied initial condition.
     """
 
     data_cfg: DataConfig
@@ -115,14 +115,14 @@ class MacroscopicStateEvolution:
     residual: List[Optional[torch.Tensor]] = field(init=False)
     bias_residual: List[Optional[torch.Tensor]] = field(init=False)
 
-    # Compatibility names: forward_noise is q and backward_noise is p.
+    # Fluctuation histories: forward_noise is q and backward_noise is p.
     forward_noise: List[Optional[torch.Tensor]] = field(init=False)
     backward_noise: List[Optional[torch.Tensor]] = field(init=False)
     sample_innovations: List[torch.Tensor] = field(init=False)
     parameter_innovations: List[torch.Tensor] = field(init=False)
 
-    # Raw-trajectory memory coefficients phi, retained for diagnostics/API
-    # compatibility only.  Production updates use the psi coordinates below.
+    # Raw-trajectory memory coefficients phi are diagnostic quantities.
+    # Production updates use the psi coordinates below.
     weight_memory: List[Optional[torch.Tensor]] = field(init=False)
     residual_memory: List[Optional[torch.Tensor]] = field(init=False)
 
@@ -206,8 +206,8 @@ class MacroscopicStateEvolution:
             self._randn(self.K_g, self._sample_innovation_generator)
             for _ in range(length)
         ]
-        # Symmetry of N(0,1): orient the parameter stream so seeded weight
-        # trajectories are preserved when descent is applied in the update.
+        # The parameter stream uses a sign-reversed standard normal family.
+        # Symmetry preserves its Gaussian law and independent random stream.
         self.parameter_innovations = [
             -self._randn(self.K_w, self._parameter_innovation_generator)
             for _ in range(length)
@@ -378,7 +378,7 @@ class MacroscopicStateEvolution:
         with self._isolated_rng(self._seed(fallback_stream)):
             return sampler(size, generator, self.dtype, self.device)
 
-    def _sample_legacy_signal(self) -> torch.Tensor:
+    def _sample_scalar_signal(self) -> torch.Tensor:
         values: List[float] = []
         with self._isolated_rng(self._seed(83)):
             for _ in range(self.K_w):
@@ -424,7 +424,7 @@ class MacroscopicStateEvolution:
             weight = self._vector("w_init", sampled[1], self.K_w)
             return signal, weight
 
-        signal = self._sample_legacy_signal()
+        signal = self._sample_scalar_signal()
         if self.initial_weight is None:
             weight = self._randn(self.K_w, generator)
         else:
@@ -899,7 +899,7 @@ class MacroscopicStateEvolution:
     ) -> torch.Tensor:
         """Return manuscript g, independent of the learning rate.
 
-        ``eta`` is retained as an unused compatibility keyword. Bias and weight
+        ``eta`` does not affect this gradient. Bias and weight
         rates are applied explicitly in their respective parameter updates.
         """
         selection_mask = (
@@ -1028,7 +1028,7 @@ class MacroscopicStateEvolution:
             )
         )
 
-    # Diagnostic accessors and compatibility coordinates.
+    # Diagnostic accessors and trajectory coordinates.
 
     def compute_weight_memory(self, t: int) -> torch.Tensor:
         """Lazily return diagnostic raw-column ``phi_t^[w]`` (no autograd).
@@ -1071,7 +1071,7 @@ class MacroscopicStateEvolution:
         return self.residual_memory[t]
 
     def compute_backward_noise(self, t: int) -> torch.Tensor:
-        """Compatibility accessor for the already-computed ``p^t``."""
+        """Return the already-computed backward fluctuation ``p^t``."""
 
         self._check_time_access(t)
         if self.backward_noise[t] is None:

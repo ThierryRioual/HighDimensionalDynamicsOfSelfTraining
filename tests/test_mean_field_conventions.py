@@ -1,4 +1,4 @@
-"""Compare manuscript units with immutable outputs captured before the refactor."""
+"""Check the effective recursion against fixed numerical reference trajectories."""
 import json
 from pathlib import Path
 
@@ -10,7 +10,7 @@ from src.config import AlgorithmConfig, DataConfig
 
 FIXTURES = Path(__file__).parent / 'fixtures' / 'mean_field_conventions'
 METADATA = json.loads((FIXTURES / 'metadata.json').read_text())
-BASELINE = torch.load(FIXTURES / 'baseline.pt', weights_only=True)
+REFERENCE = torch.load(FIXTURES / 'reference.pt', weights_only=True)
 RTOL, ATOL = 2e-9, 2e-10
 # Coordinates and raw phi become ill-conditioned at small eta; predictions
 # retain the tighter tolerance above. These are absolute coordinate tolerances.
@@ -84,44 +84,26 @@ def response_structure(values):
     return responses
 
 
-def old_over_new(name, config):
-    eta = config['eta']
-    if name in ('residual', 'backward_noise', 'label_residual_alignments',
-                'mean_residual', 'residual_memory_coordinates', 'phi_g', 'gamma_g', 'G_ring', 'P_ring', 'xi_w'):
-        return -eta
-    if name in ('bias_residual', 'mean_bias_residual'):
-        return -(.07 if config['mode'] == 'truncated' else eta)
-    if name in ('backward_innovation_scale', 'Theta_g'):
-        return eta
-    if name in ('C_g', 'C_xi_w'):
-        return eta ** 2
-    if name in ('phi_w', 'gamma_w'):
-        return -1 / eta
-    if name in ('B_g', 'P_g', 'weight_memory_coordinates', 'z_w'):
-        return -1
-    return 1
-
-
-@pytest.mark.parametrize('index', range(len(BASELINE)))
-def test_seeded_pre_refactor_equivalence(index):
+@pytest.mark.parametrize('index', range(len(REFERENCE)))
+def test_seeded_reference_trajectories(index):
     config = METADATA['configs'][index]
     process = make_process(config)
     process.compute_trajectory()
     current = snapshot(process)
-    old_snapshot = dict(BASELINE[index])
-    old_snapshot.update(response_structure(old_snapshot))
+    reference_snapshot = dict(REFERENCE[index])
+    reference_snapshot.update(response_structure(reference_snapshot))
     current.update(response_structure(current))
-    for name, old_values in old_snapshot.items():
-        new_values = current[name]
-        if not isinstance(old_values, list):
-            old_values, new_values = [old_values], [new_values]
-        for old, new in zip(old_values, new_values):
-            if isinstance(old, (bool, int)):
-                assert old == new, name
+    for name, reference_values in reference_snapshot.items():
+        current_values = current[name]
+        if not isinstance(reference_values, list):
+            reference_values, current_values = [reference_values], [current_values]
+        for expected, actual in zip(reference_values, current_values):
+            if isinstance(expected, (bool, int)):
+                assert expected == actual, name
             else:
                 torch.testing.assert_close(
-                    torch.as_tensor(new) * old_over_new(name, config),
-                    torch.as_tensor(old), rtol=RTOL, atol=COORDINATE_ATOL if name in COORDINATES else ATOL, msg=name,
+                    torch.as_tensor(actual),
+                    torch.as_tensor(expected), rtol=RTOL, atol=COORDINATE_ATOL if name in COORDINATES else ATOL, msg=name,
                 )
     if config['mode'] == 'truncated':
         assert any(process.weight_rank_truncated) or any(process.residual_rank_truncated)
@@ -155,7 +137,7 @@ def test_bias_gradient_is_independent_of_rate(eta_b):
 
 
 @pytest.mark.parametrize('eta', [.1, .2, .7])
-def test_maintained_figure_runner_against_original_predictions(eta):
+def test_figure_runner_reference_metrics(eta):
     import math
     import numpy as np
     from experiments.experiments import MonteCarloConfig, run_monte_carlo_experiment
@@ -167,10 +149,10 @@ def test_maintained_figure_runner_against_original_predictions(eta):
         d=128, k=512, runs=2, seed=49,
     )
     current = run_monte_carlo_experiment(config)
-    with np.load(FIXTURES / 'workflow_baseline.npz') as old:
+    with np.load(FIXTURES / 'experiment_metrics.npz') as reference:
         for side in ('self_training', 'effective_process'):
             for name, values in current[side].items():
-                np.testing.assert_allclose(values, old[f'{eta}/{side}/{name}'],
+                np.testing.assert_allclose(values, reference[f'{eta}/{side}/{name}'],
                                            rtol=RTOL, atol=ATOL)
 
 

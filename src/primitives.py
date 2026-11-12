@@ -213,7 +213,7 @@ def compute_abstract_pseudo_residual_from(
 ) -> torch.Tensor:
     """Finite-update adapter: return -eta times the frozen score gradient.
 
-    Retained for finite GD callback compatibility. Mean-field quantities use
+    Finite GD callbacks use this increment. Mean-field quantities use
     compute_abstract_score_gradient_from directly, in manuscript units.
     """
     return -eta * compute_abstract_score_gradient_from(

@@ -186,7 +186,7 @@ def test_approximation_runner_config_replay_and_selection(monkeypatch, train_bia
         torch.testing.assert_close(learner.callback.mu, torch.full((24,), 2.))
         assert learner.y_observed_.shape == (config.n,)
         assert not hasattr(learner, "environment_")
-        # Preserve the former adapter's L-then-U row order and observed labels.
+        # Use labeled-then-unlabeled row order and observed labels.
         n_labeled = learner.callback.X_lab.shape[0]
         torch.testing.assert_close(learner.y_observed_[:n_labeled], learner.callback.Y_lab)
         assert torch.all(learner.y_observed_[n_labeled:] == 0)

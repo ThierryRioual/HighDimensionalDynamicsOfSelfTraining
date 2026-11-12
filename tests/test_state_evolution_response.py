@@ -575,7 +575,7 @@ def test_rng_is_reproducible_and_preserves_the_global_rng_state():
     assert torch.equal(torch.random.get_rng_state(), global_state)
 
 
-def test_legacy_signal_law_isolates_python_and_numpy_global_rngs():
+def test_scalar_signal_law_isolates_python_and_numpy_global_rngs():
     def mixed_global_signal_law():
         return float(np.random.randn() + random.random())
 

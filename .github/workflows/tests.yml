@@ -29,5 +29,3 @@ jobs:
           python -m pip check
       - name: Run tests
         run: python -m pytest -q
-      - name: Verify mean-field convention fixtures
-        run: python scripts/check_mean_field_conventions.py

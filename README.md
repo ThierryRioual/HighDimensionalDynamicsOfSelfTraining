@@ -1,4 +1,4 @@
-# Feedback dynamics of self-training
+# High-dimensional dynamics of self-training
 
 ## Overview
 
@@ -19,7 +19,7 @@ using finite Monte Carlo particle populations.
 
 Tested with **CPython 3.9.6 on macOS arm64**, using CPU tensors and float64.
 The numerical, notebook, and test package versions are pinned in
-[requirements.txt](requirements.txt). The Fable audit additionally reports full figure reproduction on Linux.
+[requirements.txt](requirements.txt).
 The commands below use a macOS/Linux shell and a `python3` interpreter
 compatible with the pinned package versions.
 
@@ -51,14 +51,11 @@ notebook execution. HTTPS-dependent Jupyter features were not validated.
 | [experiments/experiments.py](experiments/experiments.py) | Shared experiment configurations, runners, and plotting functions; importing it runs no experiment. |
 | [experiments/](experiments/) | The two maintained notebook entry points and their editable experiment settings. |
 | [tests/](tests/) | Numerical identities, independent coordinate references, CGS2 checks, RNG checks, callback/initialization tests, and reduced experiment tests. |
-| [docs/](docs/) | Architecture notes and dated mathematical audits. Dated audits describe historical snapshots. |
-| [docs/audits/](docs/audits/) | Historical audits and revision records, with the original audit scope preserved. |
+| [docs/](docs/) | Implementation architecture, effective-process mathematics, and repository organization. |
 | [manuscript/](manuscript/) | LaTeX sources, bibliography, and versioned figure PDFs. |
-| [scripts/](scripts/) | Standalone verification utilities. |
 | `outputs/` | Generated plots, simulation records, and diagnostics; excluded from Git. |
-| [archive/](archive/) | Inventory of historical exports; the original PDF, PNG, and HTML files are retained locally. |
 
-Folder roles, naming conventions, and the mapping from the previous layout are
+Folder roles and naming conventions are
 documented in [repository organization](docs/repository_organization.md).
 
 ## Reproducing the figures
@@ -72,14 +69,8 @@ from `experiments/experiments.py`. Neither notebook imports the other.
 | [statistical_behavior.ipynb](experiments/statistical_behavior.ipynb) | Population-error decomposition into the optimal linear/Bayes error, alignment regret, and intercept regret; balanced and imbalanced panels in one side-by-side figure. | `d=5000`, `n=40000`, `n_iterations=400`, `seed=49`; `label_prior=0.5` then `0.2`. Edit `config_balanced`; `config_unbalanced` derives from it with `dataclasses.replace`. |
 | [approximation_accuracy.ipynb](experiments/approximation_accuracy.ipynb) | One six-panel finite-GD/effective-process comparison: population error, selected fraction, selected-error fraction, bias, alignment, and weight norm. | `d=2000`, `n=16000`, `n_iterations=300`, `k=10000`, `runs=20`, `seed=42`. Edit `config`. |
 
-`effective_process.ipynb` has been retired; its finite/effective-process
-comparison is covered by `approximation_accuracy.ipynb`. No paper figure
-numbers are assigned here.
-
 The notebooks save PNG previews to `outputs/figures/` and vector PDFs to
-`manuscript/figures/`. The manuscript includes these PDFs directly. The published
-figure configurations above are retained; renaming the folders does not rerun
-or alter their numerical results.
+`manuscript/figures/`. The manuscript includes these PDFs directly.
 
 Build the paper from the repository root with:
 
@@ -199,25 +190,15 @@ From the repository root with the environment activated:
 ```sh
 python -m pip check
 PYTHONPATH=. MPLBACKEND=Agg python -m pytest -q
-MPLBACKEND=Agg python scripts/check_mean_field_conventions.py
 ```
 
-The standalone convention check reads the immutable fixtures and writes its
-report to `outputs/verification/mean_field_conventions.json`. The GitHub Actions
-workflow runs the Python checks on pushes and pull requests; full paper-scale
-simulations are run separately.
+The configuration in `.github/workflows/tests.yml` runs the same pytest suite
+automatically on GitHub pushes and pull requests. The numerical reference checks
+are part of this suite; full paper-scale simulations are run separately.
 
 The suite uses pytest and runs reduced simulations rather than the full paper
 experiments. It includes independent numerical reference checks and tests that
 plotters use the recorded Monte Carlo data.
-
-Release preparation verified a clean installation of the pinned requirements,
-`pip check`, the full test suite, and both notebooks in fresh kernels with reduced
-settings (`d=32`, `n_iterations=5`, `k=160`, `runs=2` for the comparison).
-The Fable audit separately reports full reproduction of both paper figures on Linux.
-The corrected Figure 1 was subsequently regenerated using its full 20-run
-configuration; preserved originals and reproduction details are in
-`outputs/f02_comparison/`.
 
 A small standalone simulation-and-plot smoke test is:
 
@@ -248,13 +229,7 @@ PY
 
 ## License
 
-No license has been adopted yet. The proposed choice for code covered by the
-maintainer's rights is the [MIT License](https://opensource.org/license/mit),
-subject to explicit approval. It permits reuse with retention of the copyright
-and permission notice. [BSD-3-Clause](https://opensource.org/license/bsd-3-clause)
-is another conventional option and adds an explicit non-endorsement condition.
-No `LICENSE` file is installed before that choice is approved. Reference PDFs
-and third-party materials must retain their own applicable terms.
+No license has been adopted for this repository.
 
 ## Citation
 

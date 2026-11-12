@@ -74,9 +74,9 @@ def test_first_update_uses_explicit_initial_pseudo_labels():
         * (1.0 / (1.0 - 0.5))
         * LogisticLoss().gradient(preactivation, initial_pseudo_label)
     )
-    legacy = _pseudo_residual(preactivation)
+    score_sign_residual = _pseudo_residual(preactivation)
     torch.testing.assert_close(actual, expected)
-    assert not torch.allclose(actual, legacy)
+    assert not torch.allclose(actual, score_sign_residual)
 
 
 def test_later_update_uses_sign_even_if_initial_labels_are_supplied():

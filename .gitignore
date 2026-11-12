@@ -6,11 +6,9 @@ __pycache__/
 .ipynb_checkpoints/
 .vscode/
 
-# Generated experiment results and local historical exports
+# Local results and private working files
 /outputs/
-/archive/legacy_exports/
-/archive/manuscript_legacy_figures/
-/archive/local_state/
+/archive/
 
 # Generated documents and figures
 *.pdf

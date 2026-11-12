@@ -90,7 +90,7 @@ Both retained notebook runners use `sample` and `fit`. `sample` returns
 `y_observed = environment.Y * environment.Delta`. `fit` requires this observed
 label vector and explicit initialization and returns the fitted estimator. The
 approximation notebook groups labeled rows before unlabeled rows to preserve
-the numerical reduction order of its former split-data path.
+a consistent numerical reduction order.
 
 There is no split-data adapter or implicit random initialization. Users can
 explicitly call `primitives.compute_scores` and
@@ -112,9 +112,10 @@ reconstructing a different residual after the update.
 
 Finite GD records and callback residual diagnostics retain increment units:
 `u = -eta_w * g`, where `g` is the frozen score gradient. The existing
-`FiniteStep.g` field stores `u` for API compatibility. Effective histories
+`FiniteStep.g` field stores `u`. Effective histories
 use manuscript units `g`; the descent rates appear in the parameter updates.
-See [the convention audit](audits/mean_field_convention_refactor.md).
+The effective residual is the score gradient, and parameter updates apply
+the configured descent rates explicitly.
 
 Callback score diagnostics (`population_error`, bias, norm, alignment,
 selected-error fraction, and `unl_usage`) refer to the current state
@@ -132,7 +133,7 @@ No production Gram inverse or autograd response is used.
 
 The class separates initialization/validation, independent random streams,
 trajectory views, numerical helpers, the core recursion, observables, and
-compatibility accessors. Rank and truncation histories are retained in the
+diagnostic accessors. Rank and truncation histories are retained in the
 effective-process records. Basis quality diagnostics are available on demand
 from the orthogonal basis, without storing unused quality histories or running
 an extra diagnostic SVD at each step. The basis returns each update's information
@@ -174,11 +175,11 @@ experiment additionally seeds the effective process independently for each
 repetition. No artificial initial-label draws are made. The two runners retain
 their established observation order and callback timing. All numerical validation, including the independent
 coordinate-reference and ill-conditioned CGS2 checks, is in `tests/`;
-historical outputs and reference PDFs are not runtime dependencies.
+the checks require only the source and the numerical fixtures in `tests/`.
 
 The notebooks explicitly select float64. `config.py` also retains its existing
-Torch default-dtype setting for compatibility; changing that import side effect
-would require a separate precision and random-draw audit. The approximation
+Torch default-dtype setting. Precision and random-stream behavior are covered
+by the numerical tests. The approximation
 runner validates its supported comparison metrics before simulation, while
 the finite callback retains its broader existing metric interface.
 
@@ -189,9 +190,8 @@ selected-fraction loss-normalization options. Custom loss functions and
 penalties, explicit initial conditions, and independent weight/bias learning
 rates remain supported.
 
-The November 3 draft's equation (8) uses this total-pool unlabeled denominator.
-Its Algorithm 3.2 uses score-sign pseudo-labels at iteration zero, which is now
-the default of the finite algorithm, effective process, and both notebooks. The separate bias learning
-rate and optional bias-specific pseudo-label coefficient are extensions beyond
-that draft's shared rate and coefficient; the defaults recover the shared
-values. Dated audit documents preserve the earlier implementation's state.
+The manuscript uses the total unlabeled-pool denominator and score-sign
+pseudo-labels at iteration zero. These are the defaults of the finite
+algorithm, effective process, and both notebooks. Separate intercept learning
+rates and pseudo-label coefficients are supported extensions; their defaults
+match the shared rate and coefficient used in the manuscript.
