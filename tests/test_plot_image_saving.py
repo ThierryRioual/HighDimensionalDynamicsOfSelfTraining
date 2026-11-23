@@ -1,4 +1,4 @@
-"""Optional PNG exports use recorded results and the returned Figure directly."""
+"""Optional figure exports use recorded results and the returned Figure directly."""
 
 from copy import deepcopy
 from inspect import Parameter, signature
@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import pytest
 
-from experiments import experiments
+from experiments import experiments, plotting
 
 
 @pytest.fixture(autouse=True)
@@ -75,7 +75,7 @@ def test_saving_options_are_optional_and_keyword_only(plot_case):
 def test_saving_disabled_has_no_filesystem_effects(plot_case, tmp_path, monkeypatch):
     plot, args, filename, _ = plot_case
     fake_repo = tmp_path / "repository"
-    monkeypatch.setattr(experiments, "__file__", str(fake_repo / "experiments" / "experiments.py"))
+    monkeypatch.setattr(plotting, "__file__", str(fake_repo / "experiments" / "plotting.py"))
 
     def forbidden(*args, **kwargs):
         raise AssertionError("saving disabled must not call Figure.savefig")
@@ -163,10 +163,10 @@ def test_custom_png_is_high_resolution_white_and_keeps_shared_legend(
         assert export_bbox.contains(bounds.x1, bounds.y1)
 
 
-def test_default_png_uses_repository_output_directory(plot_case, tmp_path, monkeypatch):
+def test_default_pdf_uses_repository_output_directory(plot_case, tmp_path, monkeypatch):
     plot, args, filename, _ = plot_case
     fake_repo = tmp_path / "repository"
-    monkeypatch.setattr(experiments, "__file__", str(fake_repo / "experiments" / "experiments.py"))
+    monkeypatch.setattr(plotting, "__file__", str(fake_repo / "experiments" / "plotting.py"))
     calls = []
 
     def record_savefig(fig, filename, **kwargs):
@@ -176,17 +176,48 @@ def test_default_png_uses_repository_output_directory(plot_case, tmp_path, monke
     fig, _ = plot(*args, save_image=True)
     assert len(calls) == 1
     assert calls[0][0] is fig
-    assert calls[0][1] == fake_repo / "outputs" / "figures" / filename
+    assert calls[0][1] == fake_repo / "outputs" / "figures" / Path(filename).with_suffix(".pdf")
     assert calls[0][1].parent.is_dir()
 
 
-def test_enabled_saving_rejects_pdf_paths(plot_case, tmp_path, monkeypatch):
+def test_enabled_saving_rejects_unsupported_paths(plot_case, tmp_path, monkeypatch):
     plot, args, _, _ = plot_case
 
     def forbidden(*args, **kwargs):
         raise AssertionError("invalid paths must not write a figure")
 
     monkeypatch.setattr(Figure, "savefig", forbidden)
-    with pytest.raises(ValueError, match="(?i)png"):
-        plot(*args, save_image=True, image_path=tmp_path / "unused" / "figure.pdf")
+    with pytest.raises(ValueError, match="(?i)pdf"):
+        plot(*args, save_image=True, image_path=tmp_path / "unused" / "figure.txt")
     assert list(tmp_path.iterdir()) == []
+
+
+def test_custom_pdf_is_saved_as_vector(plot_case, tmp_path):
+    plot, args, _, _ = plot_case
+    path = tmp_path / "figure.pdf"
+    plot(*args, save_image=True, image_path=path)
+    pdf = path.read_bytes()
+    assert pdf.startswith(b"%PDF-")
+    assert b"/Subtype /Image" not in pdf
+
+
+def test_export_preserves_the_plotters_manuscript_and_custom_legend_fonts(plot_case, tmp_path):
+    plot, args, _, _ = plot_case
+    fig, axes = plot(*args, manuscript=True, legend_font_size=11)
+    ax = axes[0, 0]
+    size_before = (ax.title.get_fontsize(), ax.xaxis.label.get_fontsize(),
+                   [label.get_fontsize() for label in ax.get_xticklabels()])
+    path = tmp_path / "nested" / "manuscript.pdf"
+    plotting.save_figure(fig, path)
+    assert path.read_bytes().startswith(b"%PDF-")
+    assert (ax.title.get_fontsize(), ax.xaxis.label.get_fontsize(),
+            [label.get_fontsize() for label in ax.get_xticklabels()]) == size_before
+    assert [label.get_fontsize() for label in fig.legends[0].texts] == [11] * len(fig.legends[0].texts)
+
+
+def test_dataset_style_is_scoped():
+    original = plt.rcParams.copy()
+    with plotting.experiment_plot_style():
+        assert plt.rcParams["figure.dpi"] == 110
+        assert not plt.rcParams["axes.spines.top"]
+    assert plt.rcParams == original

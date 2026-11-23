@@ -1,4 +1,4 @@
-"""Configurations, simulation runners, and plots for the two paper experiments.
+"""Configurations and simulation runners for the two paper experiments.
 
 The notebooks choose parameters and call these functions. Importing this module
 runs no experiments and creates no figures. Runners return results dictionaries;
@@ -7,13 +7,16 @@ plotters consume those dictionaries without rerunning simulations.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
-from pathlib import Path
+from numbers import Integral
+import random
 
 import numpy as np
 import torch
-from matplotlib import pyplot as plt
+
+from experiments.plotting import plot_monte_carlo_experiment, plot_statistical_behavior
 
 from src.algorithms import SelfTrainedGradientDescent
 from src.asymptotics import MacroscopicStateEvolution
@@ -68,6 +71,58 @@ class MonteCarloConfig(ExperimentConfig):
 
 # Simulation: retain each experiment's initialization and random streams.
 
+@contextmanager
+def _float64_defaults() -> Iterator[None]:
+    """Give scalar signal laws a consistent Torch dtype during sampling."""
+    previous_dtype = torch.get_default_dtype()
+    torch.set_default_dtype(torch.float64)
+    try:
+        yield
+    finally:
+        torch.set_default_dtype(previous_dtype)
+
+
+def _validate_seed(seed: int) -> int:
+    """Check the base seed and leave room for the runner's stream offsets."""
+    if isinstance(seed, bool) or not isinstance(seed, Integral) or not 0 <= seed <= 2**63 - 1:
+        raise ValueError("seeds must be nonnegative integers in the signed 64-bit range")
+    return int(seed)
+
+
+def _sample_finite_training(
+    config: ExperimentConfig, seed: int,
+) -> tuple[IsotropicGaussian, QuenchedEnvironment, torch.Tensor, torch.Tensor]:
+    """Sample the training environment, design, and initial weights on CPU.
+
+    Preserve the caller's global CPU Torch, Python, and NumPy random states.
+    The signal law and initial weights use seed + 11. Labels and design
+    noise use the DGP's separate generator at seed + 23.
+    """
+    if isinstance(config.d, bool) or not isinstance(config.d, Integral) or config.d < 1:
+        raise ValueError("d must be a positive integer")
+    if not np.isfinite(config.data.data_to_dimension_ratio) or config.n < 1:
+        raise ValueError("the aspect ratio and dimension must give a positive sample size")
+    if not np.isfinite(config.data.scale) or config.data.scale < 0:
+        raise ValueError("the noise scale must be finite and nonnegative")
+    python_state, numpy_state = random.getstate(), np.random.get_state()
+    with torch.random.fork_rng(devices=[]), _float64_defaults():
+        try:
+            random.seed(seed + 11)
+            np.random.seed((seed + 11) % 2**32)
+            generator = torch.Generator(device="cpu").manual_seed(seed + 11)
+            torch.set_rng_state(generator.get_state())
+            dgp = IsotropicGaussian(
+                cfg=config.data, n_train=config.n, dimensions=config.d, seed=seed + 23,
+            )
+            w_init = torch.randn(config.d, dtype=torch.float64, device="cpu")
+        finally:
+            random.setstate(python_state)
+            np.random.set_state(numpy_state)
+    environment = dgp.sample_environment()
+    X, _ = dgp.sample_design(environment)
+    return dgp, environment, X, w_init
+
+
 def run_statistical_experiment(config: ExperimentConfig) -> dict:
     """Run finite GD and return its population-error decomposition.
 
@@ -77,15 +132,7 @@ def run_statistical_experiment(config: ExperimentConfig) -> dict:
     data_config, algorithm_config = config.data, config.algorithm
     sigma, p = data_config.scale, data_config.label_prior
     T = algorithm_config.n_iterations
-    # Honor the configured signal law without changing the caller's RNG state.
-    with torch.random.fork_rng():
-        torch.manual_seed(config.seed + 11)
-        dgp = IsotropicGaussian(
-            cfg=data_config, n_train=config.n, dimensions=config.d,
-            seed=config.seed + 23
-        )
-        w_init = torch.randn(config.d)
-    environment, X, _, _ = dgp.sample()
+    _, environment, X, w_init = _sample_finite_training(config, _validate_seed(config.seed))
     mu = environment.mu
     initialization = SelfTrainingInitialization(algorithm_config.initial_bias, w_init)
     callback = TestEvaluatorCallback(
@@ -136,19 +183,34 @@ def run_monte_carlo_experiment(
     Results contain the configuration, iterations, seeds, and two method
     dictionaries (self_training and effective_process) keyed by metric name.
     Metric arrays have shape (len(seeds), config.algorithm.n_iterations + 1).
-    Both unl_usage and unl_selected_error use current scores at every
-    recorded state, including initialization and the terminal state.
+    Both selection metrics use current scores and the realized unlabeled count
+    in each method, including initialization and the terminal state. A method
+    with no unlabeled observations records zero for both fractions.
     """
-    seeds = list(seeds) if seeds is not None else [config.seed + i for i in range(config.runs)]
-    if not seeds:
-        raise ValueError("seeds must contain at least one repetition")
-    supported_metrics = _COMPARISON_METRICS
-    unsupported = set(config.metrics).difference(supported_metrics)
+    if seeds is None:
+        if isinstance(config.runs, bool) or not isinstance(config.runs, Integral) or config.runs < 1:
+            raise ValueError("runs must be a positive integer")
+        base_seed = _validate_seed(config.seed)
+        seeds = range(base_seed, base_seed + int(config.runs))
+    seeds = [_validate_seed(seed) for seed in seeds]
+    if not seeds or len(seeds) != len(set(seeds)):
+        raise ValueError("seeds must contain at least one repetition and be distinct")
+    if not config.metrics or len(config.metrics) != len(set(config.metrics)):
+        raise ValueError("comparison metrics must be nonempty and distinct")
+    unsupported = set(config.metrics).difference(_COMPARISON_METRICS)
     if unsupported:
         raise ValueError(f"Unsupported comparison metrics: {sorted(unsupported)}. "
-                         f"Choose from {supported_metrics}.")
+                         f"Choose from {_COMPARISON_METRICS}.")
     data_config, algorithm_config = config.data, config.algorithm
     T = algorithm_config.n_iterations
+    if isinstance(T, bool) or not isinstance(T, int) or T < 1:
+        raise ValueError("Monte Carlo comparison requires a positive integer n_iterations")
+    if isinstance(config.k, bool) or not isinstance(config.k, int) or config.k < 1:
+        raise ValueError("k must be a positive integer")
+    if not np.isfinite(data_config.scale) or data_config.scale <= 0:
+        raise ValueError("Monte Carlo comparison requires a finite positive noise scale")
+    track_usage = "unl_usage" in config.metrics
+    track_selected_error = "unl_selected_error" in config.metrics
     results = {
         "config": config,
         "iterations": np.arange(T + 1), "seeds": np.asarray(seeds),
@@ -156,19 +218,11 @@ def run_monte_carlo_experiment(
     }
 
     for seed in seeds:
-
         print(f"Running seed {seed}...")
-
-        seed = int(seed)
-        with torch.random.fork_rng():
-            torch.manual_seed(seed + 11)
-            dgp = IsotropicGaussian(
-                cfg=data_config, dimensions=config.d, n_train=config.n, seed=seed + 23
-            )
-            w_init = torch.randn(config.d)
-        environment, X, _, _ = dgp.sample()
+        dgp, environment, X, w_init = _sample_finite_training(config, seed)
         # Retain the original split adapter's row order and reduction arithmetic.
-        order = torch.cat((environment.I_L, environment.I_U))
+        labeled_ids = environment.I_L
+        order = torch.cat((labeled_ids, environment.I_U))
         X = X[order]
         environment = QuenchedEnvironment(
             mu=environment.mu, Y=environment.Y[order], Delta=environment.Delta[order]
@@ -177,10 +231,10 @@ def run_monte_carlo_experiment(
             algorithm_config.initial_bias, w_init
         )
         callback = TestEvaluatorCallback(
-            X_lab=X[environment.I_L], Y_lab=environment.Y[environment.I_L],
-            X_unl=X[environment.I_U], Y_unl=environment.Y[environment.I_U],
+            X_unl=X[len(labeled_ids):] if track_usage or track_selected_error else None,
+            Y_unl=environment.Y[len(labeled_ids):] if track_selected_error else None,
             mu=environment.mu, sigma=data_config.scale,
-            p=data_config.label_prior, metrics=config.metrics
+            p=data_config.label_prior, metrics=config.metrics,
         )
         algorithm = SelfTrainedGradientDescent(
             cfg=algorithm_config, callback=callback
@@ -188,36 +242,36 @@ def run_monte_carlo_experiment(
         y_observed = environment.Y * environment.Delta
         algorithm.fit(X, y_observed, initialization)
 
-        effective_process = MacroscopicStateEvolution(
-            data_cfg=data_config, algo_cfg=algorithm_config, K=config.k,
-            mc_seed=seed + 47,
-            sample_base_sampler=state_evolution_sample_base_sampler(dgp.law)
-        )
-        effective_process.compute_trajectory()
-        se = effective_process
-        unlabeled = se.indicator == 0
-        selected_errors = []
-        for scores in se.preactivation:
-            selected = se.selection_mask(scores) > 0
-            predictions = sign_with_positive_tie(scores)
-            incorrect = selected & (predictions != se.label)
-            selected_errors.append(
-                float(incorrect[unlabeled].double().mean())
-                if unlabeled.any() else 0.0
+        with _float64_defaults():
+            se = MacroscopicStateEvolution(
+                data_cfg=data_config, algo_cfg=algorithm_config, K=config.k,
+                mc_seed=seed + 47,
+                sample_base_sampler=state_evolution_sample_base_sampler(dgp.law),
             )
+        se.compute_trajectory()
         effective_history = {
             "population_error": se.error,
             "bias_term": se.bias,
             "weight_signal_alignment": se.weight_signal_alignments,
             "weight_vector_norm": se.weight_norm,
-            "unl_usage": se.selection_rate[:T + 1],
-            "unl_selected_error": selected_errors,
-            "oracle_bias": se.oracle_bias,
-            "oracle_error": se.oracle_error,
         }
-        for metric, trajectory in callback.history_.items():
+        if track_usage or track_selected_error:
+            unlabeled = se.indicator == 0
+            truth = se.label[unlabeled] if track_selected_error else None
+            usage, selected_errors = [], []
+            for scores in se.preactivation:
+                scores = scores[unlabeled]
+                selected = se.selection_mask(scores) > 0
+                if track_usage:
+                    usage.append(selected.double().mean().item() if scores.numel() else 0.0)
+                if track_selected_error:
+                    wrong = selected & (sign_with_positive_tie(scores) != truth)
+                    selected_errors.append(wrong.double().mean().item() if scores.numel() else 0.0)
+            effective_history.update(unl_usage=usage, unl_selected_error=selected_errors)
+
+        for metric in config.metrics:
             results["self_training"].setdefault(metric, []).append(
-                np.asarray(trajectory, dtype=float)
+                np.asarray(callback.history_[metric], dtype=float)
             )
             results["effective_process"].setdefault(metric, []).append(
                 np.asarray(effective_history[metric], dtype=float)
@@ -229,149 +283,3 @@ def run_monte_carlo_experiment(
             for metric, trajectories in results[method].items()
         }
     return results
-
-
-# Plotting: evaluation and presentation consume recorded results only.
-
-def plot_statistical_behavior(
-    results: list[dict],
-    names: list[str],
-    *,
-    save_image: bool = False,
-    image_path: str | Path | None = None,
-):
-    """Plot recorded decompositions; optionally save a 600 dpi PNG.
-
-    Return (figure, 2D axes). The default image path is
-    outputs/figures/statistical_behavior_comparison.png relative to the repository root.
-    """
-    if not results:
-        raise ValueError("results must be a nonempty list.")
-    if not names:
-        raise ValueError("names must be a nonempty list.")
-    if len(results) != len(names):
-        raise ValueError("results and names must have the same length.")
-
-    ncols = len(results)
-    fig, axes = plt.subplots(
-        1, ncols, figsize=(4.8 * ncols, 3.4 + 1.8 / ncols),
-        sharex=True, sharey=True, squeeze=False, layout="constrained",
-    )
-    for ax, result, name in zip(axes.flat, results, names):
-        time = result["iterations"]
-        # NaN regrets create gaps; the recorded error curve remains visible.
-        ax.stackplot(
-            time, result["optimal_linear_error"], result["alignment_regret"],
-            result["bias_regret"],
-            labels=(
-                r"Bayes error $\mathcal{E}_{\mathrm{B}}$",
-                r"Alignment regret $\mathcal{R}_{\mathrm{align}}^t$",
-                r"Intercept regret $\mathcal{R}_{\mathrm{int}}^t$",
-            ),
-            colors=("#5fae5fff", "tab:blue", "tab:orange"), alpha=0.5,
-        )
-        ax.plot(time, result["population_error"], color="black", linestyle="-",
-                linewidth=1.0, label=r"Total error $\mathcal{E}^t$", zorder=3)
-        ax.set(title=name, xlabel=r"Iteration $t$", ylim=(0, 0.5))
-        ax.grid(alpha=0.25, linewidth=0.6)
-
-    xmin = min(np.min(result["iterations"]) for result in results)
-    xmax = max(np.max(result["iterations"]) for result in results)
-    if xmin < xmax:
-        axes[0, 0].set_xlim(xmin, xmax)
-    fig.legend(*axes[0, 0].get_legend_handles_labels(), loc="outside upper center",
-               ncol=min(4, 2 * ncols), frameon=False, fontsize=9)
-    if save_image:
-        destination = (
-            Path(__file__).resolve().parents[1] / "outputs" / "figures" / "statistical_behavior_comparison.png"
-            if image_path is None else Path(image_path)
-        )
-        if destination.suffix.lower() != ".png":
-            raise ValueError("image_path must have a .png extension.")
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(destination, format="png", dpi=600, facecolor="white",
-                    transparent=False, bbox_inches="tight", pad_inches=0.2)
-    return fig, axes
-
-
-def plot_monte_carlo_experiment(
-    results: dict, metrics: str | Iterable[str] | None = None,
-    *,
-    save_image: bool = False,
-    image_path: str | Path | None = None,
-):
-    """Plot per-iteration Monte Carlo medians, means, and interquartile bands.
-
-    Select existing result keys or ``normalized_alignment`` (m / tau).
-    ``weight_vector_norm`` already stores the normalized norm tau=||w||/sqrt(d).
-    By default, plot all metrics shared by the methods, plus m / tau if available.
-    Selection metrics use the scores at each recorded iteration.
-    Return (figure, axes); no simulation is run and results are not modified.
-    With save_image=True, save a 600 dpi PNG to image_path or the repository's
-    outputs/figures/approximation_accuracy.png by default.
-    """
-    titles = {
-        "population_error": r"Population error $\mathcal{E}^t$",
-        "bias_term": r"Intercept $b^t$",
-        "weight_vector_norm": r"Weight vector norm $\tau^t$",
-        "weight_signal_alignment": r"Signal alignment $m^t$",
-        "normalized_alignment": r"Normalized alignment $m^t/\tau^t$",
-        "unl_usage": r"Selected fraction $\omega^t$",
-        "unl_selected_error": r"Selected-error fraction $e^t$",
-        "oracle_bias": r"Oracle intercept $b_{\mathrm{oracle}}^t$",
-        "oracle_error": r"Oracle population error",
-    }
-    methods = (("self_training", "Algorithm", "tab:blue"),
-               ("effective_process", "Effective process", "tab:orange"))
-    available = [key for key in results["self_training"]
-                 if key in results["effective_process"]]
-    if all("weight_vector_norm" in results[method] and
-           "weight_signal_alignment" in results[method] for method, _, _ in methods):
-        available.append("normalized_alignment")
-    if metrics is None:
-        metrics = available
-    elif isinstance(metrics, str):
-        metrics = [metrics]
-    else:
-        metrics = list(metrics)
-    if not metrics or any(metric not in available for metric in metrics):
-        raise ValueError(f"Select at least one available metric: {available}")
-
-    ncols = min(3, len(metrics))
-    nrows = (len(metrics) + ncols - 1) // ncols
-    fig, axes = plt.subplots(nrows, ncols, figsize=(4.8 * ncols, 3.4 * nrows + 1.8 / ncols),
-                             squeeze=False, layout="constrained")
-    for ax, metric in zip(axes.flat, metrics):
-        for method, label, color in methods:
-            values = results[method]
-            if metric == "normalized_alignment":
-                norm = np.asarray(values["weight_vector_norm"], dtype=float)
-                values = np.divide(values["weight_signal_alignment"], norm,
-                                   out=np.full_like(norm, np.nan), where=norm > 0)
-            else:
-                values = np.asarray(values[metric], dtype=float)
-            q1, median, q3 = np.percentile(values, [25, 50, 75], axis=0)
-            ax.fill_between(results["iterations"], q1, q3, color=color,
-                            alpha=0.18, linewidth=0, label=f"{label}: IQR")
-            ax.plot(results["iterations"], median, color=color, linewidth=1.6,
-                    label=f"{label}: median")
-            ax.plot(results["iterations"], np.mean(values, axis=0), color=color,
-                    linestyle=":", linewidth=1.6, label=f"{label}: mean")
-        ax.set(title=titles.get(metric, metric.replace("_", " ").capitalize()),
-               xlabel=r"Iteration $t$")
-        ax.grid(alpha=0.25, linewidth=0.6)
-    for ax in list(axes.flat)[len(metrics):]:
-        ax.set_visible(False)
-    fig.legend(*axes.flat[0].get_legend_handles_labels(), loc="outside upper center",
-               ncol=ncols, frameon=False, fontsize=9)
-    if save_image:
-        destination = (
-            Path(__file__).resolve().parents[1] / "outputs" / "figures" / "approximation_accuracy.png"
-            if image_path is None else Path(image_path)
-        )
-        if destination.suffix.lower() != ".png":
-            raise ValueError("image_path must have a .png extension.")
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(destination, format="png", dpi=600, facecolor="white",
-                    transparent=False, bbox_inches="tight", pad_inches=0.2)
-    return fig, axes

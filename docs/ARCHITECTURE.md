@@ -3,9 +3,9 @@
 ## Dependency flow
 
 `experiments/experiments.py` provides the experiment configurations, the statistical
-and Monte Carlo runners, and their plotting functions. The two notebooks import
-these definitions and retain the paper parameter choices and execution cells.
-The module does not run experiments or create figures when imported.
+and Monte Carlo runners. `experiments/plotting.py` plots recorded results and
+exports figures. The two notebooks retain the paper parameter choices and
+execution cells. Importing either module runs no experiments.
 
 `DataConfig` describes the population. `dgp` draws a feature matrix and an
 `environment` containing the realized sample vectors. `initialization` validates
@@ -120,8 +120,9 @@ the configured descent rates explicitly.
 Callback score diagnostics (`population_error`, bias, norm, alignment,
 selected-error fraction, and `unl_usage`) refer to the current state
 `t=0,...,T`. Residual diagnostics refer to the preceding update, with zero
-entries at `t=0`. The comparison runner uses `se.selection_rate[:T+1]` for
-current-state selection fractions, including initialization.
+entries at `t=0`. The comparison runner computes both effective selection fractions directly
+from current scores and divides by the realized unlabeled count, including at
+initialization and at the terminal state.
 
 ## Effective dynamics
 
@@ -155,13 +156,15 @@ $$
 
 and the population error obtained by replacing only the evaluation intercept
 $b^t$ with $b_{\rm oracle}^t$.  The actual $b^t$ remains in every finite and
-effective-process update.  The oracle quantities are recorded as `NaN` when
-$m^t$ is numerically zero.
+effective-process update.  The internal diagnostics are recorded as `NaN` when
+$m^t$ is numerically zero. The formula gives a stationary intercept, which
+minimizes risk only for positive alignment when the score variance is
+positive. The paper comparison runner does not export these histories.
 
 ## Reproducibility and extensions
 
-The retained entry points are `experiments/statistical_behavior.ipynb` and
-`experiments/approximation_accuracy.ipynb`. Their logic is implemented in
+The retained entry points are `experiments/notebooks/statistical_behavior.ipynb` and
+`experiments/notebooks/approximation_accuracy.ipynb`. Their logic is implemented in
 `experiments/experiments.py`. Its `ExperimentConfig` packages `DataConfig`,
 `AlgorithmConfig`, dimension, and seed; `MonteCarloConfig` extends these common
 fields with particle count, repetition count, and tracked metrics. Sample size

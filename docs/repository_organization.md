@@ -6,7 +6,8 @@ imports use the `src` package, for example `from src.config import DataConfig`.
 | Directory | Role |
 | --- | --- |
 | `src/` | Numerical implementation and model configuration. |
-| `experiments/` | Figure notebooks and shared experiment runners. |
+| `experiments/` | Importable experiment runners, dataset loaders, and plotting functions. |
+| `experiments/notebooks/` | Notebook entry points for experiments and figures. |
 | `tests/` | Numerical tests, reference fixtures, and reduced experiment checks. |
 | `manuscript/` | LaTeX sources, bibliography, and required figure PDFs. |
 | `docs/` | Architecture, effective-process mathematics, and repository organization. |
@@ -18,7 +19,7 @@ Use short lowercase directory names and `snake_case` for Python modules and
 notebooks. LaTeX files and figures use descriptive names. The manuscript's
 required figures are versioned under `manuscript/figures/`.
 
-Generated simulation outputs and PNG previews go under the ignored `outputs/`
+Generated simulation outputs and experiment figure PDFs go under the ignored `outputs/`
 directory. LaTeX compilation products go under the ignored `manuscript/build/`
 directory. Numerical reference fixtures are tracked under `tests/fixtures/`.
 

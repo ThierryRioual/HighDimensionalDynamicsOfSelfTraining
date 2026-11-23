@@ -37,7 +37,7 @@ python -m jupyterlab
 In JupyterLab, select the **Self-training (.venv)** kernel for each notebook.
 This matters when an existing kernel named `python3` points to another Python
 installation. Launch JupyterLab from the repository root. The notebooks also
-resolve imports when opened with `experiments/` as the working directory.
+resolve imports when opened from a directory within the project checkout.
 
 The tested Apple Python build uses LibreSSL 2.8.3. JupyterLab's HTTP dependency
 may emit `NotOpenSSLWarning`; this did not prevent the numerical tests or local
@@ -48,8 +48,10 @@ notebook execution. HTTPS-dependent Jupyter features were not validated.
 | Path | Purpose |
 | --- | --- |
 | [src/](src/) | Finite GD, effective-process recursion, configuration, data generation, initialization, objectives, callbacks, and numerical linear algebra. |
-| [experiments/experiments.py](experiments/experiments.py) | Shared experiment configurations, runners, and plotting functions; importing it runs no experiment. |
-| [experiments/](experiments/) | The two maintained notebook entry points and their editable experiment settings. |
+| [experiments/experiments.py](experiments/experiments.py) | Shared configuration and simulation runners for the paper experiments. |
+| [experiments/plotting.py](experiments/plotting.py) | Plotting, scoped styles, and figure export for recorded results. |
+| [experiments/notebooks/](experiments/notebooks/) | Paper and dataset experiment notebooks with editable settings. |
+| [experiments/](experiments/) | Importable experiment modules, including the dataset loaders and DINOv2 embedding pipeline. |
 | [tests/](tests/) | Numerical identities, independent coordinate references, CGS2 checks, RNG checks, callback/initialization tests, and reduced experiment tests. |
 | [docs/](docs/) | Implementation architecture, effective-process mathematics, and repository organization. |
 | [manuscript/](manuscript/) | LaTeX sources, bibliography, and versioned figure PDFs. |
@@ -62,15 +64,22 @@ documented in [repository organization](docs/repository_organization.md).
 
 Open the notebooks below, select the project kernel, and run their cells in order.
 Parameters are defined in their configuration cells; both import reusable code
-from `experiments/experiments.py`. Neither notebook imports the other.
+from `experiments/experiments.py` and `experiments/plotting.py`.
 
 | Notebook | Experiment and output | Current full configuration |
 | --- | --- | --- |
-| [statistical_behavior.ipynb](experiments/statistical_behavior.ipynb) | Population-error decomposition into the optimal linear/Bayes error, alignment regret, and intercept regret; balanced and imbalanced panels in one side-by-side figure. | `d=5000`, `n=40000`, `n_iterations=400`, `seed=49`; `label_prior=0.5` then `0.2`. Edit `config_balanced`; `config_unbalanced` derives from it with `dataclasses.replace`. |
-| [approximation_accuracy.ipynb](experiments/approximation_accuracy.ipynb) | One six-panel finite-GD/effective-process comparison: population error, selected fraction, selected-error fraction, bias, alignment, and weight norm. | `d=2000`, `n=16000`, `n_iterations=300`, `k=10000`, `runs=20`, `seed=42`. Edit `config`. |
+| [statistical_behavior.ipynb](experiments/notebooks/statistical_behavior.ipynb) | Population-error decomposition into the optimal linear/Bayes error, alignment regret, and intercept regret; balanced and imbalanced panels in one side-by-side figure. | `d=5000`, `n=40000`, `n_iterations=400`, `seed=49`; `label_prior=0.5` then `0.2`. Edit `config_balanced`; `config_unbalanced` derives from it with `dataclasses.replace`. |
+| [approximation_accuracy.ipynb](experiments/notebooks/approximation_accuracy.ipynb) | One six-panel finite-GD/effective-process comparison: population error, selected fraction, selected-error fraction, bias, alignment, and weight norm. | `d=2000`, `n=16000`, `n_iterations=300`, `k=10000`, `runs=20`, `seed=42`. Edit `config`. |
 
-The notebooks save PNG previews to `outputs/figures/` and vector PDFs to
-`manuscript/figures/`. The manuscript includes these PDFs directly.
+The paper notebooks save vector PDFs to `manuscript/figures/`, which the
+manuscript includes directly. The dataset notebooks save standalone PDFs to
+`outputs/figures/`.
+
+The [dataset notebooks](experiments/notebooks/) use the same pattern. Their
+loading, fitting, and plotting code is in `experiments/mnist.py`,
+`experiments/fashion_mnist.py`, `experiments/isolet.py`, and
+`experiments/cifar_dinov2.py`. The MNIST loader also requires scikit-learn
+(tested with version 1.6.1).
 
 Build the paper from the repository root with:
 
@@ -110,10 +119,13 @@ labeled and unlabeled counts are recorded by the sampled environment.
 | `train_bias`; `initial_bias` | Train or freeze the intercept; prescribed initial value. A fixed nonzero bias still enters every score and selection decision. |
 | `loss_function`; `penalty_function` | Objects implementing `evaluate` and `gradient`; defaults are logistic loss and ridge penalty. |
 | `n_iterations`; `k`; `runs` | Number of GD updates; particle count in each effective-process population; Monte Carlo repetitions. |
-| `seed`; optional runner `seeds` | Base seed; an explicit `seeds` iterable in `run_monte_carlo_experiment` overrides the configured repetition seeds and count. |
+| `seed`; optional runner `seeds` | Nonnegative integer base seed; an explicit iterable of distinct integer `seeds` in `run_monte_carlo_experiment` overrides the configured repetition seeds and count. |
 | `metrics` | Comparison metrics to record; supported names are the six principal keys listed below. |
 
-The notebook runners draw Gaussian initial weights using their seeded streams.
+The runners sample the finite signal and Gaussian initial weights on CPU in
+float64. They seed and restore the global Torch CPU, Python, and NumPy random
+streams used by scalar signal laws. A callable that uses its own generator
+must manage that generator itself.
 For explicit weights and bias, use the finite API:
 
 ```python
@@ -138,7 +150,7 @@ for the shared-rate, score-sign algorithm used by the notebooks.
 
 Score diagnostics are recorded at $t=0,\ldots,T$, including initialization.
 `population_error` is the analytic Gaussian-mixture risk, not an empirical
-held-out error estimate. The notebook runners generate no held-out test sample.
+held-out error estimate. The two Gaussian paper runners sample training data only.
 
 | Result key | Implemented quantity |
 | --- | --- |
@@ -155,12 +167,17 @@ The Monte Carlo result has keys `config`, `iterations`, `seeds`,
 Plots summarize repetitions along axis zero: blue for finite GD, orange for
 the effective process, solid median, dotted mean, and shaded interquartile range.
 
-`plot_monte_carlo_experiment(results, metrics=None)` plots all shared available
-metrics by default. It additionally accepts the derived plotting quantity
-`normalized_alignment=m/tau`; that name is not a configured recording metric.
-Requesting `population_error` also records `oracle_bias` and `oracle_error`
-from the prescribed intercept $\sigma^2\tau^2\log[p/(1-p)]/(2m)$, with `NaN`
-near zero alignment. These are auxiliary evaluation diagnostics.
+The two selection fractions divide by the realized unlabeled count in each
+method and use zero when that count is zero. In particular the effective
+comparison records the empirical fraction, while the core state evolution
+also keeps its population-normalized selection diagnostic.
+
+`plot_monte_carlo_experiment(results, metrics=None)` plots the shared recorded
+metrics and the derived `normalized_alignment=m/tau` when available. At each
+iteration it summarizes finite repetitions only and leaves a gap when all
+values are undefined. The comparison runner returns the requested metrics
+only. The core callback and state evolution still compute their auxiliary
+stationary-intercept diagnostics separately from the comparison.
 
 Statistical results contain one-dimensional arrays of length `T+1`:
 `population_error`, `optimal_linear_error`, `alignment_regret`, and `bias_regret`.
@@ -176,12 +193,16 @@ of recorded experiments and panel titles and returns `(figure, axes)` with
 axes are shared and the four-entry legend appears once above the figure.
 
 Both plotters accept keyword-only `save_image=False` and `image_path=None`.
-With `save_image=True`, the Figure saves a 600 dpi PNG on white with tight bounds
-and padding. Defaults are `outputs/figures/statistical_behavior_comparison.png` and
-`outputs/figures/approximation_accuracy.png`, resolved from the repository root. A custom
-`image_path` must end in `.png`; relative custom paths use the current working
-directory. Directories are created only when saving is enabled. The notebook
-calls demonstrate saving with explicit paths based on `project_root`.
+With `save_image=True`, the plotters write a vector PDF by default to
+`outputs/figures/statistical_behavior_comparison.pdf` or
+`outputs/figures/approximation_accuracy.pdf` relative to the repository root.
+For a custom `image_path`, use `.pdf` for vector output or `.png` for a
+600 dpi raster preview. Relative custom paths use the current working
+directory. Output directories are created only when saving is enabled.
+For a matching notebook figure and paper PDF, pass `manuscript=True` when
+plotting and save the returned figure with `save_figure(fig, path)`. The
+optional `legend_font_size` sets the legend size in source-figure points.
+Export preserves the figure's typography.
 
 ## Running tests
 
@@ -209,8 +230,8 @@ from src.config import DataConfig, AlgorithmConfig
 from experiments.experiments import (
     ExperimentConfig, MonteCarloConfig,
     run_statistical_experiment, run_monte_carlo_experiment,
-    plot_statistical_behavior, plot_monte_carlo_experiment,
 )
+from experiments.plotting import plot_statistical_behavior, plot_monte_carlo_experiment
 
 data = DataConfig(1.0, 0.2, 0.4, 3.0, lambda: 1.0)
 algorithm = AlgorithmConfig(3, 0.1, 0.1, 0.4, positive_margin=0.5, negative_margin=-0.5)

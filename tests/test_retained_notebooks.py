@@ -4,6 +4,7 @@ import ast
 from dataclasses import replace
 import importlib
 import json
+import random
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -26,7 +27,7 @@ def test_notebooks_import_shared_experiment_functions():
         ("approximation_accuracy", "run_monte_carlo_experiment",
          "plot_monte_carlo_experiment", "MonteCarloConfig"),
     ]:
-        notebook = json.loads((root / "experiments" / f"{name}.ipynb").read_text())
+        notebook = json.loads((root / "experiments" / "notebooks" / f"{name}.ipynb").read_text())
         imported = set()
         for cell in notebook["cells"]:
             if cell["cell_type"] != "code":
@@ -34,7 +35,7 @@ def test_notebooks_import_shared_experiment_functions():
             source = "\n".join(line for line in cell["source"]
                                if not line.lstrip().startswith("%"))
             for node in ast.parse(source).body:
-                if isinstance(node, ast.ImportFrom) and node.module == "experiments.experiments":
+                if isinstance(node, ast.ImportFrom) and node.module in {"experiments.experiments", "experiments.plotting"}:
                     imported.update(alias.name for alias in node.names)
         for attribute in (runner, plotter, config):
             assert attribute in imported and callable(getattr(experiments, attribute))
@@ -44,7 +45,7 @@ def test_shared_module_import_does_not_simulate_or_create_figures(monkeypatch):
     def forbidden(*args, **kwargs):
         raise AssertionError("importing experiment definitions must not run an experiment")
 
-    monkeypatch.setattr(experiments.IsotropicGaussian, "sample", forbidden)
+    monkeypatch.setattr(experiments.IsotropicGaussian, "sample_environment", forbidden)
     monkeypatch.setattr(experiments.SelfTrainedGradientDescent, "fit", forbidden)
     monkeypatch.setattr(experiments.MacroscopicStateEvolution, "compute_trajectory", forbidden)
     monkeypatch.setattr(plt, "subplots", forbidden)
@@ -175,7 +176,7 @@ def test_approximation_runner_config_replay_and_selection(monkeypatch, train_bia
     np.testing.assert_array_equal(result["seeds"], [42, 43])
     np.testing.assert_array_equal(result["iterations"], np.arange(4))
     for method in ("self_training", "effective_process"):
-        assert set(result[method]) == set(config.metrics) | {"oracle_bias", "oracle_error"}
+        assert set(result[method]) == set(config.metrics)
         for values in result[method].values():
             assert values.shape == (2, 4) and np.isfinite(values).all()
         assert not np.array_equal(result[method]["population_error"][0],
@@ -187,8 +188,9 @@ def test_approximation_runner_config_replay_and_selection(monkeypatch, train_bia
         assert learner.y_observed_.shape == (config.n,)
         assert not hasattr(learner, "environment_")
         # Use labeled-then-unlabeled row order and observed labels.
-        n_labeled = learner.callback.X_lab.shape[0]
-        torch.testing.assert_close(learner.y_observed_[:n_labeled], learner.callback.Y_lab)
+        n_labeled = int((learner.y_observed_ != 0).sum())
+        assert torch.all(learner.y_observed_[:n_labeled] != 0)
+        assert learner.callback.X_lab is None and learner.callback.Y_lab is None
         assert torch.all(learner.y_observed_[n_labeled:] == 0)
         for step in learner.update_records_:
             alignment = torch.dot(learner.callback.mu, step.weight) / config.d
@@ -202,8 +204,9 @@ def test_approximation_runner_config_replay_and_selection(monkeypatch, train_bia
             incorrect = selected & (torch.where(scores >= 0, 1, -1) != process.label)
             expected = incorrect[process.indicator == 0].double().mean().item()
             assert result["effective_process"]["unl_selected_error"][i, t] == pytest.approx(expected)
-        np.testing.assert_array_equal(result["effective_process"]["unl_usage"][i],
-                                      [float(v) for v in process.selection_rate[:4]])
+            usage = selected[process.indicator == 0].double().mean().item()
+            assert result["effective_process"]["unl_usage"][i, t] == pytest.approx(usage)
+            assert 0 <= expected <= usage <= 1
         np.testing.assert_array_equal(result["self_training"]["unl_usage"][i],
                                       [float(step.omega) for step in learner.update_records_]
                                       + [learner.selection_mask(learner.decision_function(learner.callback.X_unl)).double().mean().item()])
@@ -224,6 +227,13 @@ def test_approximation_comparison_metric_contract():
         d=24, k=64, runs=1, metrics=("test_error",))
     with pytest.raises(ValueError, match="Unsupported comparison metrics"):
         experiments.run_monte_carlo_experiment(config)
+    with pytest.raises(ValueError, match="nonempty"):
+        experiments.run_monte_carlo_experiment(replace(config, metrics=()))
+    with pytest.raises(ValueError, match="positive integer n_iterations"):
+        experiments.run_monte_carlo_experiment(
+            replace(config, metrics=("population_error",),
+                    algorithm=replace(config.algorithm, n_iterations=0)),
+        )
     result = experiments.run_monte_carlo_experiment(
         replace(config, metrics=("unl_selected_error",)))
     for method in ("self_training", "effective_process"):
@@ -265,3 +275,72 @@ def test_approximation_plot_statistics_and_independence(monkeypatch):
     np.testing.assert_allclose(axes.flat[2].lines[0].get_ydata(), np.median(alignments/norms, axis=0))
     np.testing.assert_allclose(axes.flat[2].lines[1].get_ydata(), np.mean(alignments/norms, axis=0))
     plt.close(fig)
+
+
+@pytest.mark.parametrize("seeds", [[1.8, 1.2], [True], [4, 4], []])
+def test_comparison_rejects_invalid_repetition_seeds(seeds):
+    config = experiments.MonteCarloConfig(
+        DataConfig(.8, .2, .4, 3., lambda: 1.),
+        AlgorithmConfig(1, .1, .1, .4, margin_threshold=.5), d=24,
+    )
+    with pytest.raises(ValueError, match="seeds"):
+        experiments.run_monte_carlo_experiment(config, seeds=seeds)
+
+
+def test_runners_restore_rng_and_replay_under_different_default_dtypes():
+    def signal():
+        return random.random() + np.random.random() + torch.randn(()).item()
+
+    config = experiments.MonteCarloConfig(
+        DataConfig(.8, .2, .4, 3., signal),
+        AlgorithmConfig(2, .1, .1, .4, margin_threshold=.5), d=24, k=64, runs=1,
+        metrics=("population_error",),
+    )
+    torch_state = torch.get_rng_state()
+    python_state = random.getstate()
+    numpy_state = np.random.get_state()
+    previous_dtype = torch.get_default_dtype()
+    try:
+        torch.set_default_dtype(torch.float32)
+        stat32 = experiments.run_statistical_experiment(config)
+        mc32 = experiments.run_monte_carlo_experiment(config)
+        assert torch.get_default_dtype() == torch.float32
+        torch.set_default_dtype(torch.float64)
+        stat64 = experiments.run_statistical_experiment(config)
+        mc64 = experiments.run_monte_carlo_experiment(config)
+    finally:
+        torch.set_default_dtype(previous_dtype)
+    assert torch.equal(torch_state, torch.get_rng_state())
+    assert python_state == random.getstate()
+    np.testing.assert_equal(numpy_state, np.random.get_state())
+    np.testing.assert_equal(stat32["population_error"], stat64["population_error"])
+    for method in ("self_training", "effective_process"):
+        assert set(mc32[method]) == {"population_error"}
+        np.testing.assert_equal(mc32[method], mc64[method])
+
+
+def test_approximation_summaries_use_available_repetitions():
+    result = {
+        "iterations": [0, 1, 2],
+        "self_training": {"population_error": [[np.nan, .2, .3], [np.nan, .4, np.nan]]},
+        "effective_process": {"population_error": [[.3, .3, .3]]},
+    }
+    fig, axes = experiments.plot_monte_carlo_experiment(result)
+    try:
+        np.testing.assert_allclose(axes[0, 0].lines[0].get_ydata(), [np.nan, .3, .3])
+        np.testing.assert_allclose(axes[0, 0].lines[1].get_ydata(), [np.nan, .3, .3])
+    finally:
+        plt.close(fig)
+
+
+def test_all_selected_particle_fraction_is_one_with_random_group_counts():
+    config = experiments.MonteCarloConfig(
+        DataConfig(1., .3, .5, 4., lambda: torch.randn(()).item()),
+        AlgorithmConfig(2, .1, .1, 1., margin_threshold=0.),
+        d=20, k=8, runs=1, seed=3,
+        metrics=("unl_usage", "unl_selected_error"),
+    )
+    result = experiments.run_monte_carlo_experiment(config)
+    effective = result["effective_process"]
+    np.testing.assert_array_equal(effective["unl_usage"], np.ones((1, 3)))
+    assert np.all(effective["unl_selected_error"] <= effective["unl_usage"])

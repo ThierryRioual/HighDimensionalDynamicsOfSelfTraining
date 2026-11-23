@@ -9,11 +9,11 @@ refer to the current source. Exact coordinate identities, particle
 approximations, and numerical rank regularization are distinguished below.
 
 The maintained comparison entry point is
-[`experiments/approximation_accuracy.ipynb`](../experiments/approximation_accuracy.ipynb),
+[`experiments/notebooks/approximation_accuracy.ipynb`](../experiments/notebooks/approximation_accuracy.ipynb),
 which calls `run_monte_carlo_experiment` in
 [`experiments/experiments.py`](../experiments/experiments.py).
 The statistical notebook,
-[`experiments/statistical_behavior.ipynb`](../experiments/statistical_behavior.ipynb),
+[`experiments/notebooks/statistical_behavior.ipynb`](../experiments/notebooks/statistical_behavior.ipynb),
 computes a finite-model error decomposition and does not run the particle
 process.
 
@@ -890,7 +890,7 @@ $$
 The second is the fraction of the **entire unlabeled pool** that is selected
 incorrectly, not the error conditional on selection. Define the random
 unlabeled particle count $M_g=\sum_i(1-\mathring\Delta_i)$.
-For $M_g>0$, the empirical conditional estimates would be
+For $M_g>0$, the empirical conditional estimates are
 
 $$
 \hat\omega_{\mathrm{emp}}^t=
@@ -901,14 +901,14 @@ $$
 \mathbf1_{\{\mathrm{sign}_+(\mathring r_i^t)\ne\mathring Y_i\}}.
 $$
 
-The actual effective-process code uses **two denominator conventions**:
+The core process and the experiment runner expose distinct estimators:
 
 - `MacroscopicStateEvolution.selection_rate[t]` stores
   $\hat\omega_{\mathrm{pop}}^t$ from Section 6, with denominator
   $K_g(1-\bar\rho)$, exactly as in the supplied implementation section.
-- `run_monte_carlo_experiment` computes `unl_selected_error[t]` from current
-  scores using $\hat e_{\mathrm{emp}}^t$, with denominator $M_g$. It returns
-  zero if $M_g=0$.
+- `run_monte_carlo_experiment` computes both `unl_usage[t]` and
+  `unl_selected_error[t]` from current scores using the empirical conditional
+  estimates with denominator $M_g$. Both entries are zero if $M_g=0$.
 
 For $0<\bar\rho<1$ and $M_g>0$, the exact relation is
 
@@ -926,7 +926,7 @@ The corresponding ordering need not hold between
 $\hat e_{\mathrm{emp}}^t$ and $\hat\omega_{\mathrm{pop}}^t$.
 These are distinct finite-particle estimates of the intended conditional
 quantities; equivalence in a particle limit additionally requires
-consistency of that limit. No change of estimator is made here.
+consistency of that limit.
 
 The finite callback uses the realized total unlabeled count $M$ for both
 diagnostics. Hidden finite labels enter the selected-error evaluation only,
@@ -945,17 +945,17 @@ to the current state $t=0,\ldots,T$:
 ```
 
 Finite usage is evaluated directly from current unlabeled scores; it requires
-`X_unl` but no diagnostic labels. The effective comparison uses
-`se.selection_rate[:T+1]`, retaining its population denominator.
-The finite selected-error fraction is bounded by usage at every common time.
-For the effective particle estimates, their different empirical versus
-population denominators can prevent that exact finite-particle inequality.
+`X_unl` but no diagnostic labels. The effective comparison also uses the
+realized unlabeled count. Therefore the selected-error fraction is bounded by
+usage at every recorded time in both methods.
 Residual callback diagnostics still describe the preceding update and start
 at zero. See [`TestEvaluatorCallback`](../src/callbacks.py).
 
 ### 8.4 Auxiliary stationary-intercept diagnostic
 
-Requesting population error also records `oracle_bias` and `oracle_error`.
+The finite callback and effective process record `oracle_bias` and
+`oracle_error` internally when computing population error. The comparison
+runner returns requested metrics only and omits these auxiliary histories.
 The implementation evaluates the stationary-intercept expression
 
 $$
@@ -1009,8 +1009,9 @@ It uses $20$ repetitions, with finite-experiment seeds $42,\ldots,61$.
 For each repetition, the runner:
 
 1. Samples a finite Gaussian signal and independent Gaussian initial weights
-   with the isolated Torch seed `seed + 11`; the data generator has its own
-   seed `seed + 23`. Both notebooks use $b^0=0$ and leave first-step
+   in a float64 CPU context seeded with `seed + 11`. It restores the caller's
+   global Torch CPU, Python, and NumPy RNG states. The data generator has its
+   own seed `seed + 23`. Both notebooks use $b^0=0$ and leave first-step
    pseudo-labels endogenous.
 2. Samples the finite environment and design, groups labeled rows before
    unlabeled rows to preserve the established reduction order, and fits
@@ -1036,7 +1037,8 @@ For each method and metric, results are stored as
 `results["iterations"]` is $0,\ldots,T$.
 `plot_monte_carlo_experiment` takes only those recorded results as its data
 input. It computes the pointwise quartiles, median, and arithmetic mean
-along axis $0$. Blue denotes finite GD, orange denotes the particle
+across finite repetitions at each iteration. An iteration with no finite
+values appears as a gap. Blue denotes finite GD, orange denotes the particle
 approximation, the median is solid, the mean dotted, and the interquartile
 region shaded. Plotting does not rerun simulations.
 
