@@ -68,12 +68,13 @@ from `experiments/experiments.py` and `experiments/plotting.py`.
 
 | Notebook | Experiment and output | Current full configuration |
 | --- | --- | --- |
-| [statistical_behavior.ipynb](experiments/notebooks/statistical_behavior.ipynb) | Population-error decomposition into the optimal linear/Bayes error, alignment regret, and intercept regret; balanced and imbalanced panels in one side-by-side figure. | `d=5000`, `n=40000`, `n_iterations=400`, `seed=49`; `label_prior=0.5` then `0.2`. Edit `config_balanced`; `config_unbalanced` derives from it with `dataclasses.replace`. |
+| [statistical_behavior.ipynb](experiments/notebooks/statistical_behavior.ipynb) | Finite Gaussian trajectories and population-error decomposition, followed by the corresponding effective-process comparisons. | `d=2000`, `n=16000`, `n_iterations=400`; 20 matched Gaussian seeds for each prior in `(0.1, 0.2, 0.3, 0.4, 0.5)` and one effective trajectory per prior with `particle_count=20_000`. |
 | [approximation_accuracy.ipynb](experiments/notebooks/approximation_accuracy.ipynb) | One six-panel finite-GD/effective-process comparison: population error, selected fraction, selected-error fraction, bias, alignment, and weight norm. | `d=2000`, `n=16000`, `n_iterations=300`, `k=10000`, `runs=20`, `seed=42`. Edit `config`. |
 
-The paper notebooks save vector PDFs to `manuscript/figures/`, which the
-manuscript includes directly. The dataset notebooks save standalone PDFs to
-`outputs/figures/`.
+The approximation and effective-process comparison figures are saved as vector
+PDFs in `manuscript/figures/`. The finite-only sweep and dataset notebooks save
+their PDFs to `outputs/figures/`. The manuscript also references the earlier
+two-prior `statistical_behavior_comparison.pdf`.
 
 The [dataset notebooks](experiments/notebooks/) use the same pattern. Their
 loading, fitting, and plotting code is in `experiments/mnist.py`,

@@ -8,6 +8,8 @@ from pathlib import Path
 
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 import numpy as np
 from scipy.stats import gaussian_kde
 
@@ -118,7 +120,7 @@ def plot_statistical_behavior(
     destination = _export_destination(save_image, image_path, "statistical_behavior_comparison.pdf")
     ncols = len(results)
     fig, axes = plt.subplots(
-        1, ncols, figsize=(4.8 * ncols, 3.4 + 1.8 / ncols),
+        1, ncols, figsize=(4.8 * ncols, 2.4 + 3.8 / ncols),
         sharex=True, sharey=True, squeeze=False, layout="constrained",
     )
     for ax, result, name in zip(axes.flat, results, names):
@@ -207,9 +209,8 @@ def plot_trajectory_comparison(
             ax.plot(time, median, color=color, linewidth=1.6,
                     linestyle=(line_styles or {}).get(method, "-"),
                     label=f"{label}: median" if not median_only else label)
-            if not median_only:
-                ax.plot(time, mean, color=color,
-                        linestyle=":", linewidth=1.6, label=f"{label}: mean")
+            ax.plot(time, mean, color=color,
+                    linestyle=":", linewidth=1.6, label=f"{label}: mean")
         ax.set(title=_TRAJECTORY_TITLES.get(metric, metric.replace("_", " ").capitalize()),
                xlabel=r"Iteration $t$")
     for ax in list(axes.flat)[len(metrics):]:
@@ -273,6 +274,105 @@ def plot_monte_carlo_experiment(
     )
     if destination is not None:
         save_figure(fig, destination)
+    return fig, axes
+
+
+_IMBALANCE_TITLES = {
+    "population_error": r"Population error $\mathcal{E}^t$",
+    "normalized_intercept": r"Normalized intercept $\beta^t$",
+    "normalized_alignment": r"Normalized signal alignment $\alpha^t$",
+}
+_IMBALANCE_COLORS = ("#0d0887", "#7e03a8", "#c54071", "#ef7437", "#f99f21")
+
+
+def plot_class_imbalance_trajectories(histories: dict, proportions: Sequence[float]):
+    """Plot the finite Gaussian median, mean, and IQR for each prior."""
+    methods = [(f"{p:g}", rf"$p={p:g}$", color) for p, color in zip(proportions, _IMBALANCE_COLORS)]
+    fig, axes = plot_trajectory_comparison(
+        histories, list(_IMBALANCE_TITLES), methods, manuscript=True,
+    )
+    legend = fig.legends[0]
+    legend_font_size = legend.get_texts()[0].get_fontsize()
+    legend.remove()
+    median_lines = [line for line in axes[0, 0].lines if line.get_linestyle() == "-"]
+    fig.legend(
+        median_lines, [label for _, label, _ in methods], loc="outside lower center",
+        ncol=len(methods), frameon=False, fontsize=legend_font_size,
+    )
+    for ax, title in zip(axes.flat, _IMBALANCE_TITLES.values()):
+        ax.set(title=title, xlim=(0, histories["iterations"][-1]))
+    return fig, axes
+
+
+def plot_class_imbalance_effective_trajectories(
+    histories: dict, effective_results: Mapping[float, dict], proportions: Sequence[float],
+):
+    """Compare effective predictions with finite Gaussian means and IQRs."""
+    time = histories["iterations"]
+    fig, axes = plt.subplots(1, 3, figsize=(14.4, 4), sharex=True, layout="constrained")
+    for ax, (metric, title) in zip(axes, _IMBALANCE_TITLES.items()):
+        for p, color in zip(proportions, _IMBALANCE_COLORS):
+            values = histories[f"{p:g}"][metric]
+            q1, q3 = np.percentile(values, [25, 75], axis=0)
+            ax.fill_between(time, q1, q3, color=color, alpha=0.15, linewidth=0)
+            ax.plot(time, values.mean(axis=0), ":", color=color, linewidth=1.6)
+            ax.plot(time, effective_results[p][metric], "-", color=color, linewidth=1.6, label=rf"$p={p:g}$")
+        ax.set(title=title, xlabel=r"Iteration $t$", xlim=(0, time[-1]))
+        ax.grid(alpha=0.25, linewidth=0.6)
+
+    legend_size = _style_axes(fig, manuscript=True)
+    handles, _ = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles=[
+            *handles,
+            Line2D([], [], color="0.25", label="Effective process"),
+            Line2D([], [], color="0.25", linestyle=":", label="Gaussian mean"),
+            Patch(facecolor="0.25", alpha=0.15, label="Gaussian IQR"),
+        ],
+        loc="outside lower center", ncol=len(handles) + 3, frameon=False, fontsize=legend_size,
+    )
+    return fig, axes
+
+
+def plot_class_imbalance_decomposition(
+    histories: dict, proportions: Sequence[float], *, effective_results: Mapping[float, dict] | None = None,
+):
+    """Plot the finite mean decomposition or effective stacks with a finite mean overlay."""
+    time = histories["iterations"]
+    labels = [rf"$p={p:g}$" for p in proportions]
+    if effective_results is None:
+        metrics = ("optimal_linear_error", "alignment_regret", "bias_regret", "population_error")
+        results = []
+        for p in proportions:
+            history = histories[f"{p:g}"]
+            # Use the same runs for every term if one regret is undefined.
+            valid = np.isfinite([history[metric] for metric in metrics]).all(axis=0)
+            results.append({
+                "iterations": time,
+                **{metric: history[metric].mean(axis=0, where=valid) for metric in metrics},
+            })
+        fig, axes = plot_statistical_behavior(results, labels, manuscript=True)
+        max_error = max(np.nanmax(result["population_error"]) for result in results)
+    else:
+        fig, axes = plot_statistical_behavior(
+            [effective_results[p] for p in proportions], labels, manuscript=True,
+        )
+        for ax, p in zip(axes.flat, proportions):
+            ax.lines[0].set_label("Effective total error")
+            gaussian_mean = histories[f"{p:g}"]["population_error"].mean(axis=0)
+            ax.plot(time, gaussian_mean, "--", color="black",
+                    linewidth=1.0, label="Gaussian mean error", zorder=4)
+        legend = fig.legends[0]
+        legend_font_size = legend.get_texts()[0].get_fontsize()
+        legend.remove()
+        fig.legend(
+            *axes[0, 0].get_legend_handles_labels(), loc="outside lower center",
+            ncol=5, frameon=False, fontsize=legend_font_size,
+        )
+        max_error = max(line.get_ydata().max() for ax in axes.flat for line in ax.lines)
+
+    axes[0, 0].set(ylim=(0, max(0.5, max_error + 0.01)), xticks=np.arange(0, time[-1] + 1, 100))
+    fig.set_figheight(6.0)
     return fig, axes
 
 

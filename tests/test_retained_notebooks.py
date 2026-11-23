@@ -21,14 +21,18 @@ from src.config import AlgorithmConfig, DataConfig
 
 def test_notebooks_import_shared_experiment_functions():
     root = Path(__file__).resolve().parents[1]
-    for name, runner, plotter, config in [
-        ("statistical_behavior", "run_statistical_experiment",
-         "plot_statistical_behavior", "ExperimentConfig"),
-        ("approximation_accuracy", "run_monte_carlo_experiment",
-         "plot_monte_carlo_experiment", "MonteCarloConfig"),
-    ]:
+    for name, entry_points in {
+        "statistical_behavior": (
+            "ExperimentConfig", "run_statistical_sweep", "run_effective_process_sweep",
+            "plot_class_imbalance_trajectories", "plot_class_imbalance_effective_trajectories",
+            "plot_class_imbalance_decomposition",
+        ),
+        "approximation_accuracy": (
+            "MonteCarloConfig", "run_monte_carlo_experiment", "plot_monte_carlo_experiment",
+        ),
+    }.items():
         notebook = json.loads((root / "experiments" / "notebooks" / f"{name}.ipynb").read_text())
-        imported = set()
+        imported = {}
         for cell in notebook["cells"]:
             if cell["cell_type"] != "code":
                 continue
@@ -36,9 +40,10 @@ def test_notebooks_import_shared_experiment_functions():
                                if not line.lstrip().startswith("%"))
             for node in ast.parse(source).body:
                 if isinstance(node, ast.ImportFrom) and node.module in {"experiments.experiments", "experiments.plotting"}:
-                    imported.update(alias.name for alias in node.names)
-        for attribute in (runner, plotter, config):
-            assert attribute in imported and callable(getattr(experiments, attribute))
+                    module = importlib.import_module(node.module)
+                    imported.update({alias.name: getattr(module, alias.name) for alias in node.names})
+        for entry_point in entry_points:
+            assert callable(imported[entry_point])
 
 
 def test_shared_module_import_does_not_simulate_or_create_figures(monkeypatch):
